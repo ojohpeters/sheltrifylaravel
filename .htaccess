@@ -1,3 +1,18 @@
+# ── PHP limits (shared hosting defaults are too low for mobile photo uploads) ──
+<IfModule mod_php.c>
+    php_value upload_max_filesize 15M
+    php_value post_max_size       18M
+    php_value memory_limit        256M
+    php_value max_execution_time  120
+</IfModule>
+# cPanel often uses php8x handler instead of mod_php
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 15M
+    php_value post_max_size       18M
+    php_value memory_limit        256M
+    php_value max_execution_time  120
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 

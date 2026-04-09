@@ -4,6 +4,63 @@ const API_BASE =
 
 const VIDEO_MAX_BYTES = 20 * 1024 * 1024; // 20 MB
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+// Server-side limit (cPanel shared hosting). We compress below this before uploading.
+const IMAGE_UPLOAD_TARGET_BYTES = 2 * 1024 * 1024; // 2 MB target after compression
+
+/**
+ * Compress an image File to stay under targetBytes.
+ * Uses Canvas API — works in all modern mobile browsers.
+ * Falls back to the original file if Canvas is unavailable.
+ */
+async function compressImage(file: File, targetBytes = IMAGE_UPLOAD_TARGET_BYTES): Promise<File> {
+  // Only compress JPEG/PNG/WEBP — skip GIF/SVG
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return file;
+  // Already small enough — skip
+  if (file.size <= targetBytes) return file;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+
+      // Scale down so neither dimension exceeds 1920px
+      const MAX_DIM = 1920;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+
+      // Start at 0.85 quality, step down until small enough
+      const tryQuality = (quality: number) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return; }
+            if (blob.size <= targetBytes || quality <= 0.4) {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            } else {
+              tryQuality(Math.max(0.4, quality - 0.1));
+            }
+          },
+          'image/jpeg',
+          quality,
+        );
+      };
+      tryQuality(0.85);
+    };
+
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
 
 function getCsrfToken(): string {
   if (typeof document === 'undefined') return '';
@@ -480,8 +537,9 @@ export const uploadAPI = {
     if (file.size > IMAGE_MAX_BYTES) {
       throw new Error('Image must be 10 MB or smaller.');
     }
+    const compressed = await compressImage(file);
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('image', compressed);
 
     const response = await fetch(`${API_BASE}/upload/image`, {
       method: 'POST',
