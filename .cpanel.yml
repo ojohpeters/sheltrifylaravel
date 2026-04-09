@@ -1,0 +1,39 @@
+---
+deployment:
+  tasks:
+    # ─── Sheltrify – cPanel Auto-Deployment ───────────────────────────────
+    # Runs automatically after every git push via cPanel Git Version Control.
+    # The working directory is the repo root (= deployment path you set in cPanel).
+    #
+    # FIRST-TIME SETUP (do once via cPanel Terminal / SSH):
+    #   1. cp .env.production.example .env
+    #   2. Edit .env — fill in APP_KEY, DB_*, GEMINI_API_KEY, etc.
+    #   3. php artisan key:generate
+    #   4. php artisan migrate --force
+    #   5. chmod -R 775 storage bootstrap/cache
+    # ─────────────────────────────────────────────────────────────────────
+
+    # Install PHP dependencies (no dev packages in production)
+    - /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction 2>&1
+
+    # Clear old caches before rebuilding
+    - /usr/local/bin/php artisan config:clear
+    - /usr/local/bin/php artisan route:clear
+    - /usr/local/bin/php artisan view:clear
+
+    # Cache config/routes/views for speed
+    - /usr/local/bin/php artisan config:cache
+    - /usr/local/bin/php artisan route:cache
+    - /usr/local/bin/php artisan view:cache
+
+    # Run any new migrations automatically
+    - /usr/local/bin/php artisan migrate --force
+
+    # Link storage (safe to re-run — skips if already linked)
+    - /usr/local/bin/php artisan storage:link
+
+    # Restart queue workers if running
+    - /usr/local/bin/php artisan queue:restart
+
+    # Ensure storage & cache dirs are writable
+    - chmod -R 775 storage bootstrap/cache

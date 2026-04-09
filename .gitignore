@@ -1,6 +1,6 @@
 /.phpunit.cache
 /node_modules
-/public/build
+# public/build is intentionally committed for cPanel deployment (no Node.js at deploy time)
 /public/hot
 /public/storage
 /storage/*.key
