@@ -21,6 +21,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
     const [isLogin, setIsLogin] = useState(getInitialTab);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const showError = (msg: string) => {
+        setError(msg);
+        // Give React one tick to render the error div, then scroll it into view
+        setTimeout(() => errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+    };
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [showResetPassword, setShowResetPassword] = useState(false);
     const [resetToken, setResetToken] = useState('');
@@ -30,6 +36,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
+    const errorRef = useRef<HTMLDivElement>(null);
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -58,16 +65,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
         if (file) {
             // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                setError('Profile picture size must be less than 5MB. Please choose a smaller image.');
+                showError('Profile picture size must be less than 5MB. Please choose a smaller image.');
                 setAvatarFile(null);
                 setAvatarPreview(null);
                 if (avatarInputRef.current) avatarInputRef.current.value = '';
                 return;
             }
-            
-            // Validate file type
+
             if (!file.type.startsWith('image/')) {
-                setError('Please select an image file (JPG, PNG, etc.)');
+                showError('Please select an image file (JPG, PNG, etc.)');
                 setAvatarFile(null);
                 setAvatarPreview(null);
                 if (avatarInputRef.current) avatarInputRef.current.value = '';
@@ -98,13 +104,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
             } else {
                 // Validate required fields
                 if (!formData.fullName) {
-                    setError('Full name is required');
+                    showError('Full name is required');
                     setLoading(false);
                     return;
                 }
 
                 if (!avatarFile) {
-                    setError('Profile picture is required. Please upload your photo.');
+                    showError('Profile picture is required. Please upload your photo.');
                     setLoading(false);
                     return;
                 }
@@ -121,9 +127,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                 } catch (uploadErr: any) {
                     console.error('Upload error:', uploadErr);
                     if (uploadErr.name === 'TypeError' && uploadErr.message.includes('fetch')) {
-                        setError('Network error: Could not reach the server. Please try again.');
+                        showError('Network error: Could not reach the server. Please try again.');
                     } else {
-                        setError(uploadErr.message || 'Failed to upload profile picture. Please try again.');
+                        showError(uploadErr.message || 'Failed to upload profile picture. Please try again.');
                     }
                     setLoading(false);
                     return;
@@ -162,7 +168,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                 }
             }
         } catch (err: any) {
-            setError(err.message || 'An error occurred');
+            showError(err.message || 'An error occurred');
         } finally {
             setLoading(false);
         }
@@ -188,7 +194,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
             }}
         >
             <div
-                className="relative bg-gradient-to-br from-light-card to-light-bg dark:from-dark-card dark:to-dark-bg border border-light-border dark:border-dark-border rounded-2xl shadow-2xl w-full max-w-md p-8 text-light-text-primary dark:text-dark-text-primary my-auto max-h-[90vh] overflow-y-auto animate-scale-in"
+                className="relative bg-gradient-to-br from-light-card to-light-bg dark:from-dark-card dark:to-dark-bg border border-light-border dark:border-dark-border rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-8 text-light-text-primary dark:text-dark-text-primary my-auto max-h-[90vh] overflow-y-auto animate-scale-in"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button onClick={handleClose} className="absolute top-4 right-4 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">
@@ -216,7 +222,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                 </div>
 
                 {error && (
-                    <div className="mb-4 p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">
+                    <div ref={errorRef} className="mb-4 p-3 bg-red-500/10 text-red-500 rounded-lg text-sm">
                         {error}
                     </div>
                 )}
