@@ -13,6 +13,9 @@ deployment:
     #   5. chmod -R 775 storage bootstrap/cache
     # ─────────────────────────────────────────────────────────────────────
 
+    # Lock PHP 8.4 for this domain (LiteSpeed-compatible, no .htaccess needed)
+    - /usr/local/cpanel/bin/uapi --output=jsonpretty LangPHP php_set_vhost_lang_version version=ea-php84 2>&1 || true
+
     # Install PHP dependencies (no dev packages in production)
     - /usr/local/bin/composer install --no-dev --optimize-autoloader --no-interaction 2>&1
 
