@@ -23,3 +23,5 @@ Route::get('/admin-dashboard', fn () => $shell('adminDashboard'))->name('admin-d
 Route::get('/user-dashboard', fn () => $shell('userDashboard'))->name('user-dashboard');
 Route::get('/profile', fn () => $shell('profile'))->name('profile');
 Route::get('/payments/verify', fn () => $shell('paymentVerify'))->name('payments.verify');
+Route::get('/listing-dashboard', fn () => $shell('listingDashboard'))->name('listing-dashboard');
+Route::get('/professional-profile', fn () => $shell('professionalProfile'))->name('professional-profile');

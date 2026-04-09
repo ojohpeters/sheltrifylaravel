@@ -82,6 +82,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/upgrade-premium', [UserApiController::class, 'upgradePremium']);
     Route::post('/users/upgrade-chat', [UserApiController::class, 'upgradeChat']);
     Route::post('/users/submit-verification', [UserApiController::class, 'submitVerification']);
+    Route::post('/users/professional-profile', [UserApiController::class, 'submitProfessionalProfile']);
+    Route::get('/users/professional-profile', [UserApiController::class, 'getProfessionalProfile']);
 
     Route::get('/cart', [CartApiController::class, 'index']);
     Route::delete('/cart', [CartApiController::class, 'clear']);
@@ -158,6 +160,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/verifications/pending', [AdminApiController::class, 'pendingVerifications']);
         Route::put('/verifications/{id}/approve', [AdminApiController::class, 'approveVerification'])->where('id', '[0-9]+');
         Route::put('/verifications/{id}/reject', [AdminApiController::class, 'rejectVerification'])->where('id', '[0-9]+');
+        Route::get('/professional-profiles/pending', [AdminApiController::class, 'pendingProfessionalProfiles']);
+        Route::put('/professional-profiles/{id}/approve', [AdminApiController::class, 'approveProfessionalProfile'])->where('id', '[0-9]+');
+        Route::put('/professional-profiles/{id}/reject', [AdminApiController::class, 'rejectProfessionalProfile'])->where('id', '[0-9]+');
         Route::get('/analytics', [AdminApiController::class, 'analytics']);
         Route::get('/system-health', [AdminApiController::class, 'systemHealth']);
         Route::get('/transactions', [AdminApiController::class, 'transactions']);

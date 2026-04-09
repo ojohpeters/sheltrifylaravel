@@ -24,6 +24,9 @@ class User extends Authenticatable
         'verification_photo_url', 'verification_id_url', 'verification_id_type',
         'verification_status', 'verification_rejected_at', 'verification_rejection_reason',
         'verified_at', 'artisan_service', 'artisan_location', 'artisan_rating', 'artisan_bio',
+        'nin_number', 'nin_verified',
+        'listing_approval_status', 'listing_approval_rejection_reason', 'listing_approved_at',
+        'professional_license_url', 'professional_type',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -33,11 +36,13 @@ class User extends Authenticatable
         return [
             'is_premium'               => 'boolean',
             'is_verified'              => 'boolean',
+            'nin_verified'             => 'boolean',
             'onboarding_completed'     => 'boolean',
             'chat_enabled'             => 'boolean',
             'premium_expiry_date'      => 'datetime',
             'verification_rejected_at' => 'datetime',
             'verified_at'              => 'datetime',
+            'listing_approved_at'      => 'datetime',
             'last_seen_at'             => 'datetime',
             'notification_preferences' => 'array',
             'artisan_rating'           => 'float',
@@ -98,5 +103,10 @@ class User extends Authenticatable
     public function aiConversations(): HasMany
     {
         return $this->hasMany(AiConversation::class);
+    }
+
+    public function professionalProfile(): HasOne
+    {
+        return $this->hasOne(ProfessionalProfile::class);
     }
 }

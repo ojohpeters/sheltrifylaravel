@@ -220,10 +220,18 @@ class AdminApiController extends Controller
         return $this->jsonOk($rows);
     }
 
+    // ── Pending verifications (all roles that need NIN approval) ──────────
     public function pendingVerifications()
     {
-        $rows = User::query()->where('verification_status', 'pending')->whereIn('role', ['LANDLORD', 'AGENT'])
-            ->orderBy('created_at')->get(['id', 'email', 'full_name', 'phone', 'role', 'verification_photo_url', 'verification_id_url', 'verification_id_type', 'verification_status', 'created_at']);
+        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'ARTISAN', 'SURVEYOR', 'DEVELOPER'];
+        $rows = User::query()
+            ->where('listing_approval_status', 'pending')
+            ->whereIn('role', $listingRoles)
+            ->orderBy('created_at')
+            ->get(['id', 'email', 'full_name', 'phone', 'role',
+                   'nin_number', 'verification_photo_url', 'verification_id_url',
+                   'verification_id_type', 'verification_status',
+                   'listing_approval_status', 'created_at']);
 
         return $this->jsonOk(['verifications' => $rows]);
     }
@@ -231,34 +239,96 @@ class AdminApiController extends Controller
     public function approveVerification(string $id)
     {
         $u = User::query()->find($id);
-        if (! $u || $u->verification_status !== 'pending') {
-            return $this->jsonErr('User not found or not pending', 400);
+        if (! $u) {
+            return $this->jsonErr('User not found', 404);
         }
         $u->update([
-            'is_verified' => true,
-            'verification_status' => 'approved',
-            'verified_at' => now(),
-            'verification_rejected_at' => null,
-            'verification_rejection_reason' => null,
+            'is_verified'              => true,
+            'nin_verified'             => true,
+            'verification_status'      => 'approved',
+            'listing_approval_status'  => 'approved',
+            'verified_at'              => now(),
+            'listing_approved_at'      => now(),
+            'verification_rejected_at'              => null,
+            'verification_rejection_reason'         => null,
+            'listing_approval_rejection_reason'     => null,
         ]);
 
-        return $this->jsonOk($u->only(['id', 'email', 'full_name', 'is_verified', 'verification_status', 'verified_at']), 'Verification approved successfully');
+        return $this->jsonOk($u->only(['id', 'email', 'full_name', 'is_verified', 'verification_status', 'listing_approval_status', 'verified_at']), 'Verification and listing access approved');
     }
 
     public function rejectVerification(Request $request, string $id)
     {
         $u = User::query()->find($id);
-        if (! $u || $u->verification_status !== 'pending') {
-            return $this->jsonErr('User not found or not pending', 400);
+        if (! $u) {
+            return $this->jsonErr('User not found', 404);
         }
+        $reason = $request->input('reason', 'Documents did not meet requirements');
         $u->update([
-            'is_verified' => false,
-            'verification_status' => 'rejected',
-            'verification_rejected_at' => now(),
-            'verification_rejection_reason' => $request->input('reason', 'Verification documents did not meet requirements'),
+            'is_verified'                           => false,
+            'nin_verified'                          => false,
+            'verification_status'                   => 'rejected',
+            'listing_approval_status'               => 'rejected',
+            'verification_rejected_at'              => now(),
+            'verification_rejection_reason'         => $reason,
+            'listing_approval_rejection_reason'     => $reason,
         ]);
 
-        return $this->jsonOk($u->only(['id', 'email', 'full_name', 'is_verified', 'verification_status', 'verification_rejection_reason']), 'Verification rejected');
+        return $this->jsonOk($u->only(['id', 'email', 'full_name', 'verification_status', 'listing_approval_status', 'verification_rejection_reason']), 'Verification rejected');
+    }
+
+    // ── Professional profiles (Surveyors / Developers) ────────────────────
+    public function pendingProfessionalProfiles()
+    {
+        $profiles = \App\Models\ProfessionalProfile::query()
+            ->where('status', 'pending')
+            ->with(['user:id,email,full_name,phone,avatar_url,role'])
+            ->orderBy('created_at')
+            ->get();
+
+        return $this->jsonOk(['profiles' => $profiles]);
+    }
+
+    public function approveProfessionalProfile(string $id)
+    {
+        $profile = \App\Models\ProfessionalProfile::query()->with('user')->find($id);
+        if (! $profile) {
+            return $this->jsonErr('Profile not found', 404);
+        }
+        $profile->update([
+            'status'      => 'approved',
+            'approved_at' => now(),
+            'approved_by' => request()->user()->id,
+            'rejection_reason' => null,
+        ]);
+        // Also approve the user's listing access
+        $profile->user->update([
+            'is_verified'             => true,
+            'nin_verified'            => true,
+            'listing_approval_status' => 'approved',
+            'listing_approved_at'     => now(),
+        ]);
+
+        return $this->jsonOk($profile->load('user'), 'Professional profile approved');
+    }
+
+    public function rejectProfessionalProfile(Request $request, string $id)
+    {
+        $profile = \App\Models\ProfessionalProfile::query()->with('user')->find($id);
+        if (! $profile) {
+            return $this->jsonErr('Profile not found', 404);
+        }
+        $reason = $request->input('reason', 'Professional documents did not meet requirements');
+        $profile->update([
+            'status'           => 'rejected',
+            'rejection_reason' => $reason,
+        ]);
+        $profile->user->update([
+            'listing_approval_status'           => 'rejected',
+            'listing_approval_rejection_reason' => $reason,
+        ]);
+
+        return $this->jsonOk($profile->load('user'), 'Professional profile rejected');
     }
 
     public function analytics(Request $request)

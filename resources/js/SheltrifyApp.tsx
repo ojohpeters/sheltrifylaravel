@@ -13,6 +13,8 @@ import FeelsPage from './components/FeelsPage';
 import RentalWahalaPage from './components/RentalWahalaPage';
 import AdminDashboard from './components/AdminDashboard';
 import { UserDashboard } from './components/UserDashboard';
+import ListingDashboardPage from './components/ListingDashboardPage';
+import ProfessionalProfilePage from './components/ProfessionalProfilePage';
 import PaymentVerifyPage from './components/PaymentVerifyPage';
 import CartPage from './components/CartPage';
 import GlobalTalesPage from './components/GlobalTalesPage';
@@ -76,7 +78,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile';
 
 type ShellPageProps = {
   view: Page;
@@ -101,6 +103,8 @@ const URL_BY_PAGE: Record<Page, string> = {
   adminDashboard: '/admin-dashboard',
   userDashboard: '/user-dashboard',
   profile: '/profile',
+  listingDashboard: '/listing-dashboard',
+  professionalProfile: '/professional-profile',
 };
 
 const HASH_TO_PATH: Record<string, string> = {
@@ -120,6 +124,8 @@ const HASH_TO_PATH: Record<string, string> = {
   adminDashboard: '/admin-dashboard',
   userDashboard: '/user-dashboard',
   profile: '/profile',
+  listingDashboard: '/listing-dashboard',
+  professionalProfile: '/professional-profile',
 };
 
 const AppContent: React.FC = () => {
@@ -481,6 +487,12 @@ const AppContent: React.FC = () => {
                 router.reload({ only: ['auth'] });
               }}
             />
+          )}
+          {currentPage === 'listingDashboard' && isAuthenticated && currentUser && (
+            <ListingDashboardPage currentUser={currentUser} />
+          )}
+          {currentPage === 'professionalProfile' && isAuthenticated && currentUser && (
+            <ProfessionalProfilePage currentUser={currentUser} />
           )}
           {currentPage === 'paymentVerify' && <PaymentVerifyPage />}
         </main>

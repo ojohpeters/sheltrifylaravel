@@ -275,11 +275,41 @@ export const userAPI = {
     });
   },
 
-  submitVerification: async (data: { verificationPhotoUrl: string; verificationIdUrl: string; verificationIdType: string }) => {
+  submitVerification: async (data: { verificationPhotoUrl: string; verificationIdUrl: string; verificationIdType: string; ninNumber: string }) => {
     return apiRequest('/users/submit-verification', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  submitProfessionalProfile: async (data: {
+    professionalType: string; companyName: string; licenseNumber: string;
+    licenseUrl: string; ninNumber: string; cacNumber?: string; cacDocumentUrl?: string;
+    professionalBody?: string; membershipId?: string; membershipDocUrl?: string;
+    businessAddress?: string; yearsExperience?: string; bio?: string;
+  }) => {
+    return apiRequest('/users/professional-profile', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getProfessionalProfile: async () => {
+    return apiRequest('/users/professional-profile');
+  },
+};
+
+// Listing API
+export const listingAPI = {
+  myListings: async () => {
+    return apiRequest('/listings/user/my-listings');
+  },
+  create: async (data: {
+    title: string; price: string; location: string; description?: string;
+    bedrooms?: number; propertyType?: string; imageUrl?: string; videoUrl?: string;
+    landlordName?: string; landlordEmail?: string; landlordPhone?: string;
+  }) => {
+    return apiRequest('/listings', { method: 'POST', body: JSON.stringify(data) });
   },
 };
 
@@ -370,13 +400,26 @@ export const adminAPI = {
   },
 
   approveVerification: async (userId: string) => {
-    return apiRequest(`/admin/verifications/${userId}/approve`, {
-      method: 'PUT',
-    });
+    return apiRequest(`/admin/verifications/${userId}/approve`, { method: 'PUT' });
   },
 
   rejectVerification: async (userId: string, reason?: string) => {
     return apiRequest(`/admin/verifications/${userId}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  getPendingProfessionalProfiles: async () => {
+    return apiRequest('/admin/professional-profiles/pending');
+  },
+
+  approveProfessionalProfile: async (profileId: string) => {
+    return apiRequest(`/admin/professional-profiles/${profileId}/approve`, { method: 'PUT' });
+  },
+
+  rejectProfessionalProfile: async (profileId: string, reason?: string) => {
+    return apiRequest(`/admin/professional-profiles/${profileId}/reject`, {
       method: 'PUT',
       body: JSON.stringify({ reason }),
     });

@@ -75,16 +75,20 @@ class ListingApiController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if ($user->role === 'LANDLORD' || $user->role === 'AGENT') {
-            if (! $user->is_verified) {
-                if ($user->verification_status === 'pending') {
-                    return $this->jsonErr('Your verification is pending. Please wait for admin approval before creating listings.', 403, ['code' => 'VERIFICATION_PENDING']);
-                }
-                if ($user->verification_status === 'rejected') {
-                    return $this->jsonErr('Your verification was rejected. Please submit new verification documents.', 403, ['code' => 'VERIFICATION_REJECTED']);
-                }
+        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'SURVEYOR', 'DEVELOPER'];
 
-                return $this->jsonErr('You must submit verification documents (profile photo and ID) before creating listings. Please complete verification first.', 403, ['code' => 'VERIFICATION_REQUIRED']);
+        if (in_array($user->role, $listingRoles, true)) {
+            // Must have submitted NIN + documents
+            if (! $user->nin_number) {
+                return $this->jsonErr('You must submit your NIN and verification documents before creating listings.', 403, ['code' => 'NIN_REQUIRED']);
+            }
+            // Must be approved by admin
+            $status = $user->listing_approval_status;
+            if ($status === 'pending' || $status === null) {
+                return $this->jsonErr('Your account is pending admin approval. You will be notified once approved.', 403, ['code' => 'APPROVAL_PENDING']);
+            }
+            if ($status === 'rejected') {
+                return $this->jsonErr('Your listing access was rejected. Please contact support or resubmit your documents.', 403, ['code' => 'APPROVAL_REJECTED']);
             }
         }
 
