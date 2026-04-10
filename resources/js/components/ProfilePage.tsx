@@ -28,6 +28,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, currentUser, onUserU
   const [verificationIdFile, setVerificationIdFile] = useState<File | null>(null);
   const [verificationIdPreview, setVerificationIdPreview] = useState<string | null>(currentUser?.verificationIdUrl || null);
   const [verificationIdType, setVerificationIdType] = useState<string>(currentUser?.verificationIdType || 'NIN');
+  const [ninNumber, setNinNumber] = useState<string>(currentUser?.ninNumber || '');
   const [submittingVerification, setSubmittingVerification] = useState(false);
   const verificationPhotoInputRef = useRef<HTMLInputElement>(null);
   const verificationIdInputRef = useRef<HTMLInputElement>(null);
@@ -202,6 +203,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, currentUser, onUserU
   };
 
   const handleSubmitVerification = async () => {
+    if (!ninNumber || !/^\d{11}$/.test(ninNumber)) {
+      showError('Please enter your valid 11-digit NIN number');
+      return;
+    }
+
     if (!verificationPhotoPreview || !verificationIdPreview) {
       showError('Please upload both your profile photo and ID document');
       return;
@@ -215,6 +221,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, currentUser, onUserU
     try {
       setSubmittingVerification(true);
       const response = await userAPI.submitVerification({
+        ninNumber: ninNumber,
         verificationPhotoUrl: verificationPhotoPreview,
         verificationIdUrl: verificationIdPreview,
         verificationIdType: verificationIdType
@@ -449,6 +456,32 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, currentUser, onUserU
                       />
                     </div>
 
+                    {/* NIN Number */}
+                    <div>
+                      <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">
+                        NIN Number <span className="text-red-500">*</span>
+                      </label>
+                      <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-3">
+                        Enter your 11-digit National Identification Number (NIN)
+                      </p>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="\d{11}"
+                        maxLength={11}
+                        value={ninNumber}
+                        onChange={(e) => setNinNumber(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                        placeholder="e.g. 12345678901"
+                        className="w-full max-w-xs bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none tracking-widest text-lg font-mono"
+                      />
+                      {ninNumber.length > 0 && ninNumber.length < 11 && (
+                        <p className="text-xs text-amber-500 mt-1">{11 - ninNumber.length} more digit{11 - ninNumber.length !== 1 ? 's' : ''} needed</p>
+                      )}
+                      {ninNumber.length === 11 && (
+                        <p className="text-xs text-green-500 mt-1">NIN looks good</p>
+                      )}
+                    </div>
+
                     {/* ID Document */}
                     <div>
                       <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">
@@ -457,7 +490,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onClose, currentUser, onUserU
                       <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mb-3">
                         Upload a clear photo of your NIN, Driver's License, Passport, or other valid ID
                       </p>
-                      
+
                       <div className="mb-3">
                         <select
                           value={verificationIdType}
