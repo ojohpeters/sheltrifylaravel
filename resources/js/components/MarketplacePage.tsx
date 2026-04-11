@@ -188,7 +188,7 @@ const SectionGrid: React.FC<{
 
 const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthenticated?: boolean }> = ({ onProductCreated, isAuthenticated }) => {
     const { showSuccess, showError } = useToast();
-    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'HOME_ELECTRONICS' as string });
+    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE' as string });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -221,7 +221,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
             const response = await marketplaceAPI.create({ name: formData.name, description: formData.description || undefined, price: parseFloat(formData.price), category: formData.category, imageUrl });
             if (response.success) {
                 showSuccess('Product submitted! It will be reviewed before going live.');
-                setFormData({ name: '', description: '', price: '', category: 'HOME_ELECTRONICS' });
+                setFormData({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE' });
                 setImageFile(null); setImagePreview(null); setShowForm(false);
                 if (imageInputRef.current) imageInputRef.current.value = '';
                 onProductCreated?.();
@@ -290,11 +290,18 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                         <div>
                             <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Category</label>
                             <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="input-base text-sm">
-                                <option value="HOME_ELECTRONICS">Home Electronics</option>
-                                <option value="INTERIOR_DESIGN">Interior Design</option>
-                                <option value="BUILDING_MATERIALS">Building Materials</option>
                                 <option value="HOMES_FOR_SALE">Homes for Sale</option>
+                                <option value="SHORTLET">Shortlet Apartment</option>
+                                <option value="STUDENT_HOSTEL">Student Hostel</option>
+                                <option value="OFFICE_SPACE">Office Space</option>
+                                <option value="BUSINESS_SPACE">Business Space</option>
+                                <option value="EVENT_VENUE">Event Venue</option>
+                                <option value="WEDDING_MATERIALS">Hire Wedding Materials</option>
+                                <option value="RENT_TO_OWN">Rent to Own</option>
                                 <option value="LAND_FOR_SALE">Land for Sale</option>
+                                <option value="HOME_ELECTRONICS">Home Electronics</option>
+                                <option value="INTERIOR_DESIGN">Interior Design / Furniture</option>
+                                <option value="BUILDING_MATERIALS">Building Materials</option>
                                 <option value="SERVICES">Services</option>
                             </select>
                         </div>
@@ -330,7 +337,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
     );
 };
 
-type FilterKey = 'all' | 'homes' | 'land' | 'electronics' | 'furniture' | 'materials' | 'drivers';
+type FilterKey = 'all' | 'homes' | 'land' | 'electronics' | 'furniture' | 'materials' | 'drivers' | 'office' | 'business' | 'hostel' | 'shortlet' | 'venue' | 'wedding' | 'renttoown';
 
 interface MarketplacePageProps {
     onCartUpdate?: () => void;
@@ -366,6 +373,13 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         BUILDING_MATERIALS: products.filter(p => p.category === 'BUILDING_MATERIALS'),
         HOME_ELECTRONICS: products.filter(p => p.category === 'HOME_ELECTRONICS'),
         INTERIOR_DESIGN: products.filter(p => p.category === 'INTERIOR_DESIGN'),
+        OFFICE_SPACE: products.filter(p => p.category === 'OFFICE_SPACE'),
+        BUSINESS_SPACE: products.filter(p => p.category === 'BUSINESS_SPACE'),
+        STUDENT_HOSTEL: products.filter(p => p.category === 'STUDENT_HOSTEL'),
+        SHORTLET: products.filter(p => p.category === 'SHORTLET'),
+        EVENT_VENUE: products.filter(p => p.category === 'EVENT_VENUE'),
+        WEDDING_MATERIALS: products.filter(p => p.category === 'WEDDING_MATERIALS'),
+        RENT_TO_OWN: products.filter(p => p.category === 'RENT_TO_OWN'),
     };
 
     const allProducts = {
@@ -374,12 +388,26 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         tipperShield: productsByCategory.BUILDING_MATERIALS.map(p => ({ ...p, image: p.imageUrl, type: 'product' })),
         homeElectronics: productsByCategory.HOME_ELECTRONICS.map(p => ({ ...p, image: p.imageUrl })),
         interiorDesign: productsByCategory.INTERIOR_DESIGN.map(p => ({ ...p, image: p.imageUrl })),
+        officeSpace: productsByCategory.OFFICE_SPACE.map(p => ({ ...p, image: p.imageUrl })),
+        businessSpace: productsByCategory.BUSINESS_SPACE.map(p => ({ ...p, image: p.imageUrl })),
+        studentHostel: productsByCategory.STUDENT_HOSTEL.map(p => ({ ...p, image: p.imageUrl })),
+        shortlet: productsByCategory.SHORTLET.map(p => ({ ...p, image: p.imageUrl })),
+        eventVenue: productsByCategory.EVENT_VENUE.map(p => ({ ...p, image: p.imageUrl })),
+        weddingMaterials: productsByCategory.WEDDING_MATERIALS.map(p => ({ ...p, image: p.imageUrl })),
+        rentToOwn: productsByCategory.RENT_TO_OWN.map(p => ({ ...p, image: p.imageUrl })),
     };
 
     const filters: { key: FilterKey; label: string; icon: string }[] = [
         { key: 'all', label: 'All', icon: '🏪' },
         { key: 'homes', label: 'Homes', icon: '🏠' },
         { key: 'land', label: 'Land', icon: '🌍' },
+        { key: 'shortlet', label: 'Shortlet', icon: '🛎️' },
+        { key: 'hostel', label: 'Student Hostels', icon: '🎓' },
+        { key: 'office', label: 'Office Space', icon: '🏢' },
+        { key: 'business', label: 'Business Space', icon: '🏬' },
+        { key: 'venue', label: 'Event Venue', icon: '🎪' },
+        { key: 'wedding', label: 'Wedding Hire', icon: '💍' },
+        { key: 'renttoown', label: 'Rent to Own', icon: '🔑' },
         { key: 'electronics', label: 'Electronics', icon: '📱' },
         { key: 'furniture', label: 'Furniture', icon: '🛋️' },
         { key: 'materials', label: 'Materials', icon: '🧱' },
@@ -407,7 +435,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                         <BuildingStorefrontIcon className="w-3.5 h-3.5" />ShelTrify Marketplace
                     </div>
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white leading-tight">Your Complete<br />Home & Build Store</h1>
-                    <p className="mt-1 text-sm text-white/80">Homes · Land · Electronics · Furniture · Materials</p>
+                    <p className="mt-1 text-sm text-white/80">Homes · Shortlet · Office · Hostels · Venues · Rent-to-Own & more</p>
                 </div>
             </div>
 
@@ -444,8 +472,15 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
             ) : (
                 <>
                     {shouldShow('homes') && <SectionGrid title="Homes for Sale" icon="🏠" items={allProducts.homesForSale} renderItem={renderProduct('homesForSale')} />}
-                    {shouldShow('furniture') && <SectionGrid title="Home Furniture" icon="🛋️" items={allProducts.interiorDesign} renderItem={renderProduct('interiorDesign')} />}
+                    {shouldShow('shortlet') && <SectionGrid title="Shortlet Apartments" icon="🛎️" items={allProducts.shortlet} renderItem={renderProduct('shortlet')} />}
+                    {shouldShow('hostel') && <SectionGrid title="Student Hostels" icon="🎓" items={allProducts.studentHostel} renderItem={renderProduct('studentHostel')} />}
+                    {shouldShow('office') && <SectionGrid title="Office Space" icon="🏢" items={allProducts.officeSpace} renderItem={renderProduct('officeSpace')} />}
+                    {shouldShow('business') && <SectionGrid title="Business Space" icon="🏬" items={allProducts.businessSpace} renderItem={renderProduct('businessSpace')} />}
+                    {shouldShow('venue') && <SectionGrid title="Event Venues" icon="🎪" items={allProducts.eventVenue} renderItem={renderProduct('eventVenue')} />}
+                    {shouldShow('wedding') && <SectionGrid title="Hire Wedding Materials" icon="💍" items={allProducts.weddingMaterials} renderItem={renderProduct('weddingMaterials')} />}
+                    {shouldShow('renttoown') && <SectionGrid title="Rent to Own" icon="🔑" items={allProducts.rentToOwn} renderItem={renderProduct('rentToOwn')} />}
                     {shouldShow('land') && <SectionGrid title="Land for Sale" icon="🌍" items={allProducts.landForSale} renderItem={renderProduct('landForSale')} />}
+                    {shouldShow('furniture') && <SectionGrid title="Home Furniture" icon="🛋️" items={allProducts.interiorDesign} renderItem={renderProduct('interiorDesign')} />}
                     {shouldShow('materials') && <SectionGrid title="Building Materials" icon="🧱" items={allProducts.tipperShield} renderItem={renderProduct('tipperShield')} />}
                     {shouldShow('electronics') && <SectionGrid title="Home Electronics" icon="📱" items={allProducts.homeElectronics} renderItem={renderProduct('homeElectronics')} />}
                     {shouldShow('drivers') && (
