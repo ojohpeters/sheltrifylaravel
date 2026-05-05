@@ -92,7 +92,7 @@ interface MarketplaceProduct {
   };
 }
 
-type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content';
+type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests';
 type AdminView = 'list' | 'edit' | 'create' | 'upload';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
@@ -106,6 +106,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [feelsVideos, setFeelsVideos] = useState<FeelsVideo[]>([]);
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([]);
   const [pendingProducts, setPendingProducts] = useState<MarketplaceProduct[]>([]);
+  const [allMarketplaceProducts, setAllMarketplaceProducts] = useState<any[]>([]);
+  const [marketplaceTab, setMarketplaceTab] = useState<'pending' | 'approved' | 'all'>('pending');
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointmentFilter, setAppointmentFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -163,6 +167,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     } else if (currentPage === 'marketplace') {
       loadMarketplaceProducts();
       loadPendingProducts();
+      loadAllMarketplaceProducts();
+    } else if (currentPage === 'requests') {
+      loadAppointments();
     } else if (currentPage === 'analytics') {
       loadAnalytics();
     } else if (currentPage === 'ai') {
@@ -174,7 +181,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     } else if (currentPage === 'content') {
       loadContent();
     }
-  }, [currentPage, searchTerm, listingFilter]);
+  }, [currentPage, searchTerm, listingFilter, appointmentFilter]);
 
   const loadStats = async () => {
     try {
@@ -244,6 +251,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       }
     } catch (err: any) {
       console.error('Failed to load pending products:', err);
+    }
+  };
+
+  const loadAllMarketplaceProducts = async () => {
+    try {
+      const response = await adminAPI.getAllMarketplaceProducts();
+      if (response.success) setAllMarketplaceProducts(response.data.products || []);
+    } catch (err: any) {
+      console.error('Failed to load all marketplace products:', err);
+    }
+  };
+
+  const loadAppointments = async () => {
+    try {
+      setLoading(true);
+      const params = appointmentFilter !== 'all' ? { status: appointmentFilter } : undefined;
+      const response = await adminAPI.getAllAppointments(params);
+      if (response.success) setAppointments(response.data.appointments || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load property requests');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -614,7 +643,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     { id: 'accommodations', label: 'Accommodations', icon: BuildingStorefrontIcon },
     { id: 'listings', label: 'Listings', icon: BuildingStorefrontIcon },
     { id: 'feels', label: 'Feels Videos', icon: VideoCameraIcon },
-    { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon },
+    { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon, badge: pendingProducts.length },
+    { id: 'requests', label: 'Property Requests', icon: DocumentCheckIcon, badge: appointments.filter((a: any) => a.status === 'pending').length },
     { id: 'analytics', label: 'Analytics', icon: TrendingUpIcon },
     { id: 'ai', label: 'AI Management', icon: UserIcon },
     { id: 'system', label: 'System', icon: CogIcon },
@@ -1169,53 +1199,207 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
           {currentPage === 'marketplace' && (
             <div>
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">
-                  Pending Approvals ({pendingProducts.length})
-                </h3>
-                {pendingProducts.length === 0 ? (
+              {/* Tabs */}
+              <div className="flex gap-2 mb-5 border-b border-light-border dark:border-dark-border pb-3">
+                {(['pending', 'approved', 'all'] as const).map((tab) => {
+                  const count = tab === 'pending' ? pendingProducts.length : tab === 'approved' ? allMarketplaceProducts.filter(p => p.isApproved).length : allMarketplaceProducts.length;
+                  return (
+                    <button key={tab} onClick={() => setMarketplaceTab(tab)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${marketplaceTab === tab ? 'bg-brand-primary text-white' : 'bg-light-bg dark:bg-dark-bg text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary'}`}
+                    >
+                      {tab === 'pending' ? `Pending (${pendingProducts.length})` : tab === 'approved' ? `Approved (${allMarketplaceProducts.filter(p => p.isApproved).length})` : `All (${allMarketplaceProducts.length})`}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Pending tab */}
+              {marketplaceTab === 'pending' && (
+                pendingProducts.length === 0 ? (
                   <div className="text-center py-8 text-light-text-secondary dark:text-dark-text-secondary bg-light-bg dark:bg-dark-bg rounded-lg border border-light-border dark:border-dark-border">
                     No pending products to approve
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {pendingProducts.map((product) => (
-                      <div key={product.id} className="bg-light-bg dark:bg-dark-bg p-4 rounded-lg border border-light-border dark:border-dark-border">
+                      <div key={product.id} className="bg-light-bg dark:bg-dark-bg p-4 rounded-lg border border-amber-400/30 border-l-4 border-l-amber-400">
                         <div className="flex gap-4">
                           {product.imageUrl && (
-                            <img src={product.imageUrl} alt={product.name} className="w-24 h-24 object-cover rounded-lg" />
+                            <img src={product.imageUrl} alt={product.name} className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
                           )}
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">{product.name}</h4>
                             <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-2 line-clamp-2">{product.description || 'No description'}</p>
-                            <div className="flex items-center gap-4 text-sm">
-                              <span className="text-brand-primary font-bold">₦{product.price.toLocaleString()}</span>
-                              <span className="text-light-text-secondary dark:text-dark-text-secondary">Category: {product.category}</span>
-                              <span className="text-light-text-secondary dark:text-dark-text-secondary">By: {product.user.fullName || product.user.email}</span>
+                            <div className="flex flex-wrap items-center gap-3 text-xs">
+                              <span className="text-brand-primary font-bold">₦{product.price?.toLocaleString()}</span>
+                              <span className="px-2 py-0.5 bg-light-card dark:bg-dark-card rounded-full">{product.category?.replace(/_/g, ' ')}</span>
+                              <span className="text-light-text-secondary dark:text-dark-text-secondary">By: {product.user?.fullName || product.user?.email}</span>
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => handleApproveProduct(product.id)}
-                              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
-                            >
-                              <CheckCircleIcon className="w-4 h-4" />
-                              Approve
+                          <div className="flex flex-col gap-2 flex-shrink-0">
+                            <button onClick={() => { handleApproveProduct(product.id); loadAllMarketplaceProducts(); }}
+                              className="flex items-center gap-1.5 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xs font-semibold">
+                              <CheckCircleIcon className="w-4 h-4" />Approve
                             </button>
-                            <button
-                              onClick={() => handleRejectProduct(product.id)}
-                              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-semibold"
-                            >
-                              <XCircleIcon className="w-4 h-4" />
-                              Reject
+                            <button onClick={() => { handleRejectProduct(product.id); loadAllMarketplaceProducts(); }}
+                              className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-xs font-semibold">
+                              <XCircleIcon className="w-4 h-4" />Reject
                             </button>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                )}
+                )
+              )}
+
+              {/* Approved / All tabs */}
+              {(marketplaceTab === 'approved' || marketplaceTab === 'all') && (() => {
+                const items = marketplaceTab === 'approved' ? allMarketplaceProducts.filter(p => p.isApproved) : allMarketplaceProducts;
+                return items.length === 0 ? (
+                  <div className="text-center py-8 text-light-text-secondary dark:text-dark-text-secondary bg-light-bg dark:bg-dark-bg rounded-lg border border-light-border dark:border-dark-border">
+                    No products found
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-light-border dark:border-dark-border text-left text-xs font-semibold text-light-text-secondary dark:text-dark-text-secondary uppercase tracking-wide">
+                          <th className="p-3">Product</th>
+                          <th className="p-3">Price</th>
+                          <th className="p-3">Category</th>
+                          <th className="p-3">Seller</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((product: any) => (
+                          <tr key={product.id} className="border-b border-light-border dark:border-dark-border hover:bg-light-bg dark:hover:bg-dark-bg">
+                            <td className="p-3">
+                              <div className="flex items-center gap-3">
+                                {product.imageUrl && <img src={product.imageUrl} alt={product.name} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />}
+                                <span className="text-sm font-semibold text-light-text-primary dark:text-dark-text-primary line-clamp-1">{product.name}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-sm text-brand-primary font-bold">₦{product.price?.toLocaleString()}</td>
+                            <td className="p-3 text-xs text-light-text-secondary dark:text-dark-text-secondary">{product.category?.replace(/_/g, ' ')}</td>
+                            <td className="p-3 text-sm text-light-text-secondary dark:text-dark-text-secondary">{product.user?.fullName || product.user?.email}</td>
+                            <td className="p-3">
+                              {product.isApproved ? (
+                                <span className="px-2 py-1 text-xs font-semibold bg-green-500/20 text-green-500 rounded-full">Approved</span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-semibold bg-amber-500/20 text-amber-500 rounded-full">Pending</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {!product.isApproved ? (
+                                <button onClick={() => { handleApproveProduct(product.id); loadAllMarketplaceProducts(); }}
+                                  className="p-1.5 text-green-500 hover:bg-green-500/10 rounded transition-colors" title="Approve">
+                                  <CheckCircleIcon className="w-5 h-5" />
+                                </button>
+                              ) : (
+                                <button onClick={() => { handleRejectProduct(product.id); loadAllMarketplaceProducts(); }}
+                                  className="p-1.5 text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Reject/Remove">
+                                  <XCircleIcon className="w-5 h-5" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Property Requests (Q5) */}
+          {currentPage === 'requests' && (
+            <div>
+              <div className="mb-6 bg-gradient-to-r from-brand-primary/10 to-cyan-400/10 border border-brand-primary/20 rounded-lg p-5">
+                <h2 className="text-xl font-bold text-light-text-primary dark:text-dark-text-primary mb-1">🏠 Property Requests</h2>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  All seeker appointment requests — see who requested, the listing, and the agent/landlord who uploaded it.
+                </p>
               </div>
+              <div className="mb-4 flex gap-3 flex-wrap">
+                {['all', 'pending', 'confirmed', 'rented_out', 'completed', 'cancelled'].map((s) => (
+                  <button key={s} onClick={() => { setAppointmentFilter(s); loadAppointments(); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${appointmentFilter === s ? 'bg-brand-primary text-white' : 'bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text-secondary dark:text-dark-text-secondary hover:border-brand-primary/40'}`}
+                  >
+                    {s === 'all' ? 'All' : s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </button>
+                ))}
+              </div>
+              {appointments.length === 0 && !loading ? (
+                <div className="text-center py-12 text-light-text-secondary dark:text-dark-text-secondary">
+                  No property requests found
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {appointments.map((appt: any) => (
+                    <div key={appt.id} className={`bg-light-bg dark:bg-dark-bg p-4 rounded-xl border-l-4 border border-light-border dark:border-dark-border ${
+                      appt.status === 'rented_out' ? 'border-l-green-500' : appt.status === 'pending' ? 'border-l-amber-400' : appt.status === 'cancelled' ? 'border-l-red-500' : 'border-l-blue-400'
+                    }`}>
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                        {/* Listing */}
+                        <div className="flex-1">
+                          <div className="flex items-start gap-3">
+                            {appt.listing?.imageUrl && <img src={appt.listing.imageUrl} alt={appt.listing.title} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />}
+                            <div>
+                              <p className="font-semibold text-light-text-primary dark:text-dark-text-primary">{appt.listing?.title || 'Unknown Listing'}</p>
+                              <p className="text-sm text-brand-primary font-bold">{appt.listing?.price}</p>
+                              <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">📍 {appt.listing?.location}</p>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Seeker */}
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-light-text-secondary dark:text-dark-text-secondary uppercase tracking-wide mb-1">Seeker (Requested)</p>
+                          <p className="text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">{appt.user?.fullName || appt.user?.email}</p>
+                          <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">{appt.user?.phone || appt.user?.email}</p>
+                        </div>
+                        {/* Agent/Landlord */}
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-light-text-secondary dark:text-dark-text-secondary uppercase tracking-wide mb-1">Listed by</p>
+                          <p className="text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">{appt.listing?.user?.fullName || appt.listing?.user?.email || '—'}</p>
+                          <p className="text-xs text-brand-primary">{appt.listing?.user?.role?.replace(/_/g, ' ')}</p>
+                          <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">{appt.listing?.user?.phone}</p>
+                        </div>
+                        {/* Status + actions */}
+                        <div className="flex flex-col gap-2 items-end">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            appt.status === 'rented_out' ? 'bg-green-500/20 text-green-500' :
+                            appt.status === 'pending' ? 'bg-amber-500/20 text-amber-500' :
+                            appt.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
+                            'bg-blue-500/20 text-blue-500'
+                          }`}>{appt.status?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                          <select
+                            value={appt.status}
+                            onChange={async (e) => {
+                              await adminAPI.updateAppointment(appt.id, e.target.value);
+                              loadAppointments();
+                            }}
+                            className="text-xs bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg px-2 py-1 focus:ring-2 focus:ring-brand-primary focus:outline-none"
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="rented_out">Rented Out ✓</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                          <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted">{new Date(appt.createdAt || appt.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      {appt.notes && (
+                        <p className="mt-3 text-xs text-light-text-secondary dark:text-dark-text-secondary bg-light-card dark:bg-dark-card rounded-lg p-2">💬 {appt.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

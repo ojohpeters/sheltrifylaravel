@@ -110,9 +110,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/feels/{id}/like', [FeelsApiController::class, 'like'])->where('id', '[0-9]+');
     Route::post('/feels/{id}/comments', [FeelsApiController::class, 'commentsStore'])->where('id', '[0-9]+');
 
-    Route::post('/rental-wahala', [RentalWahalaApiController::class, 'store'])->middleware('admin');
-    Route::put('/rental-wahala/{id}', [RentalWahalaApiController::class, 'update'])->where('id', '[0-9]+')->middleware('admin');
-    Route::delete('/rental-wahala/{id}', [RentalWahalaApiController::class, 'destroy'])->where('id', '[0-9]+')->middleware('admin');
+    Route::post('/rental-wahala', [RentalWahalaApiController::class, 'store']);
+    Route::put('/rental-wahala/{id}', [RentalWahalaApiController::class, 'update'])->where('id', '[0-9]+');
+    Route::delete('/rental-wahala/{id}', [RentalWahalaApiController::class, 'destroy'])->where('id', '[0-9]+');
     Route::post('/rental-wahala/{id}/like', [RentalWahalaApiController::class, 'like'])->where('id', '[0-9]+');
 
     Route::post('/global-tales', [GlobalTalesApiController::class, 'store']);
@@ -157,6 +157,9 @@ Route::middleware('auth')->group(function () {
         Route::put('/marketplace/{id}/approve', [AdminApiController::class, 'approveProduct'])->where('id', '[0-9]+');
         Route::put('/marketplace/{id}/reject', [AdminApiController::class, 'rejectProduct'])->where('id', '[0-9]+');
         Route::get('/marketplace/pending', [AdminApiController::class, 'pendingProducts']);
+        Route::get('/marketplace', [AdminApiController::class, 'allMarketplaceProducts']);
+        Route::get('/appointments', [AdminApiController::class, 'allAppointments']);
+        Route::put('/appointments/{id}', [AdminApiController::class, 'updateAppointment'])->where('id', '[0-9]+');
         Route::get('/verifications/pending', [AdminApiController::class, 'pendingVerifications']);
         Route::put('/verifications/{id}/approve', [AdminApiController::class, 'approveVerification'])->where('id', '[0-9]+');
         Route::put('/verifications/{id}/reject', [AdminApiController::class, 'rejectVerification'])->where('id', '[0-9]+');

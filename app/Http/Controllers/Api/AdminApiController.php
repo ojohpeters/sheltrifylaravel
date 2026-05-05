@@ -220,6 +220,46 @@ class AdminApiController extends Controller
         return $this->jsonOk($rows);
     }
 
+    public function allMarketplaceProducts(Request $request)
+    {
+        $q = MarketplaceProduct::query()->with(['user:id,full_name,email,avatar_url'])->orderByDesc('created_at');
+        if ($request->filled('isApproved')) {
+            $q->where('is_approved', filter_var($request->query('isApproved'), FILTER_VALIDATE_BOOLEAN));
+        }
+        if ($request->filled('category')) {
+            $q->where('category', $request->query('category'));
+        }
+        $rows = $q->get();
+        return $this->jsonOk(['products' => $rows, 'total' => $rows->count()]);
+    }
+
+    // ── Property Requests (Appointments) ──────────────────────────────────
+    public function allAppointments(Request $request)
+    {
+        $q = \App\Models\Appointment::query()
+            ->with([
+                'user:id,full_name,email,phone',
+                'listing:id,title,price,location,user_id,image_url',
+                'listing.user:id,full_name,email,phone,role',
+            ])->orderByDesc('created_at');
+
+        if ($request->filled('status')) {
+            $q->where('status', $request->query('status'));
+        }
+        $rows = $q->get();
+        return $this->jsonOk(['appointments' => $rows, 'total' => $rows->count()]);
+    }
+
+    public function updateAppointment(Request $request, string $id)
+    {
+        $appt = \App\Models\Appointment::query()->find($id);
+        if (! $appt) return $this->jsonErr('Appointment not found', 404);
+        $data = $request->validate(['status' => 'required|in:pending,confirmed,completed,cancelled,rented_out']);
+        $appt->update(['status' => $data['status']]);
+        $appt->load(['user:id,full_name,email,phone', 'listing:id,title,price,location,user_id', 'listing.user:id,full_name,email,phone,role']);
+        return $this->jsonOk($appt, 'Appointment updated');
+    }
+
     // ── Pending verifications (all roles that need NIN approval) ──────────
     public function pendingVerifications()
     {

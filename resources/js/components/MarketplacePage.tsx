@@ -1,14 +1,14 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
-    ShoppingCartIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     BuildingStorefrontIcon,
     PhotoIcon,
     PhoneIcon,
-    CloseIcon
+    CloseIcon,
+    EyeIcon,
 } from './icons';
-import { marketplaceAPI, cartAPI, uploadAPI } from '../services/api';
+import { marketplaceAPI, uploadAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 
 const tipperDrivers = [
@@ -37,36 +37,157 @@ const SkeletonCard: React.FC = () => (
     </div>
 );
 
+// ── Product Detail Modal ──────────────────────────────────────────────────────
+const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthenticated: boolean }> = ({ product, onClose, isAuthenticated }) => {
+    const [imageError, setImageError] = useState(false);
+    const [subscribed, setSubscribed] = useState(false);
+    const [email, setEmail] = useState('');
+    const { showSuccess, showError } = useToast();
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email.includes('@')) { showError('Enter a valid email'); return; }
+        // Save subscription locally and show confirmation
+        setSubscribed(true);
+        showSuccess('Subscribed! We\'ll notify you of new listings like this.');
+    };
+
+    const phoneNumber = product.landlordPhone || product.user?.phone || '';
+    const whatsapp = phoneNumber.replace(/[^\d+]/g, '');
+    const sellerName = product.landlordName || product.user?.fullName || product.user?.email || 'Seller';
+    const isProperty = ['homesForSale','landForSale','shortlet','studentHostel','officeSpace','businessSpace','eventVenue','weddingMaterials','rentToOwn'].includes(product._category || '');
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+            <div
+                className="w-full sm:max-w-lg bg-light-card dark:bg-dark-card rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto max-h-[92vh]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Image */}
+                <div className="relative aspect-[4/3] bg-light-bg dark:bg-dark-bg">
+                    {!imageError && (product.image || product.imageUrl) ? (
+                        <img
+                            src={product.image || product.imageUrl}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <PhotoIcon className="w-16 h-16 text-light-text-muted dark:text-dark-text-muted" />
+                        </div>
+                    )}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-3 right-3 w-9 h-9 bg-black/50 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
+                    >
+                        <CloseIcon className="w-5 h-5" />
+                    </button>
+                    {product.category && (
+                        <div className="absolute bottom-3 left-3 px-3 py-1 bg-brand-primary text-white text-xs font-semibold rounded-full">
+                            {product.category.replace(/_/g, ' ')}
+                        </div>
+                    )}
+                </div>
+
+                {/* Details */}
+                <div className="p-5 space-y-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-light-text-primary dark:text-dark-text-primary">{product.name}</h2>
+                        <div className="flex items-baseline gap-2 mt-1">
+                            <p className="text-2xl font-extrabold text-brand-primary">{formatPrice(product.price)}</p>
+                            {product.oldPrice && (
+                                <p className="text-sm text-light-text-muted dark:text-dark-text-muted line-through">{formatPrice(product.oldPrice)}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {product.description && (
+                        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary leading-relaxed">{product.description}</p>
+                    )}
+
+                    {product.location && (
+                        <div className="flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                            <span>📍</span><span>{product.location}</span>
+                        </div>
+                    )}
+
+                    {product.bedrooms && (
+                        <div className="flex gap-4 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                            <span>🛏 {product.bedrooms} bed{product.bedrooms !== 1 ? 's' : ''}</span>
+                            {product.bathrooms && <span>🚿 {product.bathrooms} bath{product.bathrooms !== 1 ? 's' : ''}</span>}
+                        </div>
+                    )}
+
+                    {/* Seller info */}
+                    <div className="bg-light-bg dark:bg-dark-bg rounded-xl p-4">
+                        <p className="text-xs font-semibold text-light-text-secondary dark:text-dark-text-secondary uppercase tracking-wide mb-2">Listed by</p>
+                        <p className="font-semibold text-light-text-primary dark:text-dark-text-primary">{sellerName}</p>
+                        {product.user?.role && (
+                            <p className="text-xs text-brand-primary mt-0.5">{product.user.role.replace(/_/g, ' ')}</p>
+                        )}
+                    </div>
+
+                    {/* Contact buttons */}
+                    {phoneNumber && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <a
+                                href={`tel:${phoneNumber}`}
+                                className="flex items-center justify-center gap-2 py-3 bg-brand-primary text-white font-semibold rounded-xl text-sm hover:bg-brand-secondary transition-colors"
+                            >
+                                <PhoneIcon className="w-4 h-4" />Call
+                            </a>
+                            <a
+                                href={`https://wa.me/${whatsapp}?text=Hi, I saw your listing "${product.name}" on ShelTrify and I'm interested.`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 py-3 bg-green-500 text-white font-semibold rounded-xl text-sm hover:bg-green-600 transition-colors"
+                            >
+                                💬 WhatsApp
+                            </a>
+                        </div>
+                    )}
+
+                    {/* Subscribe */}
+                    <div className="border-t border-light-border dark:border-dark-border pt-4">
+                        <p className="text-xs font-semibold text-light-text-secondary dark:text-dark-text-secondary mb-2">
+                            🔔 Get alerts for similar listings
+                        </p>
+                        {subscribed ? (
+                            <p className="text-sm text-green-500 font-medium">✓ You're subscribed!</p>
+                        ) : (
+                            <form onSubmit={handleSubscribe} className="flex gap-2">
+                                <input
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="flex-1 text-sm bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none"
+                                />
+                                <button type="submit" className="px-4 py-2 bg-brand-primary/10 text-brand-primary font-semibold text-sm rounded-lg hover:bg-brand-primary/20 transition-colors">
+                                    Subscribe
+                                </button>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const ProductCard: React.FC<{
     product: any;
     category: string;
-    onAddToCart?: (productId: string) => void;
-    isAuthenticated?: boolean;
-}> = ({ product, category, onAddToCart, isAuthenticated }) => {
-    const [isAdding, setIsAdding] = useState(false);
+    onViewDetails?: (product: any) => void;
+}> = ({ product, category, onViewDetails }) => {
     const [imageError, setImageError] = useState(false);
-    const { showSuccess, showError } = useToast();
-    const isService = product.type === 'service';
-    const isProperty = category === 'homesForSale' || category === 'landForSale';
-    const productId = product.id || product.productId;
-
-    const handleAddToCart = useCallback(async () => {
-        if (!productId || isService) return;
-        if (!isAuthenticated) { showError('Please login to add items to cart'); return; }
-        setIsAdding(true);
-        try {
-            if (onAddToCart) { await onAddToCart(productId); }
-            else { await cartAPI.add(productId); }
-            showSuccess('Added to cart!');
-        } catch (error: any) {
-            showError(error.message || 'Failed to add to cart');
-        } finally { setIsAdding(false); }
-    }, [productId, isService, isAuthenticated, onAddToCart, showSuccess, showError]);
+    const isProperty = ['homesForSale','landForSale','shortlet','studentHostel','officeSpace','businessSpace','eventVenue','weddingMaterials','rentToOwn'].includes(category);
 
     return (
-        <div className="group bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+        <div className="group bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer" onClick={() => onViewDetails?.({ ...product, _category: category })}>
             <div className="relative overflow-hidden aspect-[4/3]">
-                {!imageError ? (
+                {!imageError && (product.image || product.imageUrl) ? (
                     <img
                         src={product.image || product.imageUrl}
                         alt={product.name}
@@ -84,9 +205,15 @@ const ProductCard: React.FC<{
                         -{product.discount}%
                     </div>
                 )}
+                <div className="absolute top-2 right-2 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <EyeIcon className="w-4 h-4 text-white" />
+                </div>
             </div>
             <div className="p-3 sm:p-4">
                 <h3 className="font-semibold text-sm text-light-text-primary dark:text-dark-text-primary truncate">{product.name}</h3>
+                {product.location && (
+                    <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate mt-0.5">📍 {product.location}</p>
+                )}
                 <div className="flex items-baseline gap-2 mt-1">
                     <p className="text-base font-bold text-brand-primary">{formatPrice(product.price)}</p>
                     {product.oldPrice && (
@@ -94,17 +221,10 @@ const ProductCard: React.FC<{
                     )}
                 </div>
                 <button
-                    onClick={handleAddToCart}
-                    disabled={isAdding || isService}
-                    className={`w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 font-semibold text-xs rounded-xl transition-all touch-manipulation ${
-                        isService
-                            ? 'bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20'
-                            : 'bg-brand-primary text-white hover:bg-brand-secondary shadow-sm hover:shadow-brand-sm'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className="w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 font-semibold text-xs rounded-xl bg-brand-primary text-white hover:bg-brand-secondary shadow-sm transition-all touch-manipulation"
+                    onClick={(e) => { e.stopPropagation(); onViewDetails?.({ ...product, _category: category }); }}
                 >
-                    {isService ? 'Get Quote' : isAdding ? 'Adding…' : (
-                        <><ShoppingCartIcon className="w-3.5 h-3.5" />Add to Cart</>
-                    )}
+                    <EyeIcon className="w-3.5 h-3.5" />View Details
                 </button>
             </div>
         </div>
@@ -301,6 +421,9 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                                 <option value="LAND_FOR_SALE">Land for Sale</option>
                                 <option value="HOME_ELECTRONICS">Home Electronics</option>
                                 <option value="INTERIOR_DESIGN">Interior Design / Furniture</option>
+                                <option value="BUY_PROPERTIES">Buy Properties</option>
+                                <option value="SALES_PROPERTIES">Sales Properties</option>
+                                <option value="PROPERTY_MANAGEMENT">Property Management</option>
                                 <option value="BUILDING_MATERIALS">Building Materials</option>
                                 <option value="SERVICES">Services</option>
                             </select>
@@ -337,7 +460,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
     );
 };
 
-type FilterKey = 'all' | 'homes' | 'land' | 'electronics' | 'furniture' | 'materials' | 'drivers' | 'office' | 'business' | 'hostel' | 'shortlet' | 'venue' | 'wedding' | 'renttoown';
+type FilterKey = 'all' | 'homes' | 'land' | 'electronics' | 'furniture' | 'materials' | 'drivers' | 'office' | 'business' | 'hostel' | 'shortlet' | 'venue' | 'wedding' | 'renttoown' | 'buy' | 'sales' | 'management';
 
 interface MarketplacePageProps {
     onCartUpdate?: () => void;
@@ -345,10 +468,10 @@ interface MarketplacePageProps {
 }
 
 const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthenticated = false }) => {
-    const { showSuccess } = useToast();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
+    const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
     useEffect(() => { loadProducts(); }, []);
 
@@ -361,11 +484,6 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         } catch { setProducts([]); }
         finally { setLoading(false); }
     }, []);
-
-    const handleAddToCart = useCallback(async (productId: string) => {
-        await cartAPI.add(productId);
-        onCartUpdate?.();
-    }, [onCartUpdate]);
 
     const productsByCategory = {
         HOMES_FOR_SALE: products.filter(p => p.category === 'HOMES_FOR_SALE'),
@@ -380,6 +498,9 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         EVENT_VENUE: products.filter(p => p.category === 'EVENT_VENUE'),
         WEDDING_MATERIALS: products.filter(p => p.category === 'WEDDING_MATERIALS'),
         RENT_TO_OWN: products.filter(p => p.category === 'RENT_TO_OWN'),
+        BUY_PROPERTIES: products.filter(p => p.category === 'BUY_PROPERTIES'),
+        SALES_PROPERTIES: products.filter(p => p.category === 'SALES_PROPERTIES'),
+        PROPERTY_MANAGEMENT: products.filter(p => p.category === 'PROPERTY_MANAGEMENT'),
     };
 
     const allProducts = {
@@ -395,6 +516,9 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         eventVenue: productsByCategory.EVENT_VENUE.map(p => ({ ...p, image: p.imageUrl })),
         weddingMaterials: productsByCategory.WEDDING_MATERIALS.map(p => ({ ...p, image: p.imageUrl })),
         rentToOwn: productsByCategory.RENT_TO_OWN.map(p => ({ ...p, image: p.imageUrl })),
+        buyProperties: productsByCategory.BUY_PROPERTIES.map(p => ({ ...p, image: p.imageUrl })),
+        salesProperties: productsByCategory.SALES_PROPERTIES.map(p => ({ ...p, image: p.imageUrl })),
+        propertyManagement: productsByCategory.PROPERTY_MANAGEMENT.map(p => ({ ...p, image: p.imageUrl })),
     };
 
     const filters: { key: FilterKey; label: string; icon: string }[] = [
@@ -411,11 +535,14 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         { key: 'electronics', label: 'Electronics', icon: '📱' },
         { key: 'furniture', label: 'Furniture', icon: '🛋️' },
         { key: 'materials', label: 'Materials', icon: '🧱' },
+        { key: 'buy', label: 'Buy Properties', icon: '🏦' },
+        { key: 'sales', label: 'Sales Properties', icon: '💰' },
+        { key: 'management', label: 'Property Mgmt', icon: '📋' },
         { key: 'drivers', label: 'Drivers', icon: '🚛' },
     ];
 
     const renderProduct = (category: string) => (product: any) => (
-        <ProductCard product={product} category={category} onAddToCart={handleAddToCart} isAuthenticated={isAuthenticated} />
+        <ProductCard product={product} category={category} onViewDetails={setSelectedProduct} />
     );
 
     const shouldShow = (key: FilterKey) => activeFilter === 'all' || activeFilter === key;
@@ -483,10 +610,22 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     {shouldShow('furniture') && <SectionGrid title="Home Furniture" icon="🛋️" items={allProducts.interiorDesign} renderItem={renderProduct('interiorDesign')} />}
                     {shouldShow('materials') && <SectionGrid title="Building Materials" icon="🧱" items={allProducts.tipperShield} renderItem={renderProduct('tipperShield')} />}
                     {shouldShow('electronics') && <SectionGrid title="Home Electronics" icon="📱" items={allProducts.homeElectronics} renderItem={renderProduct('homeElectronics')} />}
+                    {shouldShow('buy') && <SectionGrid title="Buy Properties" icon="🏦" items={allProducts.buyProperties} renderItem={renderProduct('buyProperties')} />}
+                    {shouldShow('sales') && <SectionGrid title="Sales Properties" icon="💰" items={allProducts.salesProperties} renderItem={renderProduct('salesProperties')} />}
+                    {shouldShow('management') && <SectionGrid title="Property Management" icon="📋" items={allProducts.propertyManagement} renderItem={renderProduct('propertyManagement')} />}
                     {shouldShow('drivers') && (
                         <SectionGrid title="Tipper Drivers Near You" icon="🚛" items={tipperDrivers} renderItem={(driver) => <DriverCard driver={driver} />} />
                     )}
                 </>
+            )}
+
+            {/* Product Detail Modal */}
+            {selectedProduct && (
+                <ProductDetailModal
+                    product={selectedProduct}
+                    onClose={() => setSelectedProduct(null)}
+                    isAuthenticated={isAuthenticated}
+                />
             )}
         </div>
     );

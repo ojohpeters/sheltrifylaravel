@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-DZnYkMeh.css",
+    "file": "assets/app-CRJVB5Qj.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -10,7 +10,7 @@
     "isEntry": true
   },
   "resources/js/Pages/Shell.tsx": {
-    "file": "assets/Shell-1msKvqE5.js",
+    "file": "assets/Shell-8zRcS6AG.js",
     "name": "Shell",
     "src": "resources/js/Pages/Shell.tsx",
     "isDynamicEntry": true,
@@ -18,12 +18,12 @@
       "resources/js/app.tsx"
     ],
     "css": [
-      "assets/app-DZnYkMeh.css",
+      "assets/app-CRJVB5Qj.css",
       "assets/sheltrify-DlcHlyZR.css"
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-uBOki2S1.js",
+    "file": "assets/app-DZSxw4q0.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -31,7 +31,7 @@
       "resources/js/Pages/Shell.tsx"
     ],
     "css": [
-      "assets/app-DZnYkMeh.css",
+      "assets/app-CRJVB5Qj.css",
       "assets/sheltrify-DlcHlyZR.css"
     ]
   }

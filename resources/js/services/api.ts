@@ -484,6 +484,33 @@ export const adminAPI = {
       body: JSON.stringify(data),
     });
   },
+
+  // All Marketplace Products (for admin view beyond pending)
+  getAllMarketplaceProducts: async (params?: { isApproved?: boolean; category?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) queryParams.append(key, String(value));
+      });
+    }
+    const query = queryParams.toString();
+    return apiRequest(`/admin/marketplace${query ? `?${query}` : ''}`);
+  },
+
+  // Property Requests (Appointments)
+  getAllAppointments: async (params?: { status?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    const query = queryParams.toString();
+    return apiRequest(`/admin/appointments${query ? `?${query}` : ''}`);
+  },
+
+  updateAppointment: async (id: string, status: string) => {
+    return apiRequest(`/admin/appointments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
 };
 
 // Dashboard API

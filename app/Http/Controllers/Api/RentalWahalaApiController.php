@@ -41,6 +41,10 @@ class RentalWahalaApiController extends Controller
         if (! $v) {
             return $this->jsonErr('Video not found', 404);
         }
+        $user = $request->user();
+        if ((string) $v->user_id !== (string) $user->id && $user->role !== 'ADMIN') {
+            return $this->jsonErr('You can only update your own videos', 403);
+        }
         $data = $request->validate([
             'videoUrl' => 'sometimes|string',
             'caption' => 'nullable|string',
@@ -56,11 +60,15 @@ class RentalWahalaApiController extends Controller
         return $this->jsonOk($v, 'Video updated successfully');
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         $v = RentalWahalaVideo::query()->find($id);
         if (! $v) {
             return $this->jsonErr('Video not found', 404);
+        }
+        $user = $request->user();
+        if ((string) $v->user_id !== (string) $user->id && $user->role !== 'ADMIN') {
+            return $this->jsonErr('You can only delete your own videos', 403);
         }
         $v->delete();
 
