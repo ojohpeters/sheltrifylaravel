@@ -57,6 +57,11 @@ Route::get('/payments/banks', [PaymentApiController::class, 'banks']);
 Route::get('/ai/site-data', [AiApiController::class, 'siteData']);
 Route::get('/ai/search-listings', [AiApiController::class, 'searchListings']);
 
+// Gemini proxy — key stays server-side, never reaches the browser bundle
+Route::post('/ai/chat', [App\Http\Controllers\Api\AiProxyController::class, 'chat']);
+Route::post('/ai/insights', [App\Http\Controllers\Api\AiProxyController::class, 'insights']);
+Route::post('/ai/recommendations', [App\Http\Controllers\Api\AiProxyController::class, 'recommendations']);
+
 Route::post('/contact', ContactApiController::class);
 
 // Upload routes (no auth required - used during registration)

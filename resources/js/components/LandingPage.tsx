@@ -631,9 +631,9 @@ const Premium: React.FC<Pick<LandingPageProps, 'onStartChatting' | 'onPremiumUpg
                         <div className="absolute inset-0 opacity-10"
                             style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                         <div className="relative">
-                            <p className="text-white/70 text-sm font-medium mb-1">Monthly Plan</p>
-                            <p className="text-5xl font-black mb-1">$10<span className="text-xl font-medium text-white/70">/mo</span></p>
-                            <p className="text-white/60 text-sm mb-6">≈ 15,000 SWC · Cancel anytime</p>
+                            <p className="text-white/70 text-sm font-medium mb-1">10-Month Plan</p>
+                            <p className="text-5xl font-black mb-1">₦5,000<span className="text-xl font-medium text-white/70">/10mo</span></p>
+                            <p className="text-white/60 text-sm mb-6">Full access for 10 months</p>
                             <button
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPremiumUpgrade ? onPremiumUpgrade() : onStartChatting(); }}
                                 className="w-full py-3.5 rounded-xl bg-white text-brand-primary font-bold text-base hover:bg-white/90 active:scale-95 transition-all shadow-lg"

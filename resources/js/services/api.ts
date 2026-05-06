@@ -311,6 +311,12 @@ export const listingAPI = {
   }) => {
     return apiRequest('/listings', { method: 'POST', body: JSON.stringify(data) });
   },
+  update: async (id: string, data: any) => {
+    return apiRequest(`/listings/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+  delete: async (id: string) => {
+    return apiRequest(`/listings/${id}`, { method: 'DELETE' });
+  },
 };
 
 // Admin API

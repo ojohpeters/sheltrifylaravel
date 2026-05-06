@@ -20,6 +20,7 @@ interface HeaderProps {
     onContactClick?: () => void;
     onPremiumClick?: () => void;
     onProfileClick: () => void;
+    onDashboardClick?: () => void;
     onAdminClick: () => void;
     onCartClick?: () => void;
     onLoginClick?: () => void;
@@ -60,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
     isAuthenticated, currentUser, isAdmin, cartCount = 0, currentPage,
     onLogoClick, onChatClick, onCommunityClick, onWalletClick, onMarketplaceClick,
     onFeelsClick, onRentalWahalaClick, onGlobalTalesClick, onAboutClick, onContactClick,
-    onPremiumClick, onProfileClick, onAdminClick, onCartClick,
+    onPremiumClick, onProfileClick, onDashboardClick, onAdminClick, onCartClick,
     onLoginClick, onSignupClick, onLogoutClick,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -103,7 +104,10 @@ const Header: React.FC<HeaderProps> = ({
     ];
 
     const authItems = isAuthenticated
-        ? [{ label: 'Sign Out', fn: () => { close(); onLogoutClick?.(); }, danger: true }]
+        ? [
+            { label: 'My Dashboard', fn: () => { close(); onDashboardClick?.(); }, danger: false },
+            { label: 'Sign Out',     fn: () => { close(); onLogoutClick?.(); },    danger: true  },
+          ]
         : [
             { label: 'Log In',   fn: () => { close(); onLoginClick?.(); } },
             { label: 'Sign Up',  fn: () => { close(); onSignupClick?.(); } },

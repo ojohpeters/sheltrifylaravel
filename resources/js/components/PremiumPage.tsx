@@ -126,10 +126,10 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8">
               <div className="text-center">
                 <div className="text-4xl md:text-5xl font-bold text-brand-primary mb-2">
-                  $10 USD
+                  ₦5,000
                 </div>
                 <div className="text-sm md:text-base text-light-text-secondary dark:text-dark-text-secondary">
-                  per month
+                  for 10 months
                 </div>
               </div>
             </div>
@@ -142,7 +142,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
             Ready to Upgrade?
           </h2>
           <p className="text-base md:text-lg text-light-text-secondary dark:text-dark-text-secondary mb-6 md:mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied users who have found their perfect home faster with Premium. Upgrade now for just $10 USD/month!
+            Join thousands of satisfied users who have found their perfect home faster with Premium. Upgrade now for just ₦5,000 for 10 months!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -179,7 +179,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
                 Is there a free trial?
               </h3>
               <p className="text-sm md:text-base text-light-text-secondary dark:text-dark-text-secondary">
-                Premium is ₦2,000 per month. You can cancel anytime and your access will continue until the end of your billing period.
+                Premium is ₦5,000 for 10 months. Pay once and enjoy full access for the entire period.
               </p>
             </div>
             <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg p-4 md:p-6">
@@ -206,7 +206,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
               <div className="text-center py-8">
                 <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto animate-bounce" />
                 <h3 className="text-xl font-bold mt-4">Payment Successful!</h3>
-                <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">Your premium access is now active for 1 month.</p>
+                <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">Your premium access is now active for 10 months.</p>
               </div>
             ) : (
               <>
@@ -217,8 +217,8 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
                 </div>
                 
                 <div className="mb-6 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border p-4 rounded-lg text-center">
-                  <p className="text-3xl font-bold">$10 USD<span className="text-base font-medium text-light-text-secondary dark:text-dark-text-secondary">/month</span></p>
-                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-1">Billed monthly. Cancel anytime.</p>
+                  <p className="text-3xl font-bold">₦5,000<span className="text-base font-medium text-light-text-secondary dark:text-dark-text-secondary">/10 months</span></p>
+                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-1">One-time payment for 10 months access.</p>
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <button onClick={() => setPaymentMethod('Card')} className={`w-full flex items-center justify-center gap-2 font-semibold py-2.5 rounded-md transition-colors ${paymentMethod === 'Card' ? 'bg-brand-primary text-white' : 'bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text-primary dark:text-dark-text-primary'}`}>
                       <CreditCardIcon className="w-4 h-4" /> Card
@@ -279,7 +279,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
                       disabled={isPaying}
                       className="w-full mt-6 bg-brand-primary text-white rounded-lg py-3 font-bold hover:bg-brand-secondary transition-all flex items-center justify-center disabled:bg-brand-secondary"
                     >
-                      {isPaying ? 'Processing...' : `Pay $10 USD Now`}
+                      {isPaying ? 'Processing...' : `Pay ₦5,000 Now`}
                     </button>
                   </form>
                 )}
@@ -288,9 +288,9 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
                   <div>
                     <div className="p-4 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg space-y-2 text-sm mb-4">
                       <p className="font-semibold">Bank Transfer Details</p>
-                      <div className="flex justify-between"><span>Bank:</span> <strong>ShelTrify Bank PLC</strong></div>
-                      <div className="flex justify-between"><span>Account Number:</span> <strong>0123456789</strong></div>
-                      <div className="flex justify-between"><span>Account Name:</span> <strong>ShelTrify Technologies</strong></div>
+                      <div className="flex justify-between"><span>Bank:</span> <strong>UBA</strong></div>
+                      <div className="flex justify-between"><span>Account Number:</span> <strong>1030211527</strong></div>
+                      <div className="flex justify-between"><span>Account Name:</span> <strong>SHELTRIFY COMPANY LIMITED</strong></div>
                       <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary pt-2">Please use your email as payment reference. Your account will be upgraded upon confirmation.</p>
                     </div>
                     {error && (

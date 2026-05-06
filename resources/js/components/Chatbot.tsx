@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, FormEvent, useMemo } f
 import { Message, Property, Artisan } from '../types';
 import { startNewChatSession, generatePropertyImage } from '../services/geminiService';
 import { aiAPI, userAPI } from '../services/api';
-import type { Chat } from "@google/genai";
+import type { ProxyChat } from '../services/geminiService';
 import { SendIcon, UserIcon, MicIcon, ImageIcon, HeartIcon, CheckCircleIcon, StarSolidIcon, MapIcon, CalendarIcon, CreditCardIcon, ArrowPathIcon, StarIcon, WalletIcon, CloseIcon, ChevronLeftIcon, PencilIcon, VideoCameraIcon, PlayCircleIcon, PhoneIcon, MailIcon } from './icons';
 
 // Helper to clean up potential JSON formatting issues from the model, like trailing commas.
@@ -608,7 +608,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onToggleFavorite, favorites, programm
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editedText, setEditedText] = useState('');
 
-  const chatRef = useRef<Chat | null>(null);
+  const chatRef = useRef<ProxyChat | null>(null);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [siteData, setSiteData] = useState<any>(null);

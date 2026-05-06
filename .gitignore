@@ -20,3 +20,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+# video file in repo root (public/vid1.mp4 is intentionally kept for deployment)
+/vid1.mp4

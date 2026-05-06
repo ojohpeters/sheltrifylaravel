@@ -5,7 +5,8 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthModal, ProfileModal } from './components/AuthModal';
 import ChatPage from './components/ChatPage';
-import VideoAssistant from './components/VideoAssistant';
+// VideoAssistant disabled — Live API requires direct WebSocket; re-enable when a server-side proxy is available
+// import VideoAssistant from './components/VideoAssistant';
 import CommunityPage from './components/CommunityPage';
 import WalletPage from './components/WalletPage';
 import MarketplacePage from './components/MarketplacePage';
@@ -404,6 +405,7 @@ const AppContent: React.FC = () => {
               setIsProfileModalOpen(true);
             }
           }}
+          onDashboardClick={() => navigateTo('userDashboard')}
           onAdminClick={() => navigateTo('adminDashboard')}
           onCartClick={() => navigateTo('cart')}
           onLoginClick={() => {
@@ -528,9 +530,7 @@ const AppContent: React.FC = () => {
           onViewDetails={handleViewPropertyDetails}
         />
       )}
-      {isVideoAssistantOpen && (
-        <VideoAssistant onClose={() => setIsVideoAssistantOpen(false)} />
-      )}
+      {/* VideoAssistant disabled — re-enable when server-side Live API proxy is ready */}
     </div>
   );
 };
