@@ -45,7 +45,11 @@ class AiApiController extends Controller
             ]);
         }
 
-        $result = $this->ai->chat($request->input('message'), $user, $conversation);
+        try {
+            $result = $this->ai->chat($request->input('message'), $user, $conversation);
+        } catch (\RuntimeException $e) {
+            return $this->jsonErr($e->getMessage(), 503);
+        }
 
         return $this->jsonOk([
             'conversation_id' => $conversation->id,
