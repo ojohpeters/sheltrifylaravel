@@ -613,6 +613,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onToggleFavorite, favorites, programm
   const formRef = useRef<HTMLFormElement>(null);
   const [siteData, setSiteData] = useState<any>(null);
   const [siteDataLoaded, setSiteDataLoaded] = useState(false);
+  const [conversationId, setConversationId] = useState<number | null>(null);
     
   const lastUserMessage = useMemo(() => {
     const userMessages = messages.filter(m => m.sender === 'user');
@@ -748,7 +749,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onToggleFavorite, favorites, programm
     }
 
     try {
-      const stream = await chatRef.current!.sendMessageStream({ message: `${context} ${prompt}`.trim() });
+      const stream = await chatRef.current!.sendMessageStream({ message: `${context} ${prompt}`.trim(), conversationId: conversationId ?? undefined });
       
       let botResponseText = '';
       const botMessageId = (Date.now() + 1).toString();
@@ -759,6 +760,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ onToggleFavorite, favorites, programm
       const suggestionsRegex = /\[SUGGESTIONS:.*?\]/gs;
 
       for await (const chunk of stream) {
+        if (chunk.conversationId && !conversationId) {
+          setConversationId(chunk.conversationId);
+        }
         botResponseText += chunk.text;
         
         if(chunk.functionCalls) {

@@ -159,40 +159,35 @@ type ChatChunk = { text: string; functionCalls?: any[] };
 export class ProxyChat {
     private history: ChatContent[] = [];
 
-    async sendMessageStream({ message }: { message: string }): Promise<AsyncIterableIterator<ChatChunk>> {
+    async sendMessageStream({ message, conversationId }: { message: string; conversationId?: number }): Promise<AsyncIterableIterator<ChatChunk>> {
         this.history.push({ role: 'user', parts: [{ text: message }] });
 
         const data = await proxyFetch('chat', {
-            model: 'gemini-2.5-flash',
-            contents: this.history,
-            systemInstruction: SYSTEM_INSTRUCTION,
-            tools: [{
-                function_declarations: [
-                    scheduleAppointmentFn,
-                    processPaymentFn,
-                    recommendArtisansFn,
-                ],
-            }],
+            message,
+            ...(conversationId ? { conversation_id: conversationId } : {}),
         });
 
-        const candidate = data?.candidates?.[0];
-        const parts: any[] = candidate?.content?.parts || [];
-
-        const text = parts.filter((p: any) => p.text).map((p: any) => p.text as string).join('');
-        const functionCalls = parts.filter((p: any) => p.functionCall).map((p: any) => p.functionCall);
+        const resultData = data?.data ?? {};
+        const responseText = resultData?.message ?? '';
+        const entity = resultData?.entity ?? null;
+        const responseData = resultData?.data ?? null;
+        const intent = resultData?.intent ?? null;
+        const returnedConversationId = resultData?.conversation_id ?? null;
 
         // Append model turn to history
         this.history.push({
             role: 'model',
-            parts: [
-                ...(text ? [{ text }] : []),
-                ...functionCalls.map(fc => ({ functionCall: fc })),
-            ],
+            parts: [{ text: responseText }],
         });
 
-        const chunk: ChatChunk = { text, functionCalls: functionCalls.length > 0 ? functionCalls : undefined };
+        const chunk: ChatChunk = {
+            text: responseText,
+            functionCalls: entity ? [{ name: entity, parameters: responseData }] : undefined,
+        };
 
-        async function* gen(): AsyncIterableIterator<ChatChunk> { yield chunk; }
+        async function* gen(): AsyncIterableIterator<ChatChunk & { conversationId?: number; intent?: string }> {
+            yield { ...chunk, conversationId: returnedConversationId ?? undefined, intent };
+        }
         return gen();
     }
 }
