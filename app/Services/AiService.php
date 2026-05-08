@@ -152,6 +152,18 @@ Rules:
 PROMPT;
 
         $raw = $this->callGemini($prompt, true);
+        if ($raw === null) {
+            return [
+                'action'          => 'none',
+                'entity'          => 'listings',
+                'filters'         => [],
+                'sort'            => 'newest',
+                'limit'           => 10,
+                'is_personal'     => false,
+                'plain_answer'    => true,
+                'context_summary' => $message,
+            ];
+        }
         $intent = $this->extractJson($raw);
 
         return $intent ?? [

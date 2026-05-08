@@ -93,7 +93,7 @@ class UserApiController extends Controller
     // ── Identity/NIN + listing-permission verification (all listing roles + artisans) ──
     public function submitVerification(Request $request)
     {
-        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER'];
+        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'TIPPER_DRIVER'];
         $artisanRole  = 'ARTISAN';
 
         $data = $request->validate([

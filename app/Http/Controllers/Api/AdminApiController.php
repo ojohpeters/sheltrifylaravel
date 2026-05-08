@@ -263,7 +263,7 @@ class AdminApiController extends Controller
     // ── Pending verifications (all roles that need NIN approval) ──────────
     public function pendingVerifications()
     {
-        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'ARTISAN', 'SURVEYOR', 'DEVELOPER'];
+        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'ARTISAN', 'SURVEYOR', 'DEVELOPER', 'TIPPER_DRIVER'];
         $rows = User::query()
             ->where('listing_approval_status', 'pending')
             ->whereIn('role', $listingRoles)

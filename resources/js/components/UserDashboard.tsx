@@ -265,7 +265,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
     const getRoleDisplayName = (role: string) => ({
         SEEKER: 'Seeker/Tenant', LANDLORD: 'Landlord', AGENT: 'CC/Agent',
         REFERRER: 'Referrer', TENANT: 'Tenant', INVESTOR: 'Investor',
-        ARTISAN: 'Local Artisan', ADMIN: 'Administrator',
+        ARTISAN: 'Local Artisan', ADMIN: 'Administrator', TIPPER_DRIVER: 'Tipper Driver',
     }[role] || role);
 
     // ── item card ─────────────────────────────────────────────────────────────

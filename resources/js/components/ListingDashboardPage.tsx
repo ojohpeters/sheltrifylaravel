@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { userAPI, uploadAPI, listingAPI } from '../services/api';
 
 // ── Role config ──────────────────────────────────────────────────────────────
-const LISTING_ROLES = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER'];
+const LISTING_ROLES = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'TIPPER_DRIVER'];
 const ROLE_LABELS: Record<string, string> = {
     LANDLORD:       'Landlord',
     AGENT:          'CC / Agent',
     REFERRER:       'Referrer',
     INVESTOR:       'Investor',
     ESTATE_MANAGER: 'Estate Manager',
+    TIPPER_DRIVER:  'Tipper Driver',
 };
 
 const ID_TYPES = [

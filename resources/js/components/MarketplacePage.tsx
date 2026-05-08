@@ -419,7 +419,6 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                                 <option value="WEDDING_MATERIALS">Hire Wedding Materials</option>
                                 <option value="RENT_TO_OWN">Rent to Own</option>
                                 <option value="LAND_FOR_SALE">Land for Sale</option>
-                                <option value="HOME_ELECTRONICS">Home Electronics</option>
                                 <option value="INTERIOR_DESIGN">Interior Design / Furniture</option>
                                 <option value="BUY_PROPERTIES">Buy Properties</option>
                                 <option value="SALES_PROPERTIES">Sales Properties</option>

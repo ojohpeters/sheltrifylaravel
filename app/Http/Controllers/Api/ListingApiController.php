@@ -75,7 +75,7 @@ class ListingApiController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'SURVEYOR', 'DEVELOPER'];
+        $listingRoles = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'SURVEYOR', 'DEVELOPER', 'TIPPER_DRIVER'];
 
         if (in_array($user->role, $listingRoles, true)) {
             // Must have submitted NIN + documents

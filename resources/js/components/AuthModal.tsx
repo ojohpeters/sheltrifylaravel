@@ -304,6 +304,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                                     <option value="REFERRER">Referrer</option>
                                     <option value="INVESTOR">Investor</option>
                                     <option value="ARTISAN">Local Artisan</option>
+                                    <option value="TIPPER_DRIVER">Tipper Driver</option>
                                 </select>
                             </div>
 
