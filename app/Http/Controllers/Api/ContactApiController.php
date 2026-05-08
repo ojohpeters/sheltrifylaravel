@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ContactApiController extends Controller
@@ -28,6 +29,10 @@ class ContactApiController extends Controller
                 }
             );
         } catch (\Throwable $e) {
+            Log::error('Contact form email failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return $this->jsonErr('Failed to send message. Please try again later.', 500);
         }
 
