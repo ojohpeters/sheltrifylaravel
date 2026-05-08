@@ -42,7 +42,7 @@ return [
     ],
 
     'contact' => [
-        'to' => env('CONTACT_MAIL_TO', 'sheltrify@gmail.com'),
+        'to' => env('CONTACT_MAIL_TO', 'support@sheltrify.com'),
     ],
 
     'gemini' => [

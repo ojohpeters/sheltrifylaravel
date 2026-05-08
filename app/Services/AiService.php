@@ -490,7 +490,7 @@ PROMPT;
         $count   = is_array($data) ? count($data) : null;
         $summary = $intent['context_summary'] ?? $userMessage;
 
-        // For plain answers, ask Gemini to answer directly without DB context
+        // For plain answers, try Gemini first
         if ($intent['plain_answer'] ?? false) {
             $prompt = <<<PROMPT
 You are a helpful AI assistant for Sheltrify — a Nigerian real estate, marketplace, and community platform.
@@ -500,7 +500,12 @@ Answer this question concisely and helpfully (2-3 sentences max):
 
 Context: The platform has listings for rent/sale, a marketplace, community posts, investment opportunities, artisan services, and wallet features using SWC (Sheltrify Wallet Credits) as internal currency. 1 SWC ≈ ₦4.50 NGN.
 PROMPT;
-            return $this->callGemini($prompt) ?? 'I can help you with that. Please ask me anything about listings, products, investments, or your account.';
+            $geminiReply = $this->callGemini($prompt);
+            if ($geminiReply) {
+                return $geminiReply;
+            }
+            // Fallback: contextual response based on the message
+            return $this->fallbackPlainAnswer($userMessage, $intent);
         }
 
         // Summarize the DB results
@@ -514,6 +519,7 @@ PROMPT;
 
         $countStr = $count !== null ? "{$count} result(s) found" : 'data retrieved';
 
+        // Try Gemini for response
         $prompt = <<<PROMPT
 You are a helpful AI assistant for Sheltrify — a Nigerian real estate, marketplace, and community platform.
 
@@ -534,7 +540,125 @@ Generate a warm, helpful response (2-4 sentences). Guidelines:
 - End with a helpful follow-up suggestion or offer to refine the search
 PROMPT;
 
-        return $this->callGemini($prompt) ?? "I found {$countStr} for you. Let me know if you'd like to refine this search.";
+        $geminiReply = $this->callGemini($prompt);
+        if ($geminiReply) {
+            return $geminiReply;
+        }
+
+        // Fallback: generate response from data without Gemini
+        return $this->fallbackDataResponse($userMessage, $entity, $data, $count, $summary);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Fallback response generators (used when Gemini API is unavailable)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private function fallbackPlainAnswer(string $userMessage, array $intent): string
+    {
+        $lower = strtolower(trim($userMessage));
+
+        // Greetings
+        if (preg_match('/^(hi|hello|hey|good\s+(morning|afternoon|evening)|howdy|greetings)/', $lower)) {
+            return "Hello! I'm your ShelTrify AI assistant. I can help you find properties, browse marketplace items, explore investment opportunities, check your wallet balance, and more. What would you like help with today?";
+        }
+
+        // How-to / feature questions
+        if (str_contains($lower, 'how do i') || str_contains($lower, 'how can i')) {
+            $features = [
+                'wallet' => "To use your ShelTrify Wallet, you can deposit SWC (ShelTrify Wallet Credits) via Paystack. 1 SWC ≈ ₦4.50 NGN. You can use SWC for boosts, investments, premium upgrades, and more.",
+                'boost' => "You can boost your listing for 10 SWC to get more visibility. Go to your Listings page and tap 'Boost' on the listing you want to promote.",
+                'premium' => "Premium membership costs 15,000 SWC per month and gives you benefits like boosted visibility, priority support, and exclusive features.",
+                'invest' => "To invest, browse available opportunities on the Investments page. You need to be in INVESTOR role. Investments are paid using your SWC wallet balance.",
+                'listing' => "To create a listing, you need to be verified first. Submit your NIN and ID documents, wait for admin approval, then you can create property listings.",
+                'marketplace' => "The Marketplace lets you buy and sell furniture, electronics, building materials, and more. You can list products and browse what others are selling.",
+                'referral' => "Earn SWC by referring friends! Share your referral link and when they sign up, you'll both receive rewards.",
+            ];
+            foreach ($features as $key => $answer) {
+                if (str_contains($lower, $key)) {
+                    return $answer;
+                }
+            }
+            return "I can help you with property listings, marketplace items, investments, wallet management, and more. Could you be more specific about what you'd like to do?";
+        }
+
+        // What is / explain
+        if (preg_match('/^(what is|explain|tell me about)/', $lower)) {
+            $topics = [
+                'swc' => "SWC (ShelTrify Wallet Credits) is our internal currency. 1 SWC ≈ ₦4.50 NGN. You use it for boosts (10 SWC), premium upgrades (15,000 SWC/month), investments, and more.",
+                'wallet' => "The ShelTrify Wallet holds your SWC balance. You can deposit via Paystack, use it for platform services, or withdraw to your Nigerian bank account.",
+                'sheltrify' => "ShelTrify is a Nigerian real estate, marketplace, investment, and community platform. Find properties, buy/sell goods, invest, connect with artisans, and more!",
+            ];
+            foreach ($topics as $key => $answer) {
+                if (str_contains($lower, $key)) {
+                    return $answer;
+                }
+            }
+        }
+
+        return "I'd love to help! You can ask me about property listings, marketplace items, investment opportunities, your wallet balance, or any other ShelTrify feature. What are you looking for?";
+    }
+
+    private function fallbackDataResponse(string $userMessage, ?string $entity, $data, ?int $count, string $summary): string
+    {
+        if ($count === null || !is_array($data)) {
+            // Wallet, dashboard, stats — key-value data
+            if (is_array($data) && $entity) {
+                $parts = [];
+                foreach ($data as $k => $v) {
+                    if (is_scalar($v)) {
+                        $parts[] = "{$k}: {$v}";
+                    }
+                }
+                if (!empty($parts)) {
+                    return "Here's your {$entity} information:\n- " . implode("\n- ", $parts);
+                }
+            }
+            return "I retrieved your {$entity} information. Let me know if you need anything else!";
+        }
+
+        if ($count === 0) {
+            $entityLabel = $entity ?? 'results';
+            return "I couldn't find any {$entityLabel} matching your search. Try adjusting your filters or searching in a different location. I'm here to help you find what you need!";
+        }
+
+        $entityLabels = [
+            'listings' => 'propert',
+            'products' => 'product',
+            'investments' => 'investment',
+            'opportunities' => 'investment opportunity',
+            'posts' => 'community post',
+            'feels' => 'video',
+            'tales' => 'story',
+            'artisans' => 'artisan',
+            'appointments' => 'appointment',
+            'notifications' => 'notification',
+        ];
+        $label = $entityLabels[$entity] ?? 'result';
+        $pluralLabel = $entityLabels[$entity] ?? 'results';
+
+        $countText = $count === 1 ? "1 {$pluralLabel}" : "{$count} {$pluralLabel}s";
+
+        // Build a brief summary from top results
+        $details = [];
+        foreach (array_slice($data, 0, 3) as $item) {
+            if (is_array($item)) {
+                $title = $item['title'] ?? $item['name'] ?? $item['caption'] ?? null;
+                $price = $item['price'] ?? null;
+                $location = $item['location'] ?? null;
+                $part = $title ?? ($entity ?? 'item');
+                if ($price) $part .= " — {$price}";
+                if ($location) $part .= " ({$location})";
+                $details[] = $part;
+            }
+        }
+
+        $response = "I found {$countText} for you!";
+        if (!empty($details)) {
+            $response .= " Here are some highlights:\n• " . implode("\n• ", $details);
+        }
+        $response .= "\n\nWould you like me to filter these results further or show you something specific?";
+
+        return $response;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

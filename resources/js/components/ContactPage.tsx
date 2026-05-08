@@ -21,11 +21,15 @@ const ContactPage: React.FC<ContactPageProps> = ({ onClose }) => {
     setSubmitStatus('idle');
 
     try {
+      const csrfToken = (document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content) || '';
       // Send email via backend API
-      const response = await fetch('https://sheltrify.vercel.app/api/contact', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({
           name: formData.name,
