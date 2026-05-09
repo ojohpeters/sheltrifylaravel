@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\MarketplaceProduct;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class MarketplaceApiController extends Controller
@@ -29,6 +30,17 @@ class MarketplaceApiController extends Controller
                 'totalPages' => (int) ceil($total / $limit),
             ],
         ]);
+    }
+
+    public function tipperDrivers()
+    {
+        $drivers = User::query()
+            ->where('role', 'TIPPER_DRIVER')
+            ->where('is_verified', true)
+            ->orderByDesc('created_at')
+            ->get(['id', 'full_name', 'phone', 'whatsapp', 'avatar_url', 'artisan_location', 'created_at']);
+
+        return $this->jsonOk(['drivers' => $drivers]);
     }
 
     public function byCategory(string $category)

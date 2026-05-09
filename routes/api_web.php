@@ -36,6 +36,7 @@ Route::get('/listings/{id}', [ListingApiController::class, 'show'])->where('id',
 Route::get('/marketplace', [MarketplaceApiController::class, 'index']);
 Route::get('/marketplace/category/{category}', [MarketplaceApiController::class, 'byCategory']);
 Route::get('/marketplace/my-products', [MarketplaceApiController::class, 'myProducts'])->middleware('auth');
+Route::get('/marketplace/tipper-drivers', [MarketplaceApiController::class, 'tipperDrivers']);
 
 Route::get('/community/posts', [CommunityApiController::class, 'postsIndex']);
 Route::get('/community/posts/{id}', [CommunityApiController::class, 'postShow'])->where('id', '[0-9]+');

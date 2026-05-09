@@ -11,15 +11,6 @@ import {
 import { marketplaceAPI, uploadAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 
-const tipperDrivers = [
-  { id: 1, name: 'Babatunde Adekunle', phone: '0801-234-5678', image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=256' },
-  { id: 2, name: 'Musa Ibrahim', phone: '0802-345-6789', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256' },
-  { id: 3, name: 'Chinedu Okoro', phone: '0803-456-7890', image: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?q=80&w=256' },
-  { id: 4, name: 'Suleiman Bello', phone: '0804-567-8901', image: 'https://images.unsplash.com/photo-1614283233556-f35b7c841523?q=80&w=256' },
-  { id: 5, name: 'Femi Adeboye', phone: '0806-789-0123', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=256' },
-  { id: 6, name: 'Ahmed Garba', phone: '0807-890-1234', image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=256' },
-];
-
 const formatPrice = (price: number): string => {
     if (price >= 1000000) return `₦${(price / 1000000).toFixed(2)}M`;
     return `₦${price.toLocaleString()}`;
@@ -231,13 +222,13 @@ const ProductCard: React.FC<{
     );
 };
 
-const DriverCard: React.FC<{ driver: { id: number; name: string; phone: string; image: string } }> = ({ driver }) => {
+const DriverCard: React.FC<{ driver: { id: number; name: string; phone: string; image: string; location?: string } }> = ({ driver }) => {
     const [imageError, setImageError] = useState(false);
-    const cleanPhone = driver.phone.replace(/[^\d+]/g, '');
+    const cleanPhone = driver.phone?.replace(/[^\d+]/g, '') || '';
 
     return (
         <div className="group bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <div className="relative overflow-hidden aspect-[4/3]">
+            <div className="relative overflow-hidden aspect-square">
                 {!imageError ? (
                     <img
                         src={driver.image} alt={driver.name}
@@ -252,6 +243,7 @@ const DriverCard: React.FC<{ driver: { id: number; name: string; phone: string; 
             </div>
             <div className="p-3 sm:p-4 text-center">
                 <h3 className="font-semibold text-sm text-light-text-primary dark:text-dark-text-primary">{driver.name}</h3>
+                {driver.location && <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-0.5">{driver.location}</p>}
                 <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-0.5">{driver.phone}</p>
                 <a
                     href={`tel:${cleanPhone}`}
@@ -471,17 +463,48 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
     const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+    const [tipperDrivers, setTipperDrivers] = useState<any[]>([]);
 
-    useEffect(() => { loadProducts(); }, []);
+    useEffect(() => { loadProducts(); loadTipperDrivers(); }, []);
+
+    // Refresh products periodically and on tab focus to show newly approved items
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                loadProducts();
+                loadTipperDrivers();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        const interval = setInterval(() => loadProducts(), 30000);
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
 
     const loadProducts = useCallback(async () => {
         try {
-            setLoading(true);
-            const response = await marketplaceAPI.getAll({ limit: 100 });
+            const response = await marketplaceAPI.getAll({ limit: 200 });
             if (response.success && response.data) setProducts(response.data.products || []);
             else setProducts([]);
-        } catch { setProducts([]); }
-        finally { setLoading(false); }
+        } catch { /* silent fail - keep existing data */ }
+    }, []);
+
+    const loadTipperDrivers = useCallback(async () => {
+        try {
+            const response = await fetch('/api/marketplace/tipper-drivers');
+            const data = await response.json();
+            if (data.success && data.data?.drivers) {
+                setTipperDrivers(data.data.drivers.map((d: any) => ({
+                    id: d.id,
+                    name: d.full_name || 'Tipper Driver',
+                    phone: d.phone || d.whatsapp || 'N/A',
+                    image: d.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.full_name || 'TD')}&background=random`,
+                    location: d.artisan_location || 'Available',
+                })));
+            }
+        } catch { setTipperDrivers([]); }
     }, []);
 
     const productsByCategory = {
@@ -534,6 +557,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         { key: 'electronics', label: 'Electronics', icon: '📱' },
         { key: 'furniture', label: 'Furniture', icon: '🛋️' },
         { key: 'materials', label: 'Materials', icon: '🧱' },
+        { key: 'drivers', label: 'Tipper Drivers', icon: '🚛' },
         { key: 'buy', label: 'Buy Properties', icon: '🏦' },
         { key: 'sales', label: 'Sales Properties', icon: '💰' },
         { key: 'management', label: 'Property Mgmt', icon: '📋' },
