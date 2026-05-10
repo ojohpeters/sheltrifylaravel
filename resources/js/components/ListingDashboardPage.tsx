@@ -221,8 +221,8 @@ const CreateListingForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
         bedrooms: '', propertyType: 'Apartment', imageUrl: '', videoUrl: '',
         landlordName: '', landlordEmail: '', landlordPhone: '',
     });
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const imgRef = useRef<HTMLInputElement>(null);
@@ -231,12 +231,17 @@ const CreateListingForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
         e.preventDefault();
         setLoading(true); setError(null);
         try {
-            let imageUrl = form.imageUrl;
-            if (imageFile) {
-                const res = await uploadAPI.uploadImage(imageFile, true);
-                if (res.success) imageUrl = res.data.url;
+            const images: string[] = [];
+            for (const f of imageFiles) {
+                const res = await uploadAPI.uploadImage(f, true);
+                if (res.success) images.push(res.data.url);
+                else { throw new Error('Failed to upload one or more images'); }
             }
-            const res = await listingAPI.create({ ...form, imageUrl, bedrooms: form.bedrooms ? parseInt(form.bedrooms) : undefined });
+            const res = await listingAPI.create({
+                ...form,
+                images: images.length > 0 ? images : undefined,
+                bedrooms: form.bedrooms ? parseInt(form.bedrooms) : undefined,
+            });
             if (res.success || res.id) { onSuccess(); } else { throw new Error(res.message || 'Failed to create listing'); }
         } catch (err: any) {
             setError(err.message || 'Failed to create listing.');
@@ -275,13 +280,29 @@ const CreateListingForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
                         <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Description</label>
                         <textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Describe the property..." className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none resize-none" />
                     </div>
-                    {/* Property Image */}
+                    {/* Property Images */}
                     <div className="sm:col-span-2">
-                        <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Property Image</label>
-                        <input type="file" accept="image/*" ref={imgRef} onChange={e => { const f = e.target.files?.[0]; if(f){setImageFile(f); const r=new FileReader(); r.onloadend=()=>setImagePreview(r.result as string); r.readAsDataURL(f);} }} className="hidden" />
-                        {imagePreview && <img src={imagePreview} className="w-full max-w-xs h-36 object-cover rounded-xl mb-2 border border-light-border dark:border-dark-border" alt="preview" />}
+                        <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Property Images</label>
+                        <input type="file" accept="image/*" ref={imgRef} multiple onChange={e => {
+                            const files = Array.from(e.target.files || []);
+                            const valid = files.filter(f => f.size <= 10 * 1024 * 1024 && ['image/jpeg','image/png','image/gif','image/webp'].includes(f.type));
+                            setImageFiles(prev => [...prev, ...valid]);
+                            Promise.all(valid.map(f => new Promise<string>(resolve => { const r = new FileReader(); r.onloadend = () => resolve(r.result as string); r.readAsDataURL(f); })))
+                                .then(urls => setImagePreviews(prev => [...prev, ...urls]));
+                        }} className="hidden" />
+                        {imagePreviews.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {imagePreviews.map((url, idx) => (
+                                    <div key={idx} className="relative group">
+                                        <img src={url} className="w-24 h-20 object-cover rounded-lg border border-light-border dark:border-dark-border" alt={`preview ${idx + 1}`} />
+                                        <button type="button" onClick={() => { setImageFiles(prev => prev.filter((_, i) => i !== idx)); setImagePreviews(prev => prev.filter((_, i) => i !== idx)); }}
+                                            className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all">×</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                         <button type="button" onClick={() => imgRef.current?.click()} className="px-4 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-sm font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-border dark:hover:bg-dark-border transition">
-                            {imagePreview ? 'Change Image' : 'Upload Image'}
+                            {imagePreviews.length > 0 ? `${imagePreviews.length} Image(s) Selected` : 'Upload Images'}
                         </button>
                     </div>
                     <div>

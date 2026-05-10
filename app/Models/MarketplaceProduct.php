@@ -15,7 +15,8 @@ class MarketplaceProduct extends Model
 
     protected $fillable = [
         'user_id', 'name', 'description', 'price', 'old_price', 'category',
-        'image_url', 'video_url', 'is_active', 'is_approved', 'approved_at', 'approved_by',
+        'image_url', 'video_url', 'images', 'videos',
+        'is_active', 'is_approved', 'approved_at', 'approved_by',
     ];
 
     protected function casts(): array
@@ -26,6 +27,8 @@ class MarketplaceProduct extends Model
             'is_active' => 'boolean',
             'is_approved' => 'boolean',
             'approved_at' => 'datetime',
+            'images' => 'array',
+            'videos' => 'array',
         ];
     }
 

@@ -86,7 +86,11 @@ class MarketplaceApiController extends Controller
             'oldPrice' => 'nullable|numeric|min:0.01',
             'category' => 'required|string',
             'imageUrl' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'string',
             'videoUrl' => 'nullable|string',
+            'videos' => 'nullable|array',
+            'videos.*' => 'string',
         ]);
 
         $p = MarketplaceProduct::create([
@@ -97,7 +101,9 @@ class MarketplaceApiController extends Controller
             'old_price' => $data['oldPrice'] ?? null,
             'category' => $data['category'],
             'image_url' => $data['imageUrl'] ?? null,
+            'images' => $data['images'] ?? null,
             'video_url' => $data['videoUrl'] ?? null,
+            'videos' => $data['videos'] ?? null,
             'is_active' => false,
             'is_approved' => false,
         ]);
@@ -129,9 +135,13 @@ class MarketplaceApiController extends Controller
             'oldPrice' => 'nullable|numeric|min:0.01',
             'category' => 'sometimes|string',
             'imageUrl' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'string',
             'videoUrl' => 'nullable|string',
+            'videos' => 'nullable|array',
+            'videos.*' => 'string',
         ]);
-        $map = ['name' => 'name', 'description' => 'description', 'price' => 'price', 'oldPrice' => 'old_price', 'category' => 'category', 'imageUrl' => 'image_url', 'videoUrl' => 'video_url'];
+        $map = ['name' => 'name', 'description' => 'description', 'price' => 'price', 'oldPrice' => 'old_price', 'category' => 'category', 'imageUrl' => 'image_url', 'images' => 'images', 'videoUrl' => 'video_url', 'videos' => 'videos'];
         $u = [];
         foreach ($map as $k => $col) {
             if (array_key_exists($k, $data)) {

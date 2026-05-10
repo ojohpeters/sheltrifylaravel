@@ -30,10 +30,17 @@ const SkeletonCard: React.FC = () => (
 
 // ── Product Detail Modal ──────────────────────────────────────────────────────
 const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthenticated: boolean }> = ({ product, onClose, isAuthenticated }) => {
-    const [imageError, setImageError] = useState(false);
+    const [currentImg, setCurrentImg] = useState(0);
+    const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
     const [subscribed, setSubscribed] = useState(false);
     const [email, setEmail] = useState('');
     const { showSuccess, showError } = useToast();
+
+    const allImages = product.images?.length
+        ? product.images
+        : product.image || product.imageUrl
+            ? [product.image || product.imageUrl]
+            : [];
 
     const handleSubscribe = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -61,21 +68,63 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
     const sellerName = product.landlordName || product.user?.fullName || product.user?.email || 'Seller';
     const isProperty = ['homesForSale','landForSale','shortlet','studentHostel','officeSpace','businessSpace','eventVenue','weddingMaterials','rentToOwn'].includes(product._category || '');
 
+    const prevImage = () => setCurrentImg(i => (i === 0 ? allImages.length - 1 : i - 1));
+    const nextImage = () => setCurrentImg(i => (i === allImages.length - 1 ? 0 : i + 1));
+
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (e.key === 'ArrowLeft') prevImage();
+        if (e.key === 'ArrowRight') nextImage();
+    }, [allImages.length]);
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
+
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
             <div
                 className="w-full sm:max-w-lg bg-light-card dark:bg-dark-card rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto max-h-[92vh]"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Image */}
+                {/* Image Carousel */}
                 <div className="relative aspect-[4/3] bg-light-bg dark:bg-dark-bg">
-                    {!imageError && (product.image || product.imageUrl) ? (
-                        <img
-                            src={product.image || product.imageUrl}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                            onError={() => setImageError(true)}
-                        />
+                    {allImages.length > 0 ? (
+                        <>
+                            {allImages.map((src: string, idx: number) => (
+                                <img
+                                    key={idx}
+                                    src={src}
+                                    alt={`${product.name} ${idx + 1}`}
+                                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${idx === currentImg ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                                    onError={() => setImageErrors(p => ({ ...p, [idx]: true }))}
+                                    style={{ display: imageErrors[idx] ? 'none' : 'block' }}
+                                />
+                            ))}
+                            {imageErrors[currentImg] && (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <PhotoIcon className="w-16 h-16 text-light-text-muted dark:text-dark-text-muted" />
+                                </div>
+                            )}
+                            {allImages.length > 1 && (
+                                <>
+                                    <button type="button" onClick={prevImage}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full flex items-center justify-center transition-colors z-10">
+                                        <ChevronLeftIcon className="w-5 h-5" />
+                                    </button>
+                                    <button type="button" onClick={nextImage}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full flex items-center justify-center transition-colors z-10">
+                                        <ChevronRightIcon className="w-5 h-5" />
+                                    </button>
+                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                                        {allImages.map((_: string, idx: number) => (
+                                            <button key={idx} type="button" onClick={() => setCurrentImg(idx)}
+                                                className={`w-2 h-2 rounded-full transition-all ${idx === currentImg ? 'bg-white w-4' : 'bg-white/50 hover:bg-white/70'}`} />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
                             <PhotoIcon className="w-16 h-16 text-light-text-muted dark:text-dark-text-muted" />
@@ -83,12 +132,12 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
                     )}
                     <button
                         onClick={onClose}
-                        className="absolute top-3 right-3 w-9 h-9 bg-black/50 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
+                        className="absolute top-3 right-3 w-9 h-9 bg-black/50 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors z-20"
                     >
                         <CloseIcon className="w-5 h-5" />
                     </button>
                     {product.category && (
-                        <div className="absolute bottom-3 left-3 px-3 py-1 bg-brand-primary text-white text-xs font-semibold rounded-full">
+                        <div className="absolute bottom-3 left-3 px-3 py-1 bg-brand-primary text-white text-xs font-semibold rounded-full z-10">
                             {product.category.replace(/_/g, ' ')}
                         </div>
                     )}
@@ -187,6 +236,7 @@ const ProductCard: React.FC<{
 }> = ({ product, category, onViewDetails }) => {
     const [imageError, setImageError] = useState(false);
     const isProperty = ['homesForSale','landForSale','shortlet','studentHostel','officeSpace','businessSpace','eventVenue','weddingMaterials','rentToOwn'].includes(category);
+    const imageCount = product.images?.length || (product.image || product.imageUrl ? 1 : 0);
 
     return (
         <div className="group bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer" onClick={() => onViewDetails?.({ ...product, _category: category })}>
@@ -209,9 +259,11 @@ const ProductCard: React.FC<{
                         -{product.discount}%
                     </div>
                 )}
-                <div className="absolute top-2 right-2 w-8 h-8 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <EyeIcon className="w-4 h-4 text-white" />
-                </div>
+                {imageCount > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <PhotoIcon className="w-3 h-3" />{imageCount}
+                    </div>
+                )}
             </div>
             <div className="p-3 sm:p-4">
                 <h3 className="font-semibold text-sm text-light-text-primary dark:text-dark-text-primary truncate">{product.name}</h3>
@@ -313,23 +365,31 @@ const SectionGrid: React.FC<{
 
 const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthenticated?: boolean }> = ({ onProductCreated, isAuthenticated }) => {
     const { showSuccess, showError } = useToast();
-    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE' as string });
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE' as string, videoUrl: '' });
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
 
-    const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        if (file.size > 10 * 1024 * 1024) { showError('Image must be 10MB or smaller'); return; }
-        setImageFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => setImagePreview(reader.result as string);
-        reader.readAsDataURL(file);
+    const handleImagesChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        const valid: File[] = [];
+        for (const f of files) {
+            if (f.size > 10 * 1024 * 1024) { showError(`${f.name} is over 10MB`); continue; }
+            if (!['image/jpeg','image/png','image/gif','image/webp'].includes(f.type)) { showError(`${f.name} is not a supported image type`); continue; }
+            valid.push(f);
+        }
+        setImageFiles(prev => [...prev, ...valid]);
+        Promise.all(valid.map(f => new Promise<string>(resolve => { const r = new FileReader(); r.onloadend = () => resolve(r.result as string); r.readAsDataURL(f); })))
+            .then(urls => setImagePreviews(prev => [...prev, ...urls]));
     }, [showError]);
+
+    const removeImage = (idx: number) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== idx));
+        setImagePreviews(prev => prev.filter((_, i) => i !== idx));
+    };
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -337,17 +397,24 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
         setError(null);
         setIsSubmitting(true);
         try {
-            let imageUrl: string | undefined;
-            if (imageFile) {
-                const uploadResponse = await uploadAPI.uploadImage(imageFile, true);
-                if (uploadResponse.success && uploadResponse.data?.url) imageUrl = uploadResponse.data.url;
-                else { setError(uploadResponse.message || 'Failed to upload image'); return; }
+            const images: string[] = [];
+            for (const f of imageFiles) {
+                const res = await uploadAPI.uploadImage(f, true);
+                if (res.success && res.data?.url) images.push(res.data.url);
+                else { setError('Failed to upload one or more images'); return; }
             }
-            const response = await marketplaceAPI.create({ name: formData.name, description: formData.description || undefined, price: parseFloat(formData.price), category: formData.category, imageUrl });
+            const response = await marketplaceAPI.create({
+                name: formData.name,
+                description: formData.description || undefined,
+                price: parseFloat(formData.price),
+                category: formData.category,
+                images: images.length > 0 ? images : undefined,
+                videoUrl: formData.videoUrl || undefined,
+            });
             if (response.success) {
                 showSuccess('Product submitted! It will be reviewed before going live.');
-                setFormData({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE' });
-                setImageFile(null); setImagePreview(null); setShowForm(false);
+                setFormData({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE', videoUrl: '' });
+                setImageFiles([]); setImagePreviews([]); setShowForm(false);
                 if (imageInputRef.current) imageInputRef.current.value = '';
                 onProductCreated?.();
             }
@@ -355,7 +422,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
             const msg = err.message || 'Failed to create listing';
             setError(msg); showError(msg);
         } finally { setIsSubmitting(false); }
-    }, [formData, imageFile, isAuthenticated, onProductCreated, showError, showSuccess]);
+    }, [formData, imageFiles, isAuthenticated, onProductCreated, showError, showSuccess]);
 
     return (
         <section className="mb-10 rounded-2xl border border-brand-primary/20 bg-gradient-to-br from-brand-primary/5 to-cyan-400/5 p-5 sm:p-7">
@@ -440,19 +507,29 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                                 className="input-base text-sm" />
                         </div>
 
-                        <input type="file" ref={imageInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
+                        <input type="file" ref={imageInputRef} onChange={handleImagesChange} accept="image/*" multiple className="hidden" />
                         <button type="button" onClick={() => imageInputRef.current?.click()}
                             className="w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-light-border dark:border-dark-border rounded-xl hover:border-brand-primary/50 text-sm text-light-text-secondary dark:text-dark-text-secondary transition-colors touch-manipulation">
-                            <PhotoIcon className="w-4 h-4" />{imagePreview ? 'Change Image' : 'Upload Image (optional)'}
+                            <PhotoIcon className="w-4 h-4" />{imagePreviews.length > 0 ? `${imagePreviews.length} Image(s) Selected` : 'Upload Images (optional)'}
                         </button>
 
-                        {imagePreview && (
-                            <div className="relative rounded-xl overflow-hidden">
-                                <img src={imagePreview} alt="Preview" className="w-full h-36 object-cover" />
-                                <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); if (imageInputRef.current) imageInputRef.current.value = ''; }}
-                                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors">×</button>
+                        {imagePreviews.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2">
+                                {imagePreviews.map((url, idx) => (
+                                    <div key={idx} className="relative rounded-xl overflow-hidden group">
+                                        <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-24 object-cover" />
+                                        <button type="button" onClick={() => removeImage(idx)}
+                                            className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 hover:bg-red-500 transition-colors text-xs w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100">×</button>
+                                    </div>
+                                ))}
                             </div>
                         )}
+                        <div>
+                            <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Video URL (optional)</label>
+                            <input type="url" placeholder="https://www.youtube.com/watch?v=..." value={formData.videoUrl}
+                                onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                                className="input-base text-sm" />
+                        </div>
 
                         <button type="submit" disabled={isSubmitting || !formData.name || !formData.price} className="w-full btn-primary text-sm py-3 disabled:opacity-50 disabled:cursor-not-allowed">
                             {isSubmitting ? 'Creating…' : 'Create Listing'}

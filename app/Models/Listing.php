@@ -15,7 +15,7 @@ class Listing extends Model
     protected $fillable = [
         'user_id', 'title', 'slug', 'description', 'price', 'location', 'state', 'city',
         'lat', 'lng', 'bedrooms', 'bathrooms', 'property_type', 'listing_type', 'status',
-        'image_url', 'video_url', 'amenities', 'tags', 'furnished', 'parking',
+        'image_url', 'video_url', 'images', 'videos', 'amenities', 'tags', 'furnished', 'parking',
         'landlord_name', 'landlord_email', 'landlord_phone',
         'is_active', 'is_boosted', 'boosted_until', 'boosted_at', 'boost_cost',
         'views_count', 'contact_views',
@@ -26,6 +26,8 @@ class Listing extends Model
         return [
             'amenities'     => 'array',
             'tags'          => 'array',
+            'images'        => 'array',
+            'videos'        => 'array',
             'is_active'     => 'boolean',
             'is_boosted'    => 'boolean',
             'furnished'     => 'boolean',

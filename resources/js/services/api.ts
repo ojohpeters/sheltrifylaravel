@@ -306,7 +306,7 @@ export const listingAPI = {
   },
   create: async (data: {
     title: string; price: string; location: string; description?: string;
-    bedrooms?: number; propertyType?: string; imageUrl?: string; videoUrl?: string;
+    bedrooms?: number; propertyType?: string; imageUrl?: string; images?: string[]; videoUrl?: string; videos?: string[];
     landlordName?: string; landlordEmail?: string; landlordPhone?: string;
   }) => {
     return apiRequest('/listings', { method: 'POST', body: JSON.stringify(data) });
