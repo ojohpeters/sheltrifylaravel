@@ -167,6 +167,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/marketplace', [AdminApiController::class, 'allMarketplaceProducts']);
         Route::get('/appointments', [AdminApiController::class, 'allAppointments']);
         Route::put('/appointments/{id}', [AdminApiController::class, 'updateAppointment'])->where('id', '[0-9]+');
+
+        Route::get('/feels', [AdminApiController::class, 'allFeelsVideos']);
+        Route::put('/feels/{id}/toggle', [AdminApiController::class, 'toggleFeelsVideo'])->where('id', '[0-9]+');
+        Route::delete('/feels/{id}', [AdminApiController::class, 'deleteFeelsVideo'])->where('id', '[0-9]+');
+
+        Route::get('/rental-wahala', [AdminApiController::class, 'allRentalWahalaVideos']);
+        Route::put('/rental-wahala/{id}/toggle', [AdminApiController::class, 'toggleRentalWahalaVideo'])->where('id', '[0-9]+');
+        Route::delete('/rental-wahala/{id}', [AdminApiController::class, 'deleteRentalWahalaVideo'])->where('id', '[0-9]+');
         Route::get('/verifications/pending', [AdminApiController::class, 'pendingVerifications']);
         Route::put('/verifications/{id}/approve', [AdminApiController::class, 'approveVerification'])->where('id', '[0-9]+');
         Route::put('/verifications/{id}/reject', [AdminApiController::class, 'rejectVerification'])->where('id', '[0-9]+');

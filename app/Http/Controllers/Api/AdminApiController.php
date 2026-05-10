@@ -9,6 +9,7 @@ use App\Models\GlobalTale;
 use App\Models\Listing;
 use App\Models\MarketplaceProduct;
 use App\Models\PaymentTransaction;
+use App\Models\RentalWahalaVideo;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -369,6 +370,70 @@ class AdminApiController extends Controller
         ]);
 
         return $this->jsonOk($profile->load('user'), 'Professional profile rejected');
+    }
+
+    // ── Feels video management ────────────────────────────────────────────
+    public function allFeelsVideos()
+    {
+        $videos = FeelsVideo::query()->with(['user:id,email,full_name,avatar_url'])
+            ->orderByDesc('created_at')->get();
+
+        return $this->jsonOk(['videos' => $videos]);
+    }
+
+    public function toggleFeelsVideo(string $id)
+    {
+        $v = FeelsVideo::query()->find($id);
+        if (! $v) {
+            return $this->jsonErr('Video not found', 404);
+        }
+        $v->update(['is_active' => ! $v->is_active]);
+        $v->load(['user:id,email,full_name,avatar_url']);
+
+        return $this->jsonOk($v, $v->is_active ? 'Video activated' : 'Video deactivated');
+    }
+
+    public function deleteFeelsVideo(string $id)
+    {
+        $v = FeelsVideo::query()->find($id);
+        if (! $v) {
+            return $this->jsonErr('Video not found', 404);
+        }
+        $v->delete();
+
+        return $this->jsonOk(null, 'Video deleted successfully');
+    }
+
+    // ── Rental Wahala video management ────────────────────────────────────
+    public function allRentalWahalaVideos()
+    {
+        $videos = RentalWahalaVideo::query()->with(['user:id,email,full_name,avatar_url'])
+            ->orderByDesc('created_at')->get();
+
+        return $this->jsonOk(['videos' => $videos]);
+    }
+
+    public function toggleRentalWahalaVideo(string $id)
+    {
+        $v = RentalWahalaVideo::query()->find($id);
+        if (! $v) {
+            return $this->jsonErr('Video not found', 404);
+        }
+        $v->update(['is_active' => ! $v->is_active]);
+        $v->load(['user:id,email,full_name,avatar_url']);
+
+        return $this->jsonOk($v, $v->is_active ? 'Video activated' : 'Video deactivated');
+    }
+
+    public function deleteRentalWahalaVideo(string $id)
+    {
+        $v = RentalWahalaVideo::query()->find($id);
+        if (! $v) {
+            return $this->jsonErr('Video not found', 404);
+        }
+        $v->delete();
+
+        return $this->jsonOk(null, 'Video deleted successfully');
     }
 
     public function analytics(Request $request)

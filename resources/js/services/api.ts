@@ -499,8 +499,30 @@ export const adminAPI = {
         if (value !== undefined) queryParams.append(key, String(value));
       });
     }
-    const query = queryParams.toString();
+                const query = queryParams.toString();
     return apiRequest(`/admin/marketplace${query ? `?${query}` : ''}`);
+  },
+
+  // Feels management
+  getFeelsVideos: async () => {
+    return apiRequest('/admin/feels');
+  },
+  toggleFeelsVideo: async (id: string) => {
+    return apiRequest(`/admin/feels/${id}/toggle`, { method: 'PUT' });
+  },
+  deleteFeelsVideo: async (id: string) => {
+    return apiRequest(`/admin/feels/${id}`, { method: 'DELETE' });
+  },
+
+  // Rental Wahala management
+  getRentalWahalaVideos: async () => {
+    return apiRequest('/admin/rental-wahala');
+  },
+  toggleRentalWahalaVideo: async (id: string) => {
+    return apiRequest(`/admin/rental-wahala/${id}/toggle`, { method: 'PUT' });
+  },
+  deleteRentalWahalaVideo: async (id: string) => {
+    return apiRequest(`/admin/rental-wahala/${id}`, { method: 'DELETE' });
   },
 
   // Property Requests (Appointments)

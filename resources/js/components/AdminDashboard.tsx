@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { adminAPI, feelsAPI, listingsAPI, uploadAPI } from '../services/api';
+import { adminAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI } from '../services/api';
 import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon } from './icons';
 import { useToast } from '../contexts/ToastContext';
 
@@ -67,6 +67,7 @@ interface FeelsVideo {
   music: string | null;
   likes: number;
   shares: number;
+  isActive: boolean;
   createdAt: string;
   user: {
     id: string;
@@ -92,7 +93,7 @@ interface MarketplaceProduct {
   };
 }
 
-type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests';
+type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala';
 type AdminView = 'list' | 'edit' | 'create' | 'upload';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
@@ -104,6 +105,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [feelsVideos, setFeelsVideos] = useState<FeelsVideo[]>([]);
+  const [rentalWahalaVideos, setRentalWahalaVideos] = useState<any[]>([]);
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([]);
   const [pendingProducts, setPendingProducts] = useState<MarketplaceProduct[]>([]);
   const [allMarketplaceProducts, setAllMarketplaceProducts] = useState<any[]>([]);
@@ -164,6 +166,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       loadListings();
     } else if (currentPage === 'feels') {
       loadFeelsVideos();
+    } else if (currentPage === 'rental-wahala') {
+      loadRentalWahalaVideos();
     } else if (currentPage === 'marketplace') {
       loadMarketplaceProducts();
       loadPendingProducts();
@@ -449,12 +453,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const loadFeelsVideos = async () => {
     try {
       setLoading(true);
-      const response = await feelsAPI.getAll();
+      const response = await adminAPI.getFeelsVideos();
       if (response.success) {
-        setFeelsVideos(response.data);
+        setFeelsVideos(response.data.videos || []);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load videos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRentalWahalaVideos = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getRentalWahalaVideos();
+      if (response.success) {
+        setRentalWahalaVideos(response.data.videos || []);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to load rental wahala videos');
     } finally {
       setLoading(false);
     }
@@ -562,15 +580,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     if (!window.confirm('Are you sure you want to delete this video?')) return;
 
     try {
-      const response = await feelsAPI.delete(id);
+      const response = await adminAPI.deleteFeelsVideo(id);
       if (response.success) {
         loadFeelsVideos();
         showSuccess('Video deleted successfully!');
       } else {
         showError(response.message || 'Failed to delete video');
       }
-    } catch (error: any) {
-      showError(error.message || 'Failed to delete video');
+    } catch (err: any) {
+      showError(err.message || 'Failed to delete video');
+    }
+  };
+
+  const handleRentalWahalaUpload = async () => {
+    if (!uploadData.videoUrl.trim()) {
+      showError('Please enter a video URL');
+      return;
+    }
+    try {
+      setUploading(true);
+      const response = await rentalWahalaAPI.create({
+        videoUrl: uploadData.videoUrl,
+        caption: uploadData.caption || undefined,
+        music: uploadData.music || undefined,
+      });
+      if (response.success) {
+        setCurrentView('list');
+        setUploadData({ videoUrl: '', caption: '', music: '' });
+        loadRentalWahalaVideos();
+        showSuccess('Video uploaded successfully!');
+      } else {
+        showError(response.message || 'Failed to upload video');
+      }
+    } catch (err: any) {
+      showError(err.message || 'Failed to upload video');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteRentalWahalaVideo = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this video?')) return;
+    try {
+      const response = await adminAPI.deleteRentalWahalaVideo(id);
+      if (response.success) {
+        loadRentalWahalaVideos();
+        showSuccess('Video deleted successfully!');
+      } else {
+        showError(response.message || 'Failed to delete video');
+      }
+    } catch (err: any) {
+      showError(err.message || 'Failed to delete video');
     }
   };
 
@@ -643,6 +703,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     { id: 'accommodations', label: 'Accommodations', icon: BuildingStorefrontIcon },
     { id: 'listings', label: 'Listings', icon: BuildingStorefrontIcon },
     { id: 'feels', label: 'Feels Videos', icon: VideoCameraIcon },
+    { id: 'rental-wahala', label: 'Rental Wahala', icon: VideoCameraIcon },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon, badge: pendingProducts.length },
     { id: 'requests', label: 'Property Requests', icon: DocumentCheckIcon, badge: appointments.filter((a: any) => a.status === 'pending').length },
     { id: 'analytics', label: 'Analytics', icon: TrendingUpIcon },
@@ -760,6 +821,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 {currentPage === 'accommodations' && 'Upload and manage accommodation listings'}
                 {currentPage === 'listings' && 'Manage all property listings'}
                 {currentPage === 'feels' && 'Manage Feels video content'}
+                {currentPage === 'rental-wahala' && 'Manage Rental Wahala video content'}
                 {currentPage === 'marketplace' && 'Manage marketplace products'}
                 {currentPage === 'analytics' && 'View platform analytics and insights'}
                 {currentPage === 'ai' && 'AI system management and configuration'}
@@ -1151,6 +1213,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                       <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Caption</th>
                       <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Author</th>
                       <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Likes</th>
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Status</th>
                       <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Created</th>
                       <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Actions</th>
                     </tr>
@@ -1172,13 +1235,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                         <td className="p-3 text-sm text-light-text-primary dark:text-dark-text-primary">
                           {video.likes}
                         </td>
+                        <td className="p-3 text-sm">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${video.isActive ? 'bg-green-500/10 text-green-600' : 'bg-gray-500/10 text-gray-500'}`}>
+                            {video.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
                         <td className="p-3 text-sm text-light-text-secondary dark:text-dark-text-secondary">
                           {formatDate(video.createdAt)}
                         </td>
-                        <td className="p-3 text-sm">
+                        <td className="p-3 text-sm flex gap-2">
+                          <button
+                            onClick={async () => { const r = await adminAPI.toggleFeelsVideo(video.id); if (r.success) loadFeelsVideos(); }}
+                            className={`p-1.5 rounded-md transition-colors ${video.isActive ? 'text-yellow-500 hover:bg-yellow-500/10' : 'text-green-500 hover:bg-green-500/10'}`}
+                            title={video.isActive ? 'Deactivate' : 'Activate'}
+                          >
+                            {video.isActive ? '⛔' : '✅'}
+                          </button>
                           <button
                             onClick={() => handleDeleteFeelsVideo(video.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
+                            className="text-red-500 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-500/10"
                             title="Delete video"
                           >
                             <TrashIcon className="w-5 h-5" />
@@ -1191,6 +1266,85 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 {feelsVideos.length === 0 && !loading && (
                   <div className="text-center py-8 text-light-text-secondary dark:text-dark-text-secondary">
                     No videos found. Upload the first video!
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {currentPage === 'rental-wahala' && (
+            <div>
+              <div className="mb-4 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-light-text-primary dark:text-dark-text-primary">Rental Wahala Videos</h3>
+                <button
+                  onClick={() => setCurrentView('upload')}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary transition-all"
+                >
+                  <CloudArrowUpIcon className="w-5 h-5" />
+                  Add Video
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-light-border dark:border-dark-border">
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Video URL</th>
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Caption</th>
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Author</th>
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Likes</th>
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Status</th>
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Created</th>
+                      <th className="text-left p-3 text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rentalWahalaVideos.map((video: any) => (
+                      <tr key={video.id} className="border-b border-light-border dark:border-dark-border hover:bg-light-bg dark:hover:bg-dark-bg">
+                        <td className="p-3 text-sm">
+                          <a href={video.videoUrl} target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline truncate block max-w-xs">
+                            {video.videoUrl}
+                          </a>
+                        </td>
+                        <td className="p-3 text-sm text-light-text-primary dark:text-dark-text-primary max-w-xs truncate">
+                          {video.caption || 'No caption'}
+                        </td>
+                        <td className="p-3 text-sm text-light-text-primary dark:text-dark-text-primary">
+                          {video.user?.fullName || video.user?.email?.split('@')[0] || 'Unknown'}
+                        </td>
+                        <td className="p-3 text-sm text-light-text-primary dark:text-dark-text-primary">
+                          {video.likes}
+                        </td>
+                        <td className="p-3 text-sm">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${video.isActive ? 'bg-green-500/10 text-green-600' : 'bg-gray-500/10 text-gray-500'}`}>
+                            {video.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                          {formatDate(video.createdAt)}
+                        </td>
+                        <td className="p-3 text-sm flex gap-2">
+                          <button
+                            onClick={async () => { const r = await adminAPI.toggleRentalWahalaVideo(video.id); if (r.success) loadRentalWahalaVideos(); }}
+                            className={`p-1.5 rounded-md transition-colors ${video.isActive ? 'text-yellow-500 hover:bg-yellow-500/10' : 'text-green-500 hover:bg-green-500/10'}`}
+                            title={video.isActive ? 'Deactivate' : 'Activate'}
+                          >
+                            {video.isActive ? '⛔' : '✅'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRentalWahalaVideo(video.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-500/10"
+                            title="Delete video"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {rentalWahalaVideos.length === 0 && !loading && (
+                  <div className="text-center py-8 text-light-text-secondary dark:text-dark-text-secondary">
+                    No videos found. Add the first video!
                   </div>
                 )}
               </div>
@@ -2386,17 +2540,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
         </div>
       )}
 
-      {/* Upload Modal */}
-      {currentView === 'upload' && currentPage === 'feels' && (
+      {/* Upload Modal (for both feels and rental wahala) */}
+      {currentView === 'upload' && (currentPage === 'feels' || currentPage === 'rental-wahala') && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="relative bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-2xl w-full max-w-md p-6">
             <button onClick={() => setCurrentView('list')} className="absolute top-4 right-4 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">
               <CloseIcon className="w-6 h-6" />
             </button>
-            <h2 className="text-2xl font-bold mb-4 text-light-text-primary dark:text-dark-text-primary">Upload Feels Video</h2>
+            <h2 className="text-2xl font-bold mb-4 text-light-text-primary dark:text-dark-text-primary">{currentPage === 'feels' ? 'Upload Feels Video' : 'Add Rental Wahala Video'}</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Video URL (YouTube)</label>
+                <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Video URL</label>
                 <input
                   type="text"
                   value={uploadData.videoUrl}
@@ -2427,11 +2581,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={handleUploadFeelsVideo}
+                  onClick={currentPage === 'feels' ? handleUploadFeelsVideo : handleRentalWahalaUpload}
                   disabled={uploading || !uploadData.videoUrl.trim()}
                   className="flex-1 bg-brand-primary text-white py-2 rounded-lg hover:bg-brand-secondary disabled:bg-brand-secondary/50 disabled:cursor-not-allowed"
                 >
-                  {uploading ? 'Uploading...' : 'Upload Video'}
+                  {uploading ? 'Uploading...' : 'Add Video'}
                 </button>
                 <button
                   onClick={() => setCurrentView('list')}
