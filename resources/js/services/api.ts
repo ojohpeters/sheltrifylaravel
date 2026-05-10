@@ -531,6 +531,15 @@ export const dashboardAPI = {
 };
 
 // Marketplace API
+export const subscribeAPI = {
+    subscribe: async (data: { email: string; productName?: string; productCategory?: string; productId?: number }) => {
+        return apiRequest('/marketplace/subscribe', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+};
+
 export const marketplaceAPI = {
   getAll: async (params?: { category?: string; page?: number; limit?: number }) => {
     const queryParams = new URLSearchParams();

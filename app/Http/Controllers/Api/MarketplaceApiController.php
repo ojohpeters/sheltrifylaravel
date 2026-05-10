@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\MarketplaceProduct;
+use App\Models\Subscriber;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -30,6 +31,30 @@ class MarketplaceApiController extends Controller
                 'totalPages' => (int) ceil($total / $limit),
             ],
         ]);
+    }
+
+    public function subscribe(Request $request)
+    {
+        $data = $request->validate([
+            'email' => 'required|email',
+            'productName' => 'nullable|string',
+            'productCategory' => 'nullable|string',
+            'productId' => 'nullable|integer',
+        ]);
+
+        $exists = Subscriber::query()->where('email', $data['email'])->exists();
+        if ($exists) {
+            return $this->jsonOk(null, 'You are already subscribed!');
+        }
+
+        Subscriber::create([
+            'email' => $data['email'],
+            'product_name' => $data['productName'] ?? null,
+            'product_category' => $data['productCategory'] ?? null,
+            'product_id' => $data['productId'] ?? null,
+        ]);
+
+        return $this->jsonOk(null, 'Subscribed successfully!');
     }
 
     public function tipperDrivers()

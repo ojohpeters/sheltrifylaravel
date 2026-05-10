@@ -8,7 +8,7 @@ import {
     CloseIcon,
     EyeIcon,
 } from './icons';
-import { marketplaceAPI, uploadAPI } from '../services/api';
+import { marketplaceAPI, uploadAPI, subscribeAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 
 const formatPrice = (price: number): string => {
@@ -38,9 +38,22 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
     const handleSubscribe = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email.includes('@')) { showError('Enter a valid email'); return; }
-        // Save subscription locally and show confirmation
-        setSubscribed(true);
-        showSuccess('Subscribed! We\'ll notify you of new listings like this.');
+        try {
+            const res = await subscribeAPI.subscribe({
+                email,
+                productName: product.name,
+                productCategory: product.category,
+                productId: product.id,
+            });
+            if (res.success) {
+                setSubscribed(true);
+                showSuccess('Subscribed! We\'ll notify you of new listings like this.');
+            } else {
+                showError(res.message || 'Subscription failed');
+            }
+        } catch (err: any) {
+            showError(err.message || 'Subscription failed');
+        }
     };
 
     const phoneNumber = product.landlordPhone || product.user?.phone || '';
@@ -402,7 +415,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                         <div>
                             <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Category</label>
                             <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="input-base text-sm">
-                                <option value="HOMES_FOR_SALE">Homes for Sale</option>
+                                <option value="RESIDENTIAL_HOUSE">Residential House</option>
                                 <option value="SHORTLET">Shortlet Apartment</option>
                                 <option value="STUDENT_HOSTEL">Student Hostel</option>
                                 <option value="OFFICE_SPACE">Office Space</option>
@@ -510,7 +523,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     }, []);
 
     const productsByCategory = {
-        HOMES_FOR_SALE: products.filter(p => p.category === 'HOMES_FOR_SALE'),
+        RESIDENTIAL_HOUSE: products.filter(p => p.category === 'RESIDENTIAL_HOUSE'),
         LAND_FOR_SALE: products.filter(p => p.category === 'LAND_FOR_SALE'),
         BUILDING_MATERIALS: products.filter(p => p.category === 'BUILDING_MATERIALS'),
         HOME_ELECTRONICS: products.filter(p => p.category === 'HOME_ELECTRONICS'),
@@ -529,7 +542,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     };
 
     const allProducts = {
-        homesForSale: productsByCategory.HOMES_FOR_SALE.map(p => ({ ...p, image: p.imageUrl })),
+        residentialHouse: productsByCategory.RESIDENTIAL_HOUSE.map(p => ({ ...p, image: p.imageUrl })),
         landForSale: productsByCategory.LAND_FOR_SALE.map(p => ({ ...p, image: p.imageUrl })),
         tipperShield: productsByCategory.BUILDING_MATERIALS.map(p => ({ ...p, image: p.imageUrl, type: 'product' })),
         homeElectronics: productsByCategory.HOME_ELECTRONICS.map(p => ({ ...p, image: p.imageUrl })),
@@ -624,7 +637,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                 </div>
             ) : (
                 <>
-                    {shouldShow('homes') && <SectionGrid title="Homes for Sale" icon="🏠" items={allProducts.homesForSale} renderItem={renderProduct('homesForSale')} />}
+                    {shouldShow('homes') && <SectionGrid title="Residential Houses" icon="🏠" items={allProducts.residentialHouse} renderItem={renderProduct('residentialHouse')} />}
                     {shouldShow('shortlet') && <SectionGrid title="Shortlet Apartments" icon="🛎️" items={allProducts.shortlet} renderItem={renderProduct('shortlet')} />}
                     {shouldShow('hostel') && <SectionGrid title="Student Hostels" icon="🎓" items={allProducts.studentHostel} renderItem={renderProduct('studentHostel')} />}
                     {shouldShow('office') && <SectionGrid title="Office Space" icon="🏢" items={allProducts.officeSpace} renderItem={renderProduct('officeSpace')} />}
