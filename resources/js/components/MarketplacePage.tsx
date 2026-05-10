@@ -416,7 +416,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                                 <option value="SALES_PROPERTIES">Sales Properties</option>
                                 <option value="PROPERTY_MANAGEMENT">Property Management</option>
                                 <option value="BUILDING_MATERIALS">Building Materials</option>
-                                <option value="SERVICES">Services</option>
+                                <option value="TIPPER_DRIVERS">TIPPER DRIVERS</option>
                             </select>
                         </div>
 
@@ -485,10 +485,12 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
 
     const loadProducts = useCallback(async () => {
         try {
+            setLoading(true);
             const response = await marketplaceAPI.getAll({ limit: 200 });
             if (response.success && response.data) setProducts(response.data.products || []);
             else setProducts([]);
-        } catch { /* silent fail - keep existing data */ }
+        } catch { setProducts([]); }
+        finally { setLoading(false); }
     }, []);
 
     const loadTipperDrivers = useCallback(async () => {
@@ -523,6 +525,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         BUY_PROPERTIES: products.filter(p => p.category === 'BUY_PROPERTIES'),
         SALES_PROPERTIES: products.filter(p => p.category === 'SALES_PROPERTIES'),
         PROPERTY_MANAGEMENT: products.filter(p => p.category === 'PROPERTY_MANAGEMENT'),
+        TIPPER_DRIVERS: products.filter(p => p.category === 'TIPPER_DRIVERS'),
     };
 
     const allProducts = {
@@ -541,6 +544,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         buyProperties: productsByCategory.BUY_PROPERTIES.map(p => ({ ...p, image: p.imageUrl })),
         salesProperties: productsByCategory.SALES_PROPERTIES.map(p => ({ ...p, image: p.imageUrl })),
         propertyManagement: productsByCategory.PROPERTY_MANAGEMENT.map(p => ({ ...p, image: p.imageUrl })),
+        tipperDriverProducts: productsByCategory.TIPPER_DRIVERS.map(p => ({ ...p, image: p.imageUrl })),
     };
 
     const filters: { key: FilterKey; label: string; icon: string }[] = [
@@ -561,7 +565,6 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         { key: 'buy', label: 'Buy Properties', icon: '🏦' },
         { key: 'sales', label: 'Sales Properties', icon: '💰' },
         { key: 'management', label: 'Property Mgmt', icon: '📋' },
-        { key: 'drivers', label: 'Drivers', icon: '🚛' },
     ];
 
     const renderProduct = (category: string) => (product: any) => (
@@ -638,6 +641,9 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     {shouldShow('management') && <SectionGrid title="Property Management" icon="📋" items={allProducts.propertyManagement} renderItem={renderProduct('propertyManagement')} />}
                     {shouldShow('drivers') && (
                         <SectionGrid title="Tipper Drivers Near You" icon="🚛" items={tipperDrivers} renderItem={(driver) => <DriverCard driver={driver} />} />
+                    )}
+                    {shouldShow('drivers') && allProducts.tipperDriverProducts.length > 0 && (
+                        <SectionGrid title="Tipper Driver Services" icon="🚛" items={allProducts.tipperDriverProducts} renderItem={renderProduct('tipperDriverServices')} />
                     )}
                 </>
             )}

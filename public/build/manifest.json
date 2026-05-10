@@ -10,7 +10,7 @@
     "isEntry": true
   },
   "resources/js/Pages/Shell.tsx": {
-    "file": "assets/Shell-DTkxnsVZ.js",
+    "file": "assets/Shell-BOMr-shF.js",
     "name": "Shell",
     "src": "resources/js/Pages/Shell.tsx",
     "isDynamicEntry": true,
@@ -23,7 +23,7 @@
     ]
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-BH5g1BD8.js",
+    "file": "assets/app-KdycT5i-.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
