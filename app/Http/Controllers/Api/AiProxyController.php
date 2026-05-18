@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Proxies Gemini API calls from the frontend so the API key never touches
@@ -19,6 +20,11 @@ class AiProxyController extends Controller
         return env('GEMINI_API_KEY');
     }
 
+    /**
+     * Send a fully-built payload to Gemini.
+     * Uses withBody() + explicit application/json so Laravel's HTTP client
+     * cannot fall back to form-encoded for any reason.
+     */
     private function call(string $model, array $payload): \Illuminate\Http\JsonResponse
     {
         $key = $this->key();
@@ -28,33 +34,71 @@ class AiProxyController extends Controller
 
         $url = self::BASE . "/models/{$model}:generateContent?key={$key}";
 
-        // Gemini requires JSON body — Laravel's Http::post() defaults to
-        // form-encoded for arrays, which is why "contents is not specified"
-        // was failing. asJson() forces application/json content type.
-        $response = Http::timeout(90)->asJson()->post($url, $payload);
+        $jsonBody = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $response = Http::timeout(90)
+            ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
+            ->withBody($jsonBody, 'application/json')
+            ->post($url);
+
+        if (! $response->successful()) {
+            Log::warning('Gemini API call failed', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+                'sentPayloadKeys' => array_keys($payload),
+                'contentsCount'   => is_array($payload['contents'] ?? null) ? count($payload['contents']) : 0,
+            ]);
+        }
 
         return response()->json($response->json(), $response->status());
+    }
+
+    /**
+     * Read the request body as JSON regardless of Laravel's content-type
+     * detection. Falls back to $request->all() if the raw body is empty.
+     */
+    private function readBody(Request $request): array
+    {
+        $raw = $request->getContent();
+        if (! empty($raw)) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return $request->all();
     }
 
     /** General chat endpoint — used by the chatbot */
     public function chat(Request $request): \Illuminate\Http\JsonResponse
     {
-        $model   = $request->input('model', 'gemini-2.5-flash');
-        $payload = ['contents' => $request->input('contents', [])];
+        $body  = $this->readBody($request);
+        $model = $body['model'] ?? 'gemini-2.5-flash';
 
-        $si = $request->input('systemInstruction');
-        if ($si) {
-            $payload['system_instruction'] = ['parts' => [['text' => $si]]];
+        $contents = $body['contents'] ?? [];
+        if (empty($contents)) {
+            Log::warning('AiProxyController::chat received empty contents', [
+                'bodyKeys'    => array_keys($body),
+                'rawBodyLen'  => strlen($request->getContent()),
+                'contentType' => $request->header('Content-Type'),
+            ]);
+            return response()->json([
+                'error' => ['message' => 'No message content provided.'],
+            ], 400);
         }
 
-        $tools = $request->input('tools');
-        if ($tools) {
-            $payload['tools'] = $tools;
+        $payload = ['contents' => $contents];
+
+        if (! empty($body['systemInstruction'])) {
+            $payload['system_instruction'] = ['parts' => [['text' => $body['systemInstruction']]]];
         }
 
-        $gc = $request->input('generationConfig');
-        if ($gc) {
-            $payload['generation_config'] = $gc;
+        if (! empty($body['tools'])) {
+            $payload['tools'] = $body['tools'];
+        }
+
+        if (! empty($body['generationConfig'])) {
+            $payload['generation_config'] = $body['generationConfig'];
         }
 
         return $this->call($model, $payload);
@@ -63,7 +107,8 @@ class AiProxyController extends Controller
     /** Market insights — uses Google Search grounding */
     public function insights(Request $request): \Illuminate\Http\JsonResponse
     {
-        $query = $request->input('query', '');
+        $body  = $this->readBody($request);
+        $query = $body['query'] ?? '';
 
         $systemPrompt = 'You are a real estate market analyst for the Nigerian rental market. '
             . 'Provide concise, data-driven insights. Answer clearly using markdown bullet points.';
@@ -80,8 +125,9 @@ class AiProxyController extends Controller
     /** Feels recommendations — structured JSON output */
     public function recommendations(Request $request): \Illuminate\Http\JsonResponse
     {
-        $prompt = $request->input('prompt', '');
-        $schema = $request->input('schema');
+        $body   = $this->readBody($request);
+        $prompt = $body['prompt'] ?? '';
+        $schema = $body['schema'] ?? null;
 
         $payload = [
             'contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]],
