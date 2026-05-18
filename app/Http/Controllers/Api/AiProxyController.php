@@ -28,7 +28,10 @@ class AiProxyController extends Controller
 
         $url = self::BASE . "/models/{$model}:generateContent?key={$key}";
 
-        $response = Http::timeout(90)->post($url, $payload);
+        // Gemini requires JSON body — Laravel's Http::post() defaults to
+        // form-encoded for arrays, which is why "contents is not specified"
+        // was failing. asJson() forces application/json content type.
+        $response = Http::timeout(90)->asJson()->post($url, $payload);
 
         return response()->json($response->json(), $response->status());
     }
