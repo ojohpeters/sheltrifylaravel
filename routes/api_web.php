@@ -59,10 +59,12 @@ Route::get('/payments/banks', [PaymentApiController::class, 'banks']);
 Route::get('/ai/site-data', [AiApiController::class, 'siteData']);
 Route::get('/ai/search-listings', [AiApiController::class, 'searchListings']);
 
-// Gemini proxy — key stays server-side, never reaches the browser bundle
-Route::post('/ai/chat', [App\Http\Controllers\Api\AiProxyController::class, 'chat']);
-Route::post('/ai/insights', [App\Http\Controllers\Api\AiProxyController::class, 'insights']);
-Route::post('/ai/recommendations', [App\Http\Controllers\Api\AiProxyController::class, 'recommendations']);
+// Gemini proxy — key stays server-side, never reaches the browser bundle.
+// Namespaced under /ai/gemini/* so it doesn't collide with the auth-protected
+// /api/ai/chat route used by AiApiController (DB-aware conversational chat).
+Route::post('/ai/gemini/chat', [App\Http\Controllers\Api\AiProxyController::class, 'chat']);
+Route::post('/ai/gemini/insights', [App\Http\Controllers\Api\AiProxyController::class, 'insights']);
+Route::post('/ai/gemini/recommendations', [App\Http\Controllers\Api\AiProxyController::class, 'recommendations']);
 
 Route::post('/contact', ContactApiController::class);
 

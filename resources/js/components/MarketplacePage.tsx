@@ -365,7 +365,7 @@ const SectionGrid: React.FC<{
 
 const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthenticated?: boolean }> = ({ onProductCreated, isAuthenticated }) => {
     const { showSuccess, showError } = useToast();
-    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE' as string, videoUrl: '' });
+    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'RESIDENTIAL_HOUSE' as string, videoUrl: '' });
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -413,7 +413,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
             });
             if (response.success) {
                 showSuccess('Product submitted! It will be reviewed before going live.');
-                setFormData({ name: '', description: '', price: '', category: 'HOMES_FOR_SALE', videoUrl: '' });
+                setFormData({ name: '', description: '', price: '', category: 'RESIDENTIAL_HOUSE', videoUrl: '' });
                 setImageFiles([]); setImagePreviews([]); setShowForm(false);
                 if (imageInputRef.current) imageInputRef.current.value = '';
                 onProductCreated?.();

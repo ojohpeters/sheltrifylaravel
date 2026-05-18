@@ -15,7 +15,7 @@ function getCsrfToken(): string {
 }
 
 async function proxyFetch(endpoint: string, payload: object): Promise<any> {
-    const response = await fetch(`/api/ai/${endpoint}`, {
+    const response = await fetch(`/api/ai/gemini/${endpoint}`, {
         method: 'POST',
         credentials: 'include',
         headers: {

@@ -53,7 +53,7 @@ function emptyForm(tab: TabType) {
         case 'community':
             return { title: '', content: '', category: 'general', imageUrl: '' };
         case 'marketplace':
-            return { name: '', description: '', price: '', category: 'FURNITURE', location: '', contact: '', imageUrl: '' };
+            return { name: '', description: '', price: '', category: 'RESIDENTIAL_HOUSE', location: '', contact: '', imageUrl: '' };
         case 'listings':
             return { title: '', price: '', location: '', description: '', bedrooms: '', propertyType: 'Apartment', imageUrl: '', videoUrl: '' };
         default:
