@@ -25,7 +25,7 @@ class AiApiController extends Controller
     public function chat(Request $request)
     {
         $request->validate([
-            'message'         => 'required|string|max:1000',
+            'message'         => 'required|string|max:32000',
             'conversation_id' => 'nullable|integer',
         ]);
 
