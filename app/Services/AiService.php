@@ -18,12 +18,15 @@ use Illuminate\Support\Facades\Log;
 class AiService
 {
     private string $apiKey;
-    private string $model = 'gemini-2.0-flash';
+    private string $model;
     private string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
 
     public function __construct()
     {
         $this->apiKey = config('services.gemini.api_key', '');
+        // Read the model from config (env-driven) — defaults to gemini-2.5-flash
+        // because gemini-2.0-flash has limit:0 on the free tier for new keys.
+        $this->model  = config('services.gemini.model', 'gemini-2.5-flash');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
