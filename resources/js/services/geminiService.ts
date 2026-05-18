@@ -14,8 +14,19 @@ function getCsrfToken(): string {
     return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
 }
 
+/**
+ * Backend routes:
+ *   - chat ............. /api/ai/chat                    (DB-aware AiApiController; needs auth)
+ *   - insights ......... /api/ai/gemini/insights          (direct Gemini proxy)
+ *   - recommendations .. /api/ai/gemini/recommendations   (direct Gemini proxy)
+ */
+function endpointToPath(endpoint: string): string {
+    if (endpoint === 'chat') return 'ai/chat';
+    return `ai/gemini/${endpoint}`;
+}
+
 async function proxyFetch(endpoint: string, payload: object): Promise<any> {
-    const response = await fetch(`/api/ai/gemini/${endpoint}`, {
+    const response = await fetch(`/api/${endpointToPath(endpoint)}`, {
         method: 'POST',
         credentials: 'include',
         headers: {

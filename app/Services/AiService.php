@@ -558,8 +558,11 @@ PROMPT;
         }
 
         try {
+            $jsonBody = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             $response = Http::timeout(60)
-                ->post("{$this->baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}", $payload);
+                ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
+                ->withBody($jsonBody, 'application/json')
+                ->post("{$this->baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}");
 
             if ($response->successful()) {
                 $body = $response->json();

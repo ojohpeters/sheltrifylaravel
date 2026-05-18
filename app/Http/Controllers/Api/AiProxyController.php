@@ -77,21 +77,8 @@ class AiProxyController extends Controller
 
         $contents = $body['contents'] ?? [];
         if (empty($contents)) {
-            $raw = $request->getContent();
-            Log::warning('AiProxyController::chat received empty contents', [
-                'bodyKeys'    => array_keys($body),
-                'rawBodyLen'  => strlen($raw),
-                'contentType' => $request->header('Content-Type'),
-            ]);
             return response()->json([
                 'error' => ['message' => 'No message content provided.'],
-                'debug' => [
-                    'bodyKeys'    => array_keys($body),
-                    'rawBodyLen'  => strlen($raw),
-                    'rawBodyPrefix' => substr($raw, 0, 400),
-                    'contentType' => $request->header('Content-Type'),
-                    'allKeys'     => array_keys($request->all()),
-                ],
             ], 400);
         }
 
