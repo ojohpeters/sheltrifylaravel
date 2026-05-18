@@ -152,9 +152,6 @@ Rules:
 PROMPT;
 
         $raw = $this->callGemini($prompt, true);
-        if ($raw === null) {
-            throw new \RuntimeException('AI service is temporarily unavailable. Please try again later.');
-        }
         $intent = $this->extractJson($raw);
 
         return $intent ?? [
@@ -491,11 +488,7 @@ Answer this question concisely and helpfully (2-3 sentences max):
 
 Context: The platform has listings for rent/sale, a marketplace, community posts, investment opportunities, artisan services, and wallet features using SWC (Sheltrify Wallet Credits) as internal currency. 1 SWC ≈ ₦4.50 NGN.
 PROMPT;
-            $reply = $this->callGemini($prompt);
-            if ($reply === null) {
-                throw new \RuntimeException('AI service is temporarily unavailable. Please try again later.');
-            }
-            return $reply;
+            return $this->callGemini($prompt);
         }
 
         // Summarize the DB results
@@ -529,11 +522,7 @@ Generate a warm, helpful response (2-4 sentences). Guidelines:
 - End with a helpful follow-up suggestion or offer to refine the search
 PROMPT;
 
-        $reply = $this->callGemini($prompt);
-        if ($reply === null) {
-            throw new \RuntimeException('AI service is temporarily unavailable. Please try again later.');
-        }
-        return $reply;
+        return $this->callGemini($prompt);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -542,9 +531,13 @@ PROMPT;
 
     private function callGemini(string $prompt, bool $jsonMode = false): ?string
     {
-        if (empty($this->apiKey)) {
+        // Try config first, then env directly — env() works even when
+        // config:cache wasn't re-run after the key was added to .env.
+        $key = $this->apiKey ?: (string) env('GEMINI_API_KEY', '');
+
+        if (empty($key)) {
             Log::error('Gemini API key is not configured');
-            return null;
+            throw new \RuntimeException('AI is not configured: GEMINI_API_KEY missing. Add it to the server .env and run "php artisan config:clear".');
         }
 
         $payload = [
@@ -562,24 +555,36 @@ PROMPT;
             $response = Http::timeout(60)
                 ->withHeaders(['Content-Type' => 'application/json', 'Accept' => 'application/json'])
                 ->withBody($jsonBody, 'application/json')
-                ->post("{$this->baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}");
+                ->post("{$this->baseUrl}/models/{$this->model}:generateContent?key={$key}");
 
             if ($response->successful()) {
                 $body = $response->json();
-                if (empty($body['candidates'][0]['content']['parts'][0]['text'])) {
+                $text = $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                if (empty($text)) {
                     Log::warning('Gemini returned empty response', ['body' => $body]);
+                    $blockReason = $body['promptFeedback']['blockReason'] ?? null;
+                    $finishReason = $body['candidates'][0]['finishReason'] ?? null;
+                    throw new \RuntimeException('Gemini returned empty response (blockReason: ' . ($blockReason ?: 'none') . ', finishReason: ' . ($finishReason ?: 'none') . ').');
                 }
-                return $body['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                return $text;
             }
 
+            $errBody = $response->body();
             Log::warning('Gemini API error response', [
                 'status' => $response->status(),
-                'body' => $response->body(),
+                'body'   => $errBody,
             ]);
-            return null;
+            $msg = 'Gemini API error ' . $response->status();
+            $decoded = $response->json();
+            if (is_array($decoded) && isset($decoded['error']['message'])) {
+                $msg .= ': ' . $decoded['error']['message'];
+            }
+            throw new \RuntimeException($msg);
+        } catch (\RuntimeException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Gemini API exception', ['error' => $e->getMessage()]);
-            return null;
+            throw new \RuntimeException('Gemini network/SDK error: ' . $e->getMessage());
         }
     }
 
