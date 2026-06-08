@@ -285,13 +285,16 @@ const AppContent: React.FC = () => {
         setIntendedPage(page);
         setIsAuthModalOpen(true);
       }
-    } else if (page === 'profile') {
+    } else if (page === 'profile' || page === 'notifications') {
       if (isAuthenticated) {
         go(page);
       } else {
         setIntendedPage(page);
         setIsAuthModalOpen(true);
       }
+    } else if (page === 'productDetail') {
+      // Anyone can view a product; auth gate is on the "I'm Interested" action.
+      go(page);
     } else if (page === 'paymentVerify') {
       router.visit(URL_BY_PAGE[page], { preserveScroll: false });
       window.scrollTo(0, 0);

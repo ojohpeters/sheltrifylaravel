@@ -25,3 +25,5 @@ Route::get('/profile', fn () => $shell('profile'))->name('profile');
 Route::get('/payments/verify', fn () => $shell('paymentVerify'))->name('payments.verify');
 Route::get('/listing-dashboard', fn () => $shell('listingDashboard'))->name('listing-dashboard');
 Route::get('/professional-profile', fn () => $shell('professionalProfile'))->name('professional-profile');
+Route::get('/notifications', fn () => $shell('notifications'))->name('notifications');
+Route::get('/product', fn () => $shell('productDetail'))->name('product');
