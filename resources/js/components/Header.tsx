@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LogoIcon, MenuIcon, CloseIcon, SunIcon, MoonIcon, UserIcon, ShoppingCartIcon } from './icons';
 import { useTheme } from '../SheltrifyApp';
+import NotificationBell from './NotificationBell';
 
 interface HeaderProps {
     isAuthenticated: boolean;
@@ -21,6 +22,7 @@ interface HeaderProps {
     onPremiumClick?: () => void;
     onProfileClick: () => void;
     onDashboardClick?: () => void;
+    onNotificationsClick?: () => void;
     onAdminClick: () => void;
     onCartClick?: () => void;
     onLoginClick?: () => void;
@@ -61,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({
     isAuthenticated, currentUser, isAdmin, cartCount = 0, currentPage,
     onLogoClick, onChatClick, onCommunityClick, onWalletClick, onMarketplaceClick,
     onFeelsClick, onRentalWahalaClick, onGlobalTalesClick, onAboutClick, onContactClick,
-    onPremiumClick, onProfileClick, onDashboardClick, onAdminClick, onCartClick,
+    onPremiumClick, onProfileClick, onDashboardClick, onNotificationsClick, onAdminClick, onCartClick,
     onLoginClick, onSignupClick, onLogoutClick,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -155,6 +157,11 @@ const Header: React.FC<HeaderProps> = ({
                     {/* ── Right Actions ─────────────────────────────────── */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                         <ThemeToggle />
+
+                        {/* Notifications */}
+                        {isAuthenticated && onNotificationsClick && (
+                            <NotificationBell onSeeAll={onNotificationsClick} />
+                        )}
 
                         {/* Cart */}
                         {isAuthenticated && onCartClick && (

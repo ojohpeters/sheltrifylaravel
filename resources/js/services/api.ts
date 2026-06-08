@@ -1025,3 +1025,39 @@ export const globalTalesAPI = {
   },
 };
 
+// Notifications API
+export const notificationAPI = {
+  list: async () => apiRequest('/notifications'),
+  unreadCount: async () => apiRequest('/notifications/unread-count'),
+  markRead: async (id: string) => apiRequest(`/notifications/${id}/read`, { method: 'PUT' }),
+  markAllRead: async () => apiRequest('/notifications/read-all', { method: 'PUT' }),
+  delete: async (id: string) => apiRequest(`/notifications/${id}`, { method: 'DELETE' }),
+};
+
+// Admin notification + suspension extras
+export const adminNotificationsAPI = {
+  suspendUser: async (id: string, reason: string) =>
+    apiRequest(`/admin/users/${id}/suspend`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  unsuspendUser: async (id: string) =>
+    apiRequest(`/admin/users/${id}/unsuspend`, { method: 'POST' }),
+  notifyUser: async (id: string, payload: { title: string; body: string; email?: boolean }) =>
+    apiRequest(`/admin/users/${id}/notify`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  broadcast: async (payload: { title: string; body: string; role?: string; email?: boolean }) =>
+    apiRequest('/admin/notifications/broadcast', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  listAll: async (params?: { type?: string; search?: string }) => {
+    const qp = new URLSearchParams();
+    if (params?.type)   qp.append('type', params.type);
+    if (params?.search) qp.append('search', params.search);
+    return apiRequest(`/admin/notifications${qp.toString() ? '?' + qp.toString() : ''}`);
+  },
+};
+

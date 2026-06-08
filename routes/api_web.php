@@ -185,6 +185,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/professional-profiles/pending', [AdminApiController::class, 'pendingProfessionalProfiles']);
         Route::put('/professional-profiles/{id}/approve', [AdminApiController::class, 'approveProfessionalProfile'])->where('id', '[0-9]+');
         Route::put('/professional-profiles/{id}/reject', [AdminApiController::class, 'rejectProfessionalProfile'])->where('id', '[0-9]+');
+        Route::post('/users/{id}/suspend', [AdminApiController::class, 'suspendUser'])->where('id', '[0-9]+');
+        Route::post('/users/{id}/unsuspend', [AdminApiController::class, 'unsuspendUser'])->where('id', '[0-9]+');
+        Route::post('/users/{id}/notify', [AdminApiController::class, 'sendUserNotification'])->where('id', '[0-9]+');
+        Route::post('/notifications/broadcast', [AdminApiController::class, 'broadcastNotification']);
+        Route::get('/notifications', [AdminApiController::class, 'allNotifications']);
+
         Route::get('/analytics', [AdminApiController::class, 'analytics']);
         Route::get('/system-health', [AdminApiController::class, 'systemHealth']);
         Route::get('/transactions', [AdminApiController::class, 'transactions']);

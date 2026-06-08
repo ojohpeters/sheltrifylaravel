@@ -8,9 +8,11 @@ use App\Models\FeelsVideo;
 use App\Models\GlobalTale;
 use App\Models\Listing;
 use App\Models\MarketplaceProduct;
+use App\Models\Notification;
 use App\Models\PaymentTransaction;
 use App\Models\RentalWahalaVideo;
 use App\Models\User;
+use App\Services\NotifyUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -561,5 +563,136 @@ class AdminApiController extends Controller
         }
 
         return $this->jsonOk($result, 'Bulk '.$data['action'].' completed');
+    }
+
+    // ── User suspension ───────────────────────────────────────────────────
+
+    public function suspendUser(Request $request, string $id)
+    {
+        $user = User::find($id);
+        if (! $user) return $this->jsonErr('User not found', 404);
+        if ($user->role === 'ADMIN') return $this->jsonErr('Cannot suspend another admin', 422);
+
+        $reason = (string) $request->input('reason', '');
+        $user->update([
+            'is_suspended'      => true,
+            'suspended_at'      => now(),
+            'suspension_reason' => $reason ?: null,
+        ]);
+
+        NotifyUser::send(
+            user: $user,
+            type: 'account_suspended',
+            title: 'Your ShelTrify account has been suspended',
+            body: 'An administrator has suspended your account.' . ($reason ? " Reason: {$reason}" : ' Contact support if you believe this is a mistake.'),
+            data: ['reason' => $reason],
+        );
+
+        return $this->jsonOk($user, 'User suspended');
+    }
+
+    public function unsuspendUser(string $id)
+    {
+        $user = User::find($id);
+        if (! $user) return $this->jsonErr('User not found', 404);
+
+        $user->update([
+            'is_suspended'      => false,
+            'suspended_at'      => null,
+            'suspension_reason' => null,
+        ]);
+
+        NotifyUser::send(
+            user: $user,
+            type: 'account_reactivated',
+            title: 'Your ShelTrify account has been reactivated',
+            body: 'Welcome back — your account is active again.',
+        );
+
+        return $this->jsonOk($user, 'User reactivated');
+    }
+
+    // ── Admin-initiated notifications ─────────────────────────────────────
+
+    public function broadcastNotification(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:200',
+            'body'  => 'required|string|max:2000',
+            'role'  => 'nullable|string|in:SEEKER,LANDLORD,AGENT,REFERRER,TENANT,INVESTOR,ARTISAN,TIPPER_DRIVER,ALL',
+            'email' => 'nullable|boolean',
+        ]);
+
+        $emailToo = $data['email'] ?? true;
+        $role     = $data['role'] ?? 'ALL';
+
+        $q = User::query();
+        if ($role !== 'ALL') {
+            $q->where('role', $role);
+        }
+
+        $count = 0;
+        $q->chunkById(200, function ($users) use ($data, $emailToo, &$count) {
+            foreach ($users as $u) {
+                NotifyUser::send(
+                    user: $u,
+                    type: 'admin_broadcast',
+                    title: $data['title'],
+                    body: $data['body'],
+                    emailToo: $emailToo,
+                );
+                $count++;
+            }
+        });
+
+        return $this->jsonOk(['recipients' => $count], "Broadcast sent to {$count} user(s)");
+    }
+
+    public function sendUserNotification(Request $request, string $id)
+    {
+        $user = User::find($id);
+        if (! $user) return $this->jsonErr('User not found', 404);
+
+        $data = $request->validate([
+            'title' => 'required|string|max:200',
+            'body'  => 'required|string|max:2000',
+            'email' => 'nullable|boolean',
+        ]);
+
+        NotifyUser::send(
+            user: $user,
+            type: 'admin_message',
+            title: $data['title'],
+            body: $data['body'],
+            emailToo: $data['email'] ?? true,
+        );
+
+        return $this->jsonOk(null, 'Notification sent');
+    }
+
+    public function allNotifications(Request $request)
+    {
+        $q = Notification::query()->with('user:id,full_name,email,role');
+
+        if ($type = $request->query('type')) {
+            $q->where('type', $type);
+        }
+        if ($search = $request->query('search')) {
+            $q->where(function ($qq) use ($search) {
+                $qq->where('title', 'like', "%{$search}%")
+                   ->orWhere('body',  'like', "%{$search}%");
+            });
+        }
+
+        $page = $q->orderByDesc('created_at')->paginate(50);
+
+        return $this->jsonOk([
+            'notifications' => $page->items(),
+            'pagination'    => [
+                'total'        => $page->total(),
+                'current_page' => $page->currentPage(),
+                'last_page'    => $page->lastPage(),
+            ],
+        ]);
     }
 }

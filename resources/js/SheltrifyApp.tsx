@@ -14,6 +14,7 @@ import FeelsPage from './components/FeelsPage';
 import RentalWahalaPage from './components/RentalWahalaPage';
 import AdminDashboard from './components/AdminDashboard';
 import { UserDashboard } from './components/UserDashboard';
+import NotificationsPage from './components/NotificationsPage';
 import ListingDashboardPage from './components/ListingDashboardPage';
 import ProfessionalProfilePage from './components/ProfessionalProfilePage';
 import PaymentVerifyPage from './components/PaymentVerifyPage';
@@ -79,7 +80,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
 
 type ShellPageProps = {
   view: Page;
@@ -106,6 +107,7 @@ const URL_BY_PAGE: Record<Page, string> = {
   profile: '/profile',
   listingDashboard: '/listing-dashboard',
   professionalProfile: '/professional-profile',
+  notifications: '/notifications',
 };
 
 const HASH_TO_PATH: Record<string, string> = {
@@ -127,6 +129,7 @@ const HASH_TO_PATH: Record<string, string> = {
   profile: '/profile',
   listingDashboard: '/listing-dashboard',
   professionalProfile: '/professional-profile',
+  notifications: '/notifications',
 };
 
 const AppContent: React.FC = () => {
@@ -406,6 +409,7 @@ const AppContent: React.FC = () => {
             }
           }}
           onDashboardClick={() => navigateTo('userDashboard')}
+          onNotificationsClick={() => navigateTo('notifications')}
           onAdminClick={() => navigateTo('adminDashboard')}
           onCartClick={() => navigateTo('cart')}
           onLoginClick={() => {
@@ -476,10 +480,13 @@ const AppContent: React.FC = () => {
             <AdminDashboard onClose={() => navigateTo('landing')} />
           )}
           {currentPage === 'userDashboard' && isAuthenticated && currentUser && (
-            <UserDashboard 
-              onClose={() => navigateTo('landing')} 
+            <UserDashboard
+              onClose={() => navigateTo('landing')}
               user={currentUser}
             />
+          )}
+          {currentPage === 'notifications' && isAuthenticated && (
+            <NotificationsPage onClose={() => navigateTo('landing')} />
           )}
           {currentPage === 'profile' && isAuthenticated && currentUser && (
             <ProfilePage 

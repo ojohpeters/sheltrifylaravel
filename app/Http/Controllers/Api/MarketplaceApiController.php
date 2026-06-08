@@ -7,6 +7,7 @@ use App\Models\MarketplaceProduct;
 use App\Models\Notification;
 use App\Models\Subscriber;
 use App\Models\User;
+use App\Services\NotifyUser;
 use Illuminate\Http\Request;
 
 class MarketplaceApiController extends Controller
@@ -109,20 +110,22 @@ class MarketplaceApiController extends Controller
             ->first();
 
         if (! $recent) {
-            Notification::create([
-                'user_id' => $product->user_id,
-                'type'    => 'product_interest',
-                'title'   => "{$seeker->full_name} is interested in your listing",
-                'body'    => "{$seeker->full_name} just expressed interest in \"{$product->name}\". Reach out: " . ($seeker->phone ?: $seeker->email),
-                'data'    => [
-                    'productId'    => (int) $product->id,
-                    'productName'  => $product->name,
-                    'seekerId'     => (int) $seeker->id,
-                    'seekerName'   => $seeker->full_name,
-                    'seekerEmail'  => $seeker->email,
-                    'seekerPhone'  => $seeker->phone,
+            NotifyUser::send(
+                user: (int) $product->user_id,
+                type: 'product_interest',
+                title: "{$seeker->full_name} is interested in your listing",
+                body: "{$seeker->full_name} just expressed interest in \"{$product->name}\". Reach out via: " . ($seeker->phone ?: $seeker->email),
+                data: [
+                    'productId'   => (int) $product->id,
+                    'productName' => $product->name,
+                    'seekerId'    => (int) $seeker->id,
+                    'seekerName'  => $seeker->full_name,
+                    'seekerEmail' => $seeker->email,
+                    'seekerPhone' => $seeker->phone,
                 ],
-            ]);
+                ctaUrl: rtrim(config('app.url', ''), '/') . '/notifications',
+                ctaLabel: 'View on ShelTrify',
+            );
         }
 
         return $this->jsonOk(null, 'Your interest has been sent. The seller will contact you soon.');

@@ -72,6 +72,15 @@ class AuthApiController extends Controller
             return $this->jsonErr('Invalid email or password', 401);
         }
 
+        if (Auth::user() && Auth::user()->is_suspended) {
+            $reason = Auth::user()->suspension_reason;
+            Auth::logout();
+            return $this->jsonErr(
+                'Your account has been suspended.' . ($reason ? " Reason: {$reason}" : ' Contact support to appeal.'),
+                403
+            );
+        }
+
         $request->session()->regenerate();
 
         return $this->jsonOk([

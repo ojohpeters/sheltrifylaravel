@@ -18,7 +18,9 @@ class User extends Authenticatable
 
     protected $fillable = [
         'email', 'password', 'full_name', 'phone', 'whatsapp', 'role',
-        'is_premium', 'premium_expiry_date', 'is_verified', 'avatar_url',
+        'is_premium', 'premium_expiry_date', 'is_verified',
+        'is_suspended', 'suspended_at', 'suspension_reason',
+        'avatar_url',
         'bio', 'referral_code', 'last_seen_at', 'notification_preferences',
         'onboarding_completed', 'chat_enabled',
         'verification_photo_url', 'verification_id_url', 'verification_id_type',
@@ -36,6 +38,8 @@ class User extends Authenticatable
         return [
             'is_premium'               => 'boolean',
             'is_verified'              => 'boolean',
+            'is_suspended'             => 'boolean',
+            'suspended_at'             => 'datetime',
             'nin_verified'             => 'boolean',
             'onboarding_completed'     => 'boolean',
             'chat_enabled'             => 'boolean',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { adminAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI } from '../services/api';
-import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon } from './icons';
+import { adminAPI, adminNotificationsAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI } from '../services/api';
+import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon, BellIcon, MegaphoneIcon, NoSymbolIcon } from './icons';
 import { useToast } from '../contexts/ToastContext';
 
 interface AdminDashboardProps {
@@ -93,7 +93,7 @@ interface MarketplaceProduct {
   };
 }
 
-type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala';
+type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala' | 'broadcast' | 'notifications';
 type AdminView = 'list' | 'edit' | 'create' | 'upload';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
@@ -706,6 +706,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     { id: 'rental-wahala', label: 'Rental Wahala', icon: VideoCameraIcon },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon, badge: pendingProducts.length },
     { id: 'requests', label: 'Property Requests', icon: DocumentCheckIcon, badge: appointments.filter((a: any) => a.status === 'pending').length },
+    { id: 'broadcast', label: 'Broadcast', icon: MegaphoneIcon },
+    { id: 'notifications', label: 'All Notifications', icon: BellIcon },
     { id: 'analytics', label: 'Analytics', icon: TrendingUpIcon },
     { id: 'ai', label: 'AI Management', icon: UserIcon },
     { id: 'system', label: 'System', icon: CogIcon },
@@ -1557,6 +1559,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             </div>
           )}
 
+          {/* Broadcast Tab */}
+          {currentPage === 'broadcast' && (
+            <BroadcastPanel />
+          )}
+
+          {/* All Notifications Tab */}
+          {currentPage === 'notifications' && (
+            <AllNotificationsPanel />
+          )}
+
           {/* Analytics Tab */}
           {currentPage === 'analytics' && (
             <div>
@@ -1911,6 +1923,66 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   Cancel
                 </button>
               </div>
+
+              {editingUser && (editingUser as any).role !== 'ADMIN' && (
+                <div className="border-t border-light-border dark:border-dark-border pt-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-light-text-secondary dark:text-dark-text-secondary">Account Controls</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {(editingUser as any).isSuspended || (editingUser as any).is_suspended ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const r = await adminNotificationsAPI.unsuspendUser(String(editingUser.id));
+                          if (r.success) {
+                            showSuccess('User reactivated');
+                            setEditingUser({ ...editingUser, isSuspended: false, is_suspended: false } as any);
+                            loadUsers();
+                          } else { showError(r.message || 'Failed'); }
+                        }}
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-semibold"
+                      >
+                        <CheckCircleIcon className="w-4 h-4" /> Reactivate Account
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const reason = window.prompt('Reason for suspension (shown to the user):', '') || '';
+                          const r = await adminNotificationsAPI.suspendUser(String(editingUser.id), reason);
+                          if (r.success) {
+                            showSuccess('User suspended');
+                            setEditingUser({ ...editingUser, isSuspended: true, is_suspended: true, suspensionReason: reason } as any);
+                            loadUsers();
+                          } else { showError(r.message || 'Failed'); }
+                        }}
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-semibold"
+                      >
+                        <NoSymbolIcon className="w-4 h-4" /> Suspend Account
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const title = window.prompt('Notification title:', 'A message from ShelTrify support');
+                        if (!title) return;
+                        const body = window.prompt('Message body:', '');
+                        if (!body) return;
+                        const r = await adminNotificationsAPI.notifyUser(String(editingUser.id), { title, body, email: true });
+                        if (r.success) showSuccess('Notification sent (in-app + email)');
+                        else showError(r.message || 'Failed');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary text-sm font-semibold"
+                    >
+                      <BellIcon className="w-4 h-4" /> Send Direct Message
+                    </button>
+                  </div>
+                  {((editingUser as any).isSuspended || (editingUser as any).is_suspended) && (
+                    <p className="text-xs text-red-500">
+                      Currently suspended{(editingUser as any).suspensionReason ? ` — Reason: ${(editingUser as any).suspensionReason}` : ''}.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2304,6 +2376,66 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   Cancel
                 </button>
               </div>
+
+              {editingUser && (editingUser as any).role !== 'ADMIN' && (
+                <div className="border-t border-light-border dark:border-dark-border pt-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-light-text-secondary dark:text-dark-text-secondary">Account Controls</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {(editingUser as any).isSuspended || (editingUser as any).is_suspended ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const r = await adminNotificationsAPI.unsuspendUser(String(editingUser.id));
+                          if (r.success) {
+                            showSuccess('User reactivated');
+                            setEditingUser({ ...editingUser, isSuspended: false, is_suspended: false } as any);
+                            loadUsers();
+                          } else { showError(r.message || 'Failed'); }
+                        }}
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-semibold"
+                      >
+                        <CheckCircleIcon className="w-4 h-4" /> Reactivate Account
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const reason = window.prompt('Reason for suspension (shown to the user):', '') || '';
+                          const r = await adminNotificationsAPI.suspendUser(String(editingUser.id), reason);
+                          if (r.success) {
+                            showSuccess('User suspended');
+                            setEditingUser({ ...editingUser, isSuspended: true, is_suspended: true, suspensionReason: reason } as any);
+                            loadUsers();
+                          } else { showError(r.message || 'Failed'); }
+                        }}
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-semibold"
+                      >
+                        <NoSymbolIcon className="w-4 h-4" /> Suspend Account
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const title = window.prompt('Notification title:', 'A message from ShelTrify support');
+                        if (!title) return;
+                        const body = window.prompt('Message body:', '');
+                        if (!body) return;
+                        const r = await adminNotificationsAPI.notifyUser(String(editingUser.id), { title, body, email: true });
+                        if (r.success) showSuccess('Notification sent (in-app + email)');
+                        else showError(r.message || 'Failed');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary text-sm font-semibold"
+                    >
+                      <BellIcon className="w-4 h-4" /> Send Direct Message
+                    </button>
+                  </div>
+                  {((editingUser as any).isSuspended || (editingUser as any).is_suspended) && (
+                    <p className="text-xs text-red-500">
+                      Currently suspended{(editingUser as any).suspensionReason ? ` — Reason: ${(editingUser as any).suspensionReason}` : ''}.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2596,6 +2728,189 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Broadcast Panel ─────────────────────────────────────────────────────────
+
+const BROADCAST_ROLES = ['ALL','SEEKER','LANDLORD','AGENT','REFERRER','TENANT','INVESTOR','ARTISAN','TIPPER_DRIVER'];
+
+const BroadcastPanel: React.FC = () => {
+  const [title, setTitle] = useState('');
+  const [body, setBody]   = useState('');
+  const [role, setRole]   = useState('ALL');
+  const [email, setEmail] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [lastSent, setLastSent] = useState<number | null>(null);
+
+  const send = async () => {
+    if (!title.trim() || !body.trim()) return;
+    if (!window.confirm(`Send to ${role === 'ALL' ? 'ALL users' : role + 's'}${email ? ' (in-app + email)' : ' (in-app only)'}?`)) return;
+    setSending(true);
+    try {
+      const r = await adminNotificationsAPI.broadcast({ title, body, role, email });
+      if (r.success) {
+        setLastSent(r.data?.recipients ?? 0);
+        setTitle(''); setBody('');
+      } else {
+        alert(r.message || 'Failed');
+      }
+    } catch (e: any) { alert(e.message || 'Failed'); }
+    finally { setSending(false); }
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <div className="mb-6 flex items-center gap-3">
+        <MegaphoneIcon className="w-7 h-7 text-brand-primary" />
+        <div>
+          <h3 className="text-xl font-bold text-light-text-primary dark:text-dark-text-primary">Broadcast a Notification</h3>
+          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">Push an announcement to every user, or just one role.</p>
+        </div>
+      </div>
+
+      {lastSent !== null && (
+        <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-700 dark:text-green-400">
+          ✓ Sent to <strong>{lastSent}</strong> user{lastSent === 1 ? '' : 's'}.
+        </div>
+      )}
+
+      <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl p-5 space-y-4">
+        <div>
+          <label className="block text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-1">Audience</label>
+          <select
+            value={role}
+            onChange={e => setRole(e.target.value)}
+            className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-3 py-2 text-sm"
+          >
+            {BROADCAST_ROLES.map(r => <option key={r} value={r}>{r === 'ALL' ? 'All users' : r.replace(/_/g, ' ')}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-1">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            maxLength={200}
+            placeholder="New feature launched!"
+            className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase text-light-text-secondary dark:text-dark-text-secondary mb-1">Message</label>
+          <textarea
+            value={body}
+            onChange={e => setBody(e.target.value)}
+            rows={5}
+            maxLength={2000}
+            placeholder="Write your announcement here..."
+            className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-3 py-2 text-sm resize-none"
+          />
+          <p className="mt-1 text-xs text-light-text-muted dark:text-dark-text-muted">{body.length}/2000</p>
+        </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={email} onChange={e => setEmail(e.target.checked)} className="rounded" />
+          <span className="text-sm text-light-text-primary dark:text-dark-text-primary">Also send via email</span>
+        </label>
+
+        <button
+          onClick={send}
+          disabled={sending || !title.trim() || !body.trim()}
+          className="w-full px-4 py-3 bg-brand-primary text-white rounded-lg font-semibold text-sm hover:bg-brand-secondary disabled:opacity-60"
+        >
+          {sending ? 'Sending…' : `Send broadcast → ${role === 'ALL' ? 'all users' : role + 's'}`}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── All Notifications Panel ─────────────────────────────────────────────────
+
+const AllNotificationsPanel: React.FC = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [type, setType] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await adminNotificationsAPI.listAll({ search: search || undefined, type: type || undefined });
+      if (r.success) setItems(r.data?.notifications || []);
+    } catch { setItems([]); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center gap-3">
+        <BellIcon className="w-7 h-7 text-brand-primary" />
+        <div>
+          <h3 className="text-xl font-bold text-light-text-primary dark:text-dark-text-primary">All Notifications</h3>
+          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">Every notification issued by the platform, in chronological order.</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Search title or body…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && load()}
+          className="flex-1 min-w-[200px] bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg px-3 py-2 text-sm"
+        />
+        <select value={type} onChange={e => setType(e.target.value)} className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg px-3 py-2 text-sm">
+          <option value="">All types</option>
+          <option value="product_interest">Product interest</option>
+          <option value="admin_broadcast">Admin broadcast</option>
+          <option value="admin_message">Admin direct message</option>
+          <option value="account_suspended">Account suspended</option>
+          <option value="account_reactivated">Account reactivated</option>
+        </select>
+        <button onClick={load} className="px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-semibold">Filter</button>
+      </div>
+
+      {loading ? (
+        <p className="text-center py-8 text-light-text-secondary dark:text-dark-text-secondary">Loading…</p>
+      ) : items.length === 0 ? (
+        <p className="text-center py-8 text-light-text-secondary dark:text-dark-text-secondary">No notifications match.</p>
+      ) : (
+        <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl overflow-hidden divide-y divide-light-border dark:divide-dark-border">
+          {items.map(n => (
+            <div key={n.id} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-brand-primary/10 text-brand-primary rounded">{n.type}</span>
+                    <span className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                      → {n.user?.fullName || n.user?.full_name || 'user #' + (n.userId || n.user_id)} ({n.user?.role || 'unknown'})
+                    </span>
+                    {(n.readAt || n.read_at) ? (
+                      <span className="text-xs text-light-text-muted dark:text-dark-text-muted">read</span>
+                    ) : (
+                      <span className="text-xs text-brand-primary font-semibold">unread</span>
+                    )}
+                  </div>
+                  <h4 className="mt-1 font-semibold text-sm text-light-text-primary dark:text-dark-text-primary">{n.title}</h4>
+                  <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-0.5">{n.body}</p>
+                </div>
+                <span className="text-xs text-light-text-muted dark:text-dark-text-muted whitespace-nowrap shrink-0">
+                  {new Date(n.createdAt || n.created_at).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
