@@ -150,7 +150,15 @@ const AppContent: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isVideoAssistantOpen, setIsVideoAssistantOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(() => {
+    // Inertia navigation re-mounts components, so persist the selected product
+    // across the /marketplace → /product navigation via sessionStorage.
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem('sheltrify:selectedProduct');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
   const [intendedPage, setIntendedPage] = useState<Page | null>(null);
   const [favorites, setFavorites] = useState<Property[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -453,14 +461,22 @@ const AppContent: React.FC = () => {
             <MarketplacePage
               onCartUpdate={refreshCart}
               isAuthenticated={isAuthenticated}
-              onViewProduct={(p) => { setSelectedProduct(p); navigateTo('productDetail'); }}
+              onViewProduct={(p) => {
+                setSelectedProduct(p);
+                try { sessionStorage.setItem('sheltrify:selectedProduct', JSON.stringify(p)); } catch { /* ignore */ }
+                navigateTo('productDetail');
+              }}
             />
           )}
           {currentPage === 'productDetail' && (
             <ProductDetailPage
               product={selectedProduct}
               isAuthenticated={isAuthenticated}
-              onBack={() => navigateTo('marketplace')}
+              onBack={() => {
+                try { sessionStorage.removeItem('sheltrify:selectedProduct'); } catch { /* ignore */ }
+                setSelectedProduct(null);
+                navigateTo('marketplace');
+              }}
             />
           )}
           {currentPage === 'cart' && <CartPage currentUser={currentUser} onCartUpdate={refreshCart} />}
