@@ -18,7 +18,7 @@ class NotificationMail extends Mailable
 
     public function __construct(
         public string $recipientName,
-        public string $subject,
+        public string $mailSubject,
         public string $bodyText,
         public ?array $data = null,
         public ?string $ctaUrl = null,
@@ -27,7 +27,7 @@ class NotificationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->subject);
+        return new Envelope(subject: $this->mailSubject);
     }
 
     public function content(): Content

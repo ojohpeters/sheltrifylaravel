@@ -40,7 +40,7 @@ class NotifyUser
             try {
                 Mail::to($userModel->email)->send(new NotificationMail(
                     recipientName: $userModel->full_name ?: explode('@', $userModel->email)[0],
-                    subject: $title,
+                    mailSubject: $title,
                     bodyText: $body,
                     data: $data,
                     ctaUrl: $ctaUrl,
