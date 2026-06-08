@@ -16,6 +16,34 @@ const formatPrice = (price: number): string => {
     return `₦${price.toLocaleString()}`;
 };
 
+// Category-keyed fallback images so cards never look broken when a seller
+// forgot to upload an image (or storage:link isn't set on the server).
+const FALLBACK_IMAGES: Record<string, string> = {
+    RESIDENTIAL_HOUSE:   'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&q=70',
+    LAND_FOR_SALE:       'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=70',
+    SHORTLET:            'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=70',
+    STUDENT_HOSTEL:      'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=600&q=70',
+    OFFICE_SPACE:        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=70',
+    BUSINESS_SPACE:      'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=600&q=70',
+    EVENT_VENUE:         'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=70',
+    WEDDING_MATERIALS:   'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=70',
+    RENT_TO_OWN:         'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=70',
+    BUY_PROPERTIES:      'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=600&q=70',
+    SALES_PROPERTIES:    'https://images.unsplash.com/photo-1494526585095-c41746248156?w=600&q=70',
+    PROPERTY_MANAGEMENT: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=70',
+    BUILDING_MATERIALS:  'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=600&q=70',
+    HOME_ELECTRONICS:    'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=70',
+    INTERIOR_DESIGN:     'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=70',
+    TIPPER_DRIVERS:      'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&q=70',
+    LOCAL_ARTISANS:      'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=600&q=70',
+};
+
+const productImage = (product: any): string => {
+    const real = product?.image || product?.imageUrl || product?.images?.[0];
+    if (real) return real;
+    return FALLBACK_IMAGES[product?.category as string] || 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600&q=70';
+};
+
 // Skeleton shimmer card
 const SkeletonCard: React.FC = () => (
     <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden animate-pulse">
@@ -300,20 +328,31 @@ const ProductCard: React.FC<{
     category: string;
     onViewDetails?: (product: any) => void;
 }> = ({ product, category, onViewDetails }) => {
-    const [imageError, setImageError] = useState(false);
+    const [imgSrc, setImgSrc] = useState<string>(() => productImage(product));
+    const [hardFail, setHardFail] = useState(false);
     const isProperty = ['homesForSale','landForSale','shortlet','studentHostel','officeSpace','businessSpace','eventVenue','weddingMaterials','rentToOwn'].includes(category);
     const imageCount = product.images?.length || (product.image || product.imageUrl ? 1 : 0);
+
+    const handleImgError = () => {
+        // First failure: swap to category fallback. Second failure: show placeholder.
+        const fallback = FALLBACK_IMAGES[product?.category as string];
+        if (fallback && imgSrc !== fallback) {
+            setImgSrc(fallback);
+        } else {
+            setHardFail(true);
+        }
+    };
 
     return (
         <div className="group bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer" onClick={() => onViewDetails?.({ ...product, _category: category })}>
             <div className="relative overflow-hidden aspect-[4/3]">
-                {!imageError && (product.image || product.imageUrl) ? (
+                {!hardFail ? (
                     <img
-                        src={product.image || product.imageUrl}
+                        src={imgSrc}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
-                        onError={() => setImageError(true)}
+                        onError={handleImgError}
                     />
                 ) : (
                     <div className="w-full h-full bg-light-bg dark:bg-dark-bg flex items-center justify-center">
@@ -655,13 +694,16 @@ type FilterKey = 'all' | 'homes' | 'land' | 'electronics' | 'furniture' | 'mater
 interface MarketplacePageProps {
     onCartUpdate?: () => void;
     isAuthenticated?: boolean;
+    onViewProduct?: (product: any) => void;
 }
 
-const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthenticated = false }) => {
+const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthenticated = false, onViewProduct }) => {
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
-    const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+    const handleViewProduct = (product: any) => {
+        if (onViewProduct) onViewProduct(product);
+    };
     const [tipperDrivers, setTipperDrivers] = useState<any[]>([]);
     const [localArtisans, setLocalArtisans] = useState<any[]>([]);
 
@@ -789,7 +831,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     ];
 
     const renderProduct = (category: string) => (product: any) => (
-        <ProductCard product={product} category={category} onViewDetails={setSelectedProduct} />
+        <ProductCard product={product} category={category} onViewDetails={handleViewProduct} />
     );
 
     const shouldShow = (key: FilterKey) => activeFilter === 'all' || activeFilter === key;
@@ -875,14 +917,6 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                 </>
             )}
 
-            {/* Product Detail Modal */}
-            {selectedProduct && (
-                <ProductDetailModal
-                    product={selectedProduct}
-                    onClose={() => setSelectedProduct(null)}
-                    isAuthenticated={isAuthenticated}
-                />
-            )}
         </div>
     );
 };

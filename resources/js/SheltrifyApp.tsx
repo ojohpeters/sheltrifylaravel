@@ -15,6 +15,7 @@ import RentalWahalaPage from './components/RentalWahalaPage';
 import AdminDashboard from './components/AdminDashboard';
 import { UserDashboard } from './components/UserDashboard';
 import NotificationsPage from './components/NotificationsPage';
+import ProductDetailPage from './components/ProductDetailPage';
 import ListingDashboardPage from './components/ListingDashboardPage';
 import ProfessionalProfilePage from './components/ProfessionalProfilePage';
 import PaymentVerifyPage from './components/PaymentVerifyPage';
@@ -80,7 +81,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
 
 type ShellPageProps = {
   view: Page;
@@ -108,6 +109,7 @@ const URL_BY_PAGE: Record<Page, string> = {
   listingDashboard: '/listing-dashboard',
   professionalProfile: '/professional-profile',
   notifications: '/notifications',
+  productDetail: '/product',
 };
 
 const HASH_TO_PATH: Record<string, string> = {
@@ -130,6 +132,7 @@ const HASH_TO_PATH: Record<string, string> = {
   listingDashboard: '/listing-dashboard',
   professionalProfile: '/professional-profile',
   notifications: '/notifications',
+  productDetail: '/product',
 };
 
 const AppContent: React.FC = () => {
@@ -147,6 +150,7 @@ const AppContent: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isVideoAssistantOpen, setIsVideoAssistantOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [intendedPage, setIntendedPage] = useState<Page | null>(null);
   const [favorites, setFavorites] = useState<Property[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -442,7 +446,20 @@ const AppContent: React.FC = () => {
               currentUser={currentUser}
             />
           )}
-          {currentPage === 'marketplace' && <MarketplacePage onCartUpdate={refreshCart} isAuthenticated={isAuthenticated} />}
+          {currentPage === 'marketplace' && (
+            <MarketplacePage
+              onCartUpdate={refreshCart}
+              isAuthenticated={isAuthenticated}
+              onViewProduct={(p) => { setSelectedProduct(p); navigateTo('productDetail'); }}
+            />
+          )}
+          {currentPage === 'productDetail' && (
+            <ProductDetailPage
+              product={selectedProduct}
+              isAuthenticated={isAuthenticated}
+              onBack={() => navigateTo('marketplace')}
+            />
+          )}
           {currentPage === 'cart' && <CartPage currentUser={currentUser} onCartUpdate={refreshCart} />}
           {currentPage === 'feels' && (
             <FeelsPage 
