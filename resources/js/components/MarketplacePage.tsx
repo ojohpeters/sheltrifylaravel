@@ -105,15 +105,37 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
     }, [handleKeyDown]);
 
     return (
-        <div className="fixed inset-0 z-[100]">
+        <div
+            className="fixed inset-0 z-[100]"
+            style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 100,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}
+        >
             {/* Backdrop — separate sibling so backdrop-filter cannot blur the modal card */}
-            <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-            {/* Modal container */}
-            <div className="absolute inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none">
-                <div
-                    className="relative w-full sm:max-w-lg bg-light-card dark:bg-dark-card rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-y-auto max-h-[92vh] pointer-events-auto"
-                    onClick={(e) => e.stopPropagation()}
-                >
+            <div
+                className="absolute inset-0 bg-black/70"
+                style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)' }}
+                onClick={onClose}
+            />
+            {/* Modal card — uses inline styles for critical visibility */}
+            <div
+                className="bg-light-card dark:bg-dark-card rounded-2xl shadow-2xl overflow-y-auto"
+                style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    width: '100%',
+                    maxWidth: '560px',
+                    maxHeight: '92vh',
+                    background: 'var(--modal-bg, #ffffff)',
+                    margin: '0 16px',
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Image Carousel */}
                 <div className="relative aspect-[4/3] bg-light-bg dark:bg-dark-bg">
                     {allImages.length > 0 ? (
@@ -268,7 +290,6 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
                         )}
                     </div>
                 </div>
-            </div>
             </div>
         </div>
     );
