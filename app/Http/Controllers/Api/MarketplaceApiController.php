@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\MarketplaceProduct;
+use App\Models\Notification;
 use App\Models\Subscriber;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -66,6 +67,65 @@ class MarketplaceApiController extends Controller
             ->get(['id', 'full_name', 'phone', 'whatsapp', 'avatar_url', 'artisan_location', 'created_at']);
 
         return $this->jsonOk(['drivers' => $drivers]);
+    }
+
+    /**
+     * Local artisans directory — users with role=ARTISAN. Mirrors tipperDrivers.
+     */
+    public function localArtisans()
+    {
+        $artisans = User::query()
+            ->where('role', 'ARTISAN')
+            ->where('is_verified', true)
+            ->orderByDesc('created_at')
+            ->get(['id', 'full_name', 'phone', 'whatsapp', 'avatar_url', 'artisan_location', 'artisan_service', 'artisan_rating', 'created_at']);
+
+        return $this->jsonOk(['artisans' => $artisans]);
+    }
+
+    /**
+     * A seeker expresses interest in a marketplace product. Creates a
+     * notification for the product owner so they know somebody wants it.
+     * Idempotent within 24h — a seeker who taps twice doesn't spam the owner.
+     */
+    public function interest(Request $request, string $id)
+    {
+        $product = MarketplaceProduct::query()->find($id);
+        if (! $product) {
+            return $this->jsonErr('Product not found', 404);
+        }
+
+        $seeker = $request->user();
+        if ($product->user_id === $seeker->id) {
+            return $this->jsonErr('You cannot express interest in your own listing.', 422);
+        }
+
+        $oneDayAgo = now()->subDay();
+        $recent = Notification::where('user_id', $product->user_id)
+            ->where('type', 'product_interest')
+            ->where('created_at', '>=', $oneDayAgo)
+            ->whereJsonContains('data->productId', (int) $product->id)
+            ->whereJsonContains('data->seekerId', (int) $seeker->id)
+            ->first();
+
+        if (! $recent) {
+            Notification::create([
+                'user_id' => $product->user_id,
+                'type'    => 'product_interest',
+                'title'   => "{$seeker->full_name} is interested in your listing",
+                'body'    => "{$seeker->full_name} just expressed interest in \"{$product->name}\". Reach out: " . ($seeker->phone ?: $seeker->email),
+                'data'    => [
+                    'productId'    => (int) $product->id,
+                    'productName'  => $product->name,
+                    'seekerId'     => (int) $seeker->id,
+                    'seekerName'   => $seeker->full_name,
+                    'seekerEmail'  => $seeker->email,
+                    'seekerPhone'  => $seeker->phone,
+                ],
+            ]);
+        }
+
+        return $this->jsonOk(null, 'Your interest has been sent. The seller will contact you soon.');
     }
 
     public function byCategory(string $category)

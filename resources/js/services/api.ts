@@ -603,6 +603,16 @@ export const marketplaceAPI = {
       method: 'DELETE',
     });
   },
+
+  getLocalArtisans: async () => {
+    return apiRequest('/marketplace/local-artisans');
+  },
+
+  expressInterest: async (productId: string) => {
+    return apiRequest(`/marketplace/${productId}/interest`, {
+      method: 'POST',
+    });
+  },
 };
 
 // Cart API

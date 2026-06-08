@@ -34,7 +34,30 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
     const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
     const [subscribed, setSubscribed] = useState(false);
     const [email, setEmail] = useState('');
+    const [interestSending, setInterestSending] = useState(false);
+    const [interestSent, setInterestSent] = useState(false);
     const { showSuccess, showError } = useToast();
+
+    const handleExpressInterest = async () => {
+        if (!isAuthenticated) {
+            showError('Please log in to express interest.');
+            return;
+        }
+        setInterestSending(true);
+        try {
+            const r = await marketplaceAPI.expressInterest(String(product.id));
+            if (r.success) {
+                setInterestSent(true);
+                showSuccess(r.message || 'Your interest has been sent to the seller.');
+            } else {
+                showError(r.message || 'Failed to send interest.');
+            }
+        } catch (err: any) {
+            showError(err.message || 'Failed to send interest.');
+        } finally {
+            setInterestSending(false);
+        }
+    };
 
     const allImages = product.images?.length
         ? product.images
@@ -181,6 +204,23 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
                         )}
                     </div>
 
+                    {/* I'm Interested button — notifies the owner */}
+                    <button
+                        onClick={handleExpressInterest}
+                        disabled={interestSending || interestSent}
+                        className={`w-full flex items-center justify-center gap-2 py-3 font-semibold rounded-xl text-sm transition-colors ${
+                            interestSent
+                                ? 'bg-green-500/10 text-green-600 dark:text-green-400 cursor-default'
+                                : 'bg-brand-primary text-white hover:bg-brand-secondary disabled:opacity-60'
+                        }`}
+                    >
+                        {interestSent
+                            ? '✓ Interest sent — seller has been notified'
+                            : interestSending
+                                ? 'Sending...'
+                                : "👋 I'm Interested — Notify Seller"}
+                    </button>
+
                     {/* Contact buttons */}
                     {phoneNumber && (
                         <div className="grid grid-cols-2 gap-3">
@@ -315,6 +355,48 @@ const DriverCard: React.FC<{ driver: { id: number; name: string; phone: string; 
                     className="w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 font-semibold text-xs rounded-xl bg-brand-primary text-white hover:bg-brand-secondary transition-all shadow-sm touch-manipulation"
                 >
                     <PhoneIcon className="w-3.5 h-3.5" />Contact Driver
+                </a>
+            </div>
+        </div>
+    );
+};
+
+const ArtisanCard: React.FC<{ artisan: { id: number; name: string; phone: string; image: string; location?: string; service?: string; rating?: number } }> = ({ artisan }) => {
+    const [imageError, setImageError] = useState(false);
+    const cleanPhone = artisan.phone?.replace(/[^\d+]/g, '') || '';
+
+    return (
+        <div className="group bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="relative overflow-hidden aspect-square">
+                {!imageError ? (
+                    <img
+                        src={artisan.image} alt={artisan.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy" onError={() => setImageError(true)}
+                    />
+                ) : (
+                    <div className="w-full h-full bg-light-bg dark:bg-dark-bg flex items-center justify-center">
+                        <PhotoIcon className="w-10 h-10 text-light-text-muted dark:text-dark-text-muted" />
+                    </div>
+                )}
+                {artisan.service && (
+                    <div className="absolute bottom-2 left-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold rounded-md truncate text-center">
+                        🔧 {artisan.service}
+                    </div>
+                )}
+            </div>
+            <div className="p-3 sm:p-4 text-center">
+                <h3 className="font-semibold text-sm text-light-text-primary dark:text-dark-text-primary">{artisan.name}</h3>
+                {artisan.location && <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-0.5">{artisan.location}</p>}
+                <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-0.5">{artisan.phone}</p>
+                {artisan.rating && artisan.rating > 0 ? (
+                    <p className="text-xs text-yellow-500 mt-1">{'⭐'.repeat(Math.round(artisan.rating))} <span className="text-light-text-secondary dark:text-dark-text-secondary">({artisan.rating.toFixed(1)})</span></p>
+                ) : null}
+                <a
+                    href={`tel:${cleanPhone}`}
+                    className="w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 font-semibold text-xs rounded-xl bg-brand-primary text-white hover:bg-brand-secondary transition-all shadow-sm touch-manipulation"
+                >
+                    <PhoneIcon className="w-3.5 h-3.5" />Contact Artisan
                 </a>
             </div>
         </div>
@@ -497,6 +579,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                                 <option value="PROPERTY_MANAGEMENT">Property Management</option>
                                 <option value="BUILDING_MATERIALS">Building Materials</option>
                                 <option value="TIPPER_DRIVERS">TIPPER DRIVERS</option>
+                                <option value="LOCAL_ARTISANS">LOCAL ARTISANS</option>
                             </select>
                         </div>
 
@@ -541,7 +624,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
     );
 };
 
-type FilterKey = 'all' | 'homes' | 'land' | 'electronics' | 'furniture' | 'materials' | 'drivers' | 'office' | 'business' | 'hostel' | 'shortlet' | 'venue' | 'wedding' | 'renttoown' | 'buy' | 'sales' | 'management';
+type FilterKey = 'all' | 'homes' | 'land' | 'electronics' | 'furniture' | 'materials' | 'drivers' | 'artisans' | 'office' | 'business' | 'hostel' | 'shortlet' | 'venue' | 'wedding' | 'renttoown' | 'buy' | 'sales' | 'management';
 
 interface MarketplacePageProps {
     onCartUpdate?: () => void;
@@ -554,8 +637,9 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
     const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
     const [tipperDrivers, setTipperDrivers] = useState<any[]>([]);
+    const [localArtisans, setLocalArtisans] = useState<any[]>([]);
 
-    useEffect(() => { loadProducts(); loadTipperDrivers(); }, []);
+    useEffect(() => { loadProducts(); loadTipperDrivers(); loadLocalArtisans(); }, []);
 
     // Refresh products periodically and on tab focus to show newly approved items
     useEffect(() => {
@@ -599,6 +683,24 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         } catch { setTipperDrivers([]); }
     }, []);
 
+    const loadLocalArtisans = useCallback(async () => {
+        try {
+            const response = await fetch('/api/marketplace/local-artisans');
+            const data = await response.json();
+            if (data.success && data.data?.artisans) {
+                setLocalArtisans(data.data.artisans.map((a: any) => ({
+                    id: a.id,
+                    name: a.full_name || 'Local Artisan',
+                    phone: a.phone || a.whatsapp || 'N/A',
+                    image: a.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.full_name || 'LA')}&background=random`,
+                    location: a.artisan_location || 'Available',
+                    service: a.artisan_service || 'General services',
+                    rating: a.artisan_rating || 0,
+                })));
+            }
+        } catch { setLocalArtisans([]); }
+    }, []);
+
     const productsByCategory = {
         RESIDENTIAL_HOUSE: products.filter(p => p.category === 'RESIDENTIAL_HOUSE'),
         LAND_FOR_SALE: products.filter(p => p.category === 'LAND_FOR_SALE'),
@@ -616,6 +718,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         SALES_PROPERTIES: products.filter(p => p.category === 'SALES_PROPERTIES'),
         PROPERTY_MANAGEMENT: products.filter(p => p.category === 'PROPERTY_MANAGEMENT'),
         TIPPER_DRIVERS: products.filter(p => p.category === 'TIPPER_DRIVERS'),
+        LOCAL_ARTISANS: products.filter(p => p.category === 'LOCAL_ARTISANS'),
     };
 
     const allProducts = {
@@ -635,6 +738,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         salesProperties: productsByCategory.SALES_PROPERTIES.map(p => ({ ...p, image: p.imageUrl })),
         propertyManagement: productsByCategory.PROPERTY_MANAGEMENT.map(p => ({ ...p, image: p.imageUrl })),
         tipperDriverProducts: productsByCategory.TIPPER_DRIVERS.map(p => ({ ...p, image: p.imageUrl })),
+        localArtisanProducts: productsByCategory.LOCAL_ARTISANS.map(p => ({ ...p, image: p.imageUrl })),
     };
 
     const filters: { key: FilterKey; label: string; icon: string }[] = [
@@ -652,6 +756,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         { key: 'furniture', label: 'Furniture', icon: '🛋️' },
         { key: 'materials', label: 'Materials', icon: '🧱' },
         { key: 'drivers', label: 'Tipper Drivers', icon: '🚛' },
+        { key: 'artisans', label: 'Local Artisans', icon: '🔧' },
         { key: 'buy', label: 'Buy Properties', icon: '🏦' },
         { key: 'sales', label: 'Sales Properties', icon: '💰' },
         { key: 'management', label: 'Property Mgmt', icon: '📋' },
@@ -734,6 +839,12 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     )}
                     {shouldShow('drivers') && allProducts.tipperDriverProducts.length > 0 && (
                         <SectionGrid title="Tipper Driver Services" icon="🚛" items={allProducts.tipperDriverProducts} renderItem={renderProduct('tipperDriverServices')} />
+                    )}
+                    {shouldShow('artisans') && (
+                        <SectionGrid title="Local Artisans Near You" icon="🔧" items={localArtisans} renderItem={(artisan) => <ArtisanCard artisan={artisan} />} />
+                    )}
+                    {shouldShow('artisans') && allProducts.localArtisanProducts.length > 0 && (
+                        <SectionGrid title="Local Artisan Services" icon="🔧" items={allProducts.localArtisanProducts} renderItem={renderProduct('localArtisanServices')} />
                     )}
                 </>
             )}

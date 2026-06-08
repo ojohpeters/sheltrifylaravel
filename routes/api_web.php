@@ -37,6 +37,7 @@ Route::get('/marketplace', [MarketplaceApiController::class, 'index']);
 Route::get('/marketplace/category/{category}', [MarketplaceApiController::class, 'byCategory']);
 Route::get('/marketplace/my-products', [MarketplaceApiController::class, 'myProducts'])->middleware('auth');
 Route::get('/marketplace/tipper-drivers', [MarketplaceApiController::class, 'tipperDrivers']);
+Route::get('/marketplace/local-artisans', [MarketplaceApiController::class, 'localArtisans']);
 Route::post('/marketplace/subscribe', [MarketplaceApiController::class, 'subscribe']);
 
 Route::get('/community/posts', [CommunityApiController::class, 'postsIndex']);
@@ -103,6 +104,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/marketplace', [MarketplaceApiController::class, 'store']);
     Route::put('/marketplace/{id}', [MarketplaceApiController::class, 'update'])->where('id', '[0-9]+');
     Route::delete('/marketplace/{id}', [MarketplaceApiController::class, 'destroy'])->where('id', '[0-9]+');
+    Route::post('/marketplace/{id}/interest', [MarketplaceApiController::class, 'interest'])->where('id', '[0-9]+');
 
     Route::post('/community/posts', [CommunityApiController::class, 'postStore']);
     Route::post('/community/posts/{id}/like', [CommunityApiController::class, 'like'])->where('id', '[0-9]+');
