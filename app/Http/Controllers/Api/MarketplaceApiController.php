@@ -109,26 +109,56 @@ class MarketplaceApiController extends Controller
             ->whereJsonContains('data->seekerId', (int) $seeker->id)
             ->first();
 
+        $payload = [
+            'productId'   => (int) $product->id,
+            'productName' => $product->name,
+            'seekerId'    => (int) $seeker->id,
+            'seekerName'  => $seeker->full_name,
+            'seekerEmail' => $seeker->email,
+            'seekerPhone' => $seeker->phone,
+        ];
+
         if (! $recent) {
+            // 1. Notify the listing owner (DB + email)
             NotifyUser::send(
                 user: (int) $product->user_id,
                 type: 'product_interest',
                 title: "{$seeker->full_name} is interested in your listing",
                 body: "{$seeker->full_name} just expressed interest in \"{$product->name}\". Reach out via: " . ($seeker->phone ?: $seeker->email),
-                data: [
-                    'productId'   => (int) $product->id,
-                    'productName' => $product->name,
-                    'seekerId'    => (int) $seeker->id,
-                    'seekerName'  => $seeker->full_name,
-                    'seekerEmail' => $seeker->email,
-                    'seekerPhone' => $seeker->phone,
-                ],
+                data: $payload,
                 ctaUrl: rtrim(config('app.url', ''), '/') . '/notifications',
                 ctaLabel: 'View on ShelTrify',
             );
+
+            // 2. Also notify every admin so they can track all platform activity
+            User::query()->where('role', 'ADMIN')->get()->each(function ($admin) use ($seeker, $product, $payload) {
+                NotifyUser::send(
+                    user: $admin,
+                    type: 'product_interest_admin',
+                    title: "New interest: {$seeker->full_name} → \"{$product->name}\"",
+                    body: "Seeker {$seeker->full_name} (" . ($seeker->phone ?: $seeker->email) . ") is interested in \"{$product->name}\" listed by user #{$product->user_id}.",
+                    data: $payload,
+                );
+            });
         }
 
-        return $this->jsonOk(null, 'Your interest has been sent. The seller will contact you soon.');
+        // Build a WhatsApp deep link the frontend can open immediately —
+        // works even when the seller is offline / not logged in.
+        $ownerPhone = '';
+        if ($product->relationLoaded('user') === false) {
+            $product->load('user:id,phone,whatsapp,full_name');
+        }
+        $ownerPhone = $product->user?->whatsapp ?: $product->user?->phone ?: '';
+        $whatsapp   = preg_replace('/[^\d+]/', '', $ownerPhone);
+        $waMessage  = "Hi, I'm {$seeker->full_name}. I'm interested in your listing \"{$product->name}\" on ShelTrify. My phone: " . ($seeker->phone ?: 'see email ' . $seeker->email);
+        $waUrl      = $whatsapp
+            ? 'https://wa.me/' . ltrim($whatsapp, '+') . '?text=' . rawurlencode($waMessage)
+            : null;
+
+        return $this->jsonOk(
+            ['whatsappUrl' => $waUrl, 'ownerPhone' => $ownerPhone],
+            'Your interest has been sent. The seller will contact you soon.'
+        );
     }
 
     public function byCategory(string $category)

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CloseIcon, LogoIcon, BookmarkSolidIcon, UserIcon, XIcon, PhotoIcon } from './icons';
+import { CloseIcon, LogoIcon, BookmarkSolidIcon, UserIcon, XIcon, PhotoIcon, EyeIcon } from './icons';
 import { Property } from '../types';
 import { authAPI, uploadAPI } from '../services/api';
 
@@ -21,6 +21,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
     const [isLogin, setIsLogin] = useState(getInitialTab);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const showError = (msg: string) => {
         setError(msg);
@@ -391,14 +394,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                     </div>
                      <div>
                         <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Password</label>
-                        <input 
-                            type="password" 
-                            placeholder="••••••••" 
-                            required 
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none transition" 
-                        />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                required
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg pl-4 pr-11 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none transition"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(s => !s)}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-colors"
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                tabIndex={-1}
+                            >
+                                <EyeIcon className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                     {isLogin && !showForgotPassword && !showResetPassword && (
                         <div className="text-right">
@@ -478,25 +492,47 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">New Password</label>
-                                <input 
-                                    type="password" 
-                                    placeholder="Enter new password" 
-                                    required 
-                                    value={resetPasswordData.newPassword}
-                                    onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
-                                    className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none transition" 
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showNewPassword ? 'text' : 'password'}
+                                        placeholder="Enter new password"
+                                        required
+                                        value={resetPasswordData.newPassword}
+                                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                                        className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg pl-4 pr-11 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none transition"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewPassword(s => !s)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-colors"
+                                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                                        tabIndex={-1}
+                                    >
+                                        <EyeIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Confirm Password</label>
-                                <input 
-                                    type="password" 
-                                    placeholder="Confirm new password" 
-                                    required 
-                                    value={resetPasswordData.confirmPassword}
-                                    onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
-                                    className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none transition" 
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        placeholder="Confirm new password"
+                                        required
+                                        value={resetPasswordData.confirmPassword}
+                                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+                                        className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg pl-4 pr-11 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none transition"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(s => !s)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-colors"
+                                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                        tabIndex={-1}
+                                    >
+                                        <EyeIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <button

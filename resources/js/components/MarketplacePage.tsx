@@ -327,7 +327,8 @@ const ProductCard: React.FC<{
     product: any;
     category: string;
     onViewDetails?: (product: any) => void;
-}> = ({ product, category, onViewDetails }) => {
+    onRequest?: (product: any) => void;
+}> = ({ product, category, onViewDetails, onRequest }) => {
     const [imgSrc, setImgSrc] = useState<string>(() => productImage(product));
     const [hardFail, setHardFail] = useState(false);
     const isProperty = ['homesForSale','landForSale','shortlet','studentHostel','officeSpace','businessSpace','eventVenue','weddingMaterials','rentToOwn'].includes(category);
@@ -381,12 +382,20 @@ const ProductCard: React.FC<{
                         <p className="text-xs text-light-text-muted dark:text-dark-text-muted line-through">{formatPrice(product.oldPrice)}</p>
                     )}
                 </div>
-                <button
-                    className="w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 font-semibold text-xs rounded-xl bg-brand-primary text-white hover:bg-brand-secondary shadow-sm transition-all touch-manipulation"
-                    onClick={(e) => { e.stopPropagation(); onViewDetails?.({ ...product, _category: category }); }}
-                >
-                    <EyeIcon className="w-3.5 h-3.5" />View Details
-                </button>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                    <button
+                        className="flex items-center justify-center gap-1 px-2 py-2 font-semibold text-xs rounded-xl bg-brand-primary text-white hover:bg-brand-secondary shadow-sm transition-all touch-manipulation"
+                        onClick={(e) => { e.stopPropagation(); onViewDetails?.({ ...product, _category: category }); }}
+                    >
+                        <EyeIcon className="w-3.5 h-3.5" />View
+                    </button>
+                    <button
+                        className="flex items-center justify-center gap-1 px-2 py-2 font-semibold text-xs rounded-xl bg-green-500 text-white hover:bg-green-600 shadow-sm transition-all touch-manipulation"
+                        onClick={(e) => { e.stopPropagation(); onRequest?.({ ...product, _category: category }); }}
+                    >
+                        👋 Request
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -698,11 +707,47 @@ interface MarketplacePageProps {
 }
 
 const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthenticated = false, onViewProduct }) => {
+    const { showSuccess, showError } = useToast();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
     const handleViewProduct = (product: any) => {
         if (onViewProduct) onViewProduct(product);
+    };
+
+    const handleRequest = async (product: any) => {
+        // Build a WhatsApp deep link from whatever phone data we have on the product —
+        // works even when the seller is offline / not logged in.
+        const ownerPhone: string = product?.user?.whatsapp || product?.user?.phone || product?.landlordPhone || '';
+        const cleanPhone = (ownerPhone || '').replace(/[^\d+]/g, '').replace(/^\+/, '');
+        const waMessage = `Hi, I'm interested in your listing "${product.name}" on ShelTrify. Could you share more details?`;
+        const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}` : '';
+
+        if (isAuthenticated) {
+            try {
+                const r = await marketplaceAPI.expressInterest(String(product.id));
+                if (r.success) {
+                    showSuccess(r.message || 'Request sent — the seller has been notified.');
+                    // Backend returns the canonical WhatsApp URL with the seeker's
+                    // name/phone prefilled. Prefer it over the client-built fallback.
+                    const url = r.data?.whatsappUrl || waUrl;
+                    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                } else {
+                    showError(r.message || 'Failed to send request.');
+                    if (waUrl) window.open(waUrl, '_blank', 'noopener,noreferrer');
+                }
+            } catch (err: any) {
+                showError(err.message || 'Could not save request — opening WhatsApp anyway.');
+                if (waUrl) window.open(waUrl, '_blank', 'noopener,noreferrer');
+            }
+        } else {
+            // Not logged in — go straight to WhatsApp so the seeker can still reach the seller.
+            if (waUrl) {
+                window.open(waUrl, '_blank', 'noopener,noreferrer');
+            } else {
+                showError("Seller hasn't published a contact number. Try View Details.");
+            }
+        }
     };
     const [tipperDrivers, setTipperDrivers] = useState<any[]>([]);
     const [localArtisans, setLocalArtisans] = useState<any[]>([]);
@@ -831,7 +876,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     ];
 
     const renderProduct = (category: string) => (product: any) => (
-        <ProductCard product={product} category={category} onViewDetails={handleViewProduct} />
+        <ProductCard product={product} category={category} onViewDetails={handleViewProduct} onRequest={handleRequest} />
     );
 
     const shouldShow = (key: FilterKey) => activeFilter === 'all' || activeFilter === key;
