@@ -3,6 +3,7 @@ import { Message, Property, Artisan } from '../types';
 import { startNewChatSession, generatePropertyImage } from '../services/geminiService';
 import { aiAPI, userAPI } from '../services/api';
 import type { ProxyChat } from '../services/geminiService';
+import { digitalPurchasesAllowed, chatPaywallEnabled } from '../platform';
 import { SendIcon, UserIcon, MicIcon, ImageIcon, HeartIcon, CheckCircleIcon, StarSolidIcon, MapIcon, CalendarIcon, CreditCardIcon, ArrowPathIcon, StarIcon, WalletIcon, CloseIcon, ChevronLeftIcon, PencilIcon, VideoCameraIcon, PlayCircleIcon, PhoneIcon, MailIcon } from './icons';
 
 // Helper to clean up potential JSON formatting issues from the model, like trailing commas.
@@ -522,7 +523,32 @@ const PremiumModal: React.FC<{ onClose: () => void; onConfirm: () => void }> = (
         setPaymentMethod(method);
         setView('payment');
     };
-    
+
+    // The chat upgrade is digital content, so Google Play would require Play
+    // Billing for it. The purchase path is not offered in the Play build.
+    if (!digitalPurchasesAllowed()) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+                <div className="relative bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-2xl w-full max-w-md p-8 text-light-text-primary dark:text-dark-text-primary">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary">
+                        <CloseIcon className="w-6 h-6"/>
+                    </button>
+                    <div className="text-center">
+                        <StarIcon className="w-12 h-12 mx-auto text-yellow-400 p-2 bg-yellow-400/10 rounded-full" />
+                        <h2 className="text-2xl font-bold mt-3">Not available here</h2>
+                        <p className="text-light-text-secondary dark:text-dark-text-secondary mt-2 text-sm">
+                            Chat upgrades aren't available in the Android app. If your account is
+                            already upgraded, it works here normally.
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="mt-6 w-full bg-brand-primary text-white rounded-lg py-3 font-bold hover:bg-brand-secondary transition-all">
+                        Got it
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
             <div className="relative bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-2xl w-full max-w-md p-8 text-light-text-primary dark:text-dark-text-primary transition-all duration-300">
@@ -944,7 +970,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onToggleFavorite, favorites, programm
     if (!currentInput.trim() || isLoading || !chatRef.current) return;
     
     // Check free message limit for non-premium users
-    if (!isPremium && freeMessageCount >= FREE_MESSAGE_LIMIT) {
+    if (chatPaywallEnabled() && !isPremium && freeMessageCount >= FREE_MESSAGE_LIMIT) {
       const upgradeMessage: Message = {
         id: `upgrade-${Date.now()}`,
         sender: 'bot',
@@ -1028,7 +1054,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onToggleFavorite, favorites, programm
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="hidden sm:inline-flex px-2.5 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full">AI Assistant</span>
-          {!isPremium && (
+          {!isPremium && digitalPurchasesAllowed() && (
             <button onClick={() => setIsPremiumModalOpen(true)} className="flex items-center gap-1 px-2.5 py-1 bg-yellow-400/90 text-yellow-900 text-xs font-bold rounded-full hover:bg-yellow-300 transition-colors">
               <StarSolidIcon className="w-3.5 h-3.5" /> Upgrade
             </button>
@@ -1129,7 +1155,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ onToggleFavorite, favorites, programm
         )}
 
         {/* Free messages remaining indicator */}
-        {!isPremium && freeMessageCount > 0 && freeMessageCount < FREE_MESSAGE_LIMIT && (
+        {chatPaywallEnabled() && !isPremium && freeMessageCount > 0 && freeMessageCount < FREE_MESSAGE_LIMIT && (
           <div className="mb-2 flex items-center justify-between px-1">
             <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
               {FREE_MESSAGE_LIMIT - freeMessageCount} free message{FREE_MESSAGE_LIMIT - freeMessageCount !== 1 ? 's' : ''} left

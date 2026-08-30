@@ -29,6 +29,7 @@ import BottomNav from './components/BottomNav';
 import { Property } from './types';
 import { authAPI } from './services/api';
 import { ToastProvider } from './contexts/ToastContext';
+import { digitalPurchasesAllowed } from './platform';
 
 const FAVORITES_STORAGE_KEY = 'sheltrify_favorites';
 
@@ -345,6 +346,13 @@ const AppContent: React.FC = () => {
   };
 
   const handlePremiumUpgrade = async () => {
+    // Premium is digital content. Google Play requires Play Billing for it, so
+    // the SWC-debiting upgrade is not offered in the Play build.
+    if (!digitalPurchasesAllowed()) {
+      showToast('Premium upgrades aren\'t available in the Android app.');
+      return;
+    }
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       setIntendedPage('premium');

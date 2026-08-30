@@ -14,6 +14,18 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="ShelTrify — Nigeria's Property &amp; Marketplace Platform">
     <meta name="twitter:description" content="Find homes, shortlets, land, building materials, and trusted local services all in one place.">
+
+    {{-- PWA / Android TWA --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#00B8B8">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="ShelTrify">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
     <title inertia>{{ config('app.name', 'ShelTrify') }}</title>
     @routes
     @viteReactRefresh

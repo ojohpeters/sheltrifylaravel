@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#0B1220"/>
+      <stop offset="60%"  stop-color="#07090F"/>
+      <stop offset="100%" stop-color="#04211F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.5" r="0.55">
+      <stop offset="0%"   stop-color="#00B8B8" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#00B8B8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#00D4D4"/>
+      <stop offset="100%" stop-color="#008A8A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <!-- Logo mark -->
+  <g transform="translate(96,170)">
+    <rect width="160" height="160" rx="38" fill="url(#mark)"/>
+    <g transform="translate(33,33) scale(3.9)" fill="none" stroke="#FFFFFF"
+       stroke-linejoin="round" stroke-linecap="round">
+      <path d="M3 9.5L12 2L21 9.5V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V9.5Z" stroke-width="2"/>
+      <path d="M12 18C13.1046 18 14 17.1046 14 16C14 14.8954 13.1046 14 12 14C10.8954 14 10 14.8954 10 16C10 17.1046 10.8954 18 12 18Z" stroke-width="1.6"/>
+      <path d="M12 14V11" stroke-width="2"/>
+    </g>
+  </g>
+
+  <!-- Wordmark + tagline -->
+  <g font-family="Liberation Sans, DejaVu Sans, sans-serif">
+    <text x="296" y="238" fill="#FFFFFF" font-size="76" font-weight="bold"
+          letter-spacing="-1.5">ShelTrify</text>
+    <text x="298" y="288" fill="#8FE3E3" font-size="27" font-weight="normal">
+      Property, marketplace &amp; trusted local services
+    </text>
+    <text x="298" y="330" fill="#5F7B96" font-size="23" font-weight="normal">
+      Homes &#183; Shortlets &#183; Land &#183; Materials &#183; Artisans
+    </text>
+  </g>
+
+  <!-- Accent rule -->
+  <rect x="298" y="352" width="118" height="5" rx="2.5" fill="#00B8B8"/>
+</svg>

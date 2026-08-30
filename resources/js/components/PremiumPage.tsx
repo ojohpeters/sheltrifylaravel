@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LogoIcon, CloseIcon, StarIcon, ShieldCheckIcon, TrendingUpIcon, UsersIcon, CreditCardIcon, ArrowPathIcon, CheckCircleIcon, ChevronLeftIcon } from './icons';
 import { userAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import { digitalPurchasesAllowed } from '../platform';
 
 interface PremiumPageProps {
   onClose?: () => void;
@@ -144,13 +145,23 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
           <p className="text-base md:text-lg text-light-text-secondary dark:text-dark-text-secondary mb-6 md:mb-8 max-w-2xl mx-auto">
             Join thousands of satisfied users who have found their perfect home faster with Premium. Upgrade now for just ₦5,000 for 10 months!
           </p>
+          {/* Premium is digital content. Google Play requires Play Billing for
+              it, so the purchase path is not offered in the Play build. */}
+          {!digitalPurchasesAllowed() && (
+            <div className="mb-6 mx-auto max-w-md rounded-lg border border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg p-4 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+              Premium upgrades aren't available in the Android app. If your account
+              already has Premium, all its benefits work here normally.
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="px-6 md:px-8 py-3 md:py-4 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary transition-colors font-semibold text-base md:text-lg"
-            >
-              Upgrade to Premium
-            </button>
+            {digitalPurchasesAllowed() && (
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="px-6 md:px-8 py-3 md:py-4 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary transition-colors font-semibold text-base md:text-lg"
+              >
+                Upgrade to Premium
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-6 md:px-8 py-3 md:py-4 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text-primary dark:text-dark-text-primary rounded-lg hover:bg-light-border dark:hover:bg-dark-border transition-colors font-semibold text-base md:text-lg"
@@ -195,7 +206,7 @@ const PremiumPage: React.FC<PremiumPageProps> = ({ onClose, onPremiumUpgrade }) 
       </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && (
+      {showPaymentModal && digitalPurchasesAllowed() && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
           <div className="relative bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-2xl w-full max-w-md p-8 text-light-text-primary dark:text-dark-text-primary">
             <button onClick={() => setShowPaymentModal(false)} className="absolute top-4 right-4 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">

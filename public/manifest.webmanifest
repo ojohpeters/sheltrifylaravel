@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "ShelTrify — Property & Marketplace",
+  "short_name": "ShelTrify",
+  "description": "Nigeria's trusted marketplace for property, homes, shortlets, land, building materials, tipper drivers, and local services.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090F",
+  "theme_color": "#00B8B8",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "shopping", "lifestyle"],
+  "icons": [
+    { "src": "/icons/icon-192.png",     "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png",     "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg",         "sizes": "any",     "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Marketplace",  "short_name": "Market", "url": "/marketplace",  "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Community",    "short_name": "Community", "url": "/community", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Feels",        "short_name": "Feels",  "url": "/feels",        "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
