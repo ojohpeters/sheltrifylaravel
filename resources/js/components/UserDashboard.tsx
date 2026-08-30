@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     CloseIcon, UserIcon, WalletIcon, BuildingStorefrontIcon, ShoppingCartIcon,
     StarIcon, TrendingUpIcon, PencilIcon, TrashIcon, PlusIcon, FilmIcon,
-    GlobeAltIcon, VideoCameraIcon, HeartIcon,
+    GlobeAltIcon, VideoCameraIcon, HeartIcon, CheckCircleIcon, UsersIcon,
 } from './icons';
 import {
     dashboardAPI, feelsAPI, rentalWahalaAPI, globalTalesAPI,
@@ -416,9 +416,24 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
     );
 
     const EmptyState: React.FC<{ label: string }> = ({ label }) => (
-        <div className="text-center py-10 text-light-text-secondary dark:text-dark-text-secondary">
-            <PlusIcon className="w-10 h-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No {label} yet. Create your first one!</p>
+        <div className="text-center py-16 px-6 rounded-2xl border border-dashed border-light-border dark:border-dark-border">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-primary/10 flex items-center justify-center">
+                <PlusIcon className="w-7 h-7 text-brand-primary" />
+            </div>
+            <p className="mt-4 font-semibold text-light-text-primary dark:text-dark-text-primary">
+                Nothing here yet
+            </p>
+            <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary max-w-sm mx-auto">
+                Your {label.toLowerCase()} will show up here once you add your first one.
+            </p>
+            {tabHasCreate && (
+                <button
+                    onClick={openCreate}
+                    className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-secondary transition-colors"
+                >
+                    <PlusIcon className="w-4 h-4" /> Add your first {singularOf(label).toLowerCase()}
+                </button>
+            )}
         </div>
     );
 
@@ -426,6 +441,15 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
 
     const tabHasCreate = !['overview', 'earnings'].includes(activeTab);
     const tabLabel = TABS.find(t => t.key === activeTab)?.label ?? '';
+
+    // "Rental Wahala" -> "Video", "Global Tales" -> "Story". Previously this
+    // ternary was written out at three call sites and had to agree at each.
+    function singularOf(label: string): string {
+        if (label === 'Rental Wahala') return 'Video';
+        if (label === 'Global Tales') return 'Story';
+        if (label === 'Community') return 'Post';
+        return label.replace(/s$/, '');
+    }
 
     const renderTabContent = () => {
         if (tabLoading) {
@@ -634,62 +658,118 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
             </div>
 
             <div className="container mx-auto px-4 py-6 md:py-12 max-w-5xl">
-                {/* Desktop header */}
-                <div className="hidden lg:flex items-center justify-between mb-6 pb-4 border-b border-light-border dark:border-dark-border">
-                    <h2 className="text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">My Dashboard</h2>
+                {/* ── Hero ──────────────────────────────────────────────── */}
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B1524] via-[#07090F] to-[#042A28] p-6 sm:p-8">
+                    {/* Decorative wash, pushed behind content and non-interactive. */}
+                    <div aria-hidden="true"
+                         className="pointer-events-none absolute -right-16 -top-16 w-64 h-64 rounded-full bg-brand-primary/20 blur-3xl" />
+
                     {onClose && (
-                        <button onClick={onClose} className="text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">
+                        <button onClick={onClose} aria-label="Close dashboard"
+                                className="absolute top-5 right-5 text-white/50 hover:text-white transition-colors">
                             <CloseIcon className="w-6 h-6" />
                         </button>
                     )}
-                </div>
 
-                <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-lg overflow-hidden">
-                    {/* Profile strip */}
-                    <div className="border-b border-light-border dark:border-dark-border px-6 py-4 flex items-center gap-4">
+                    <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
                         {user?.avatarUrl
-                            ? <img src={user.avatarUrl} alt={user.fullName} className="w-12 h-12 rounded-full object-cover" />
-                            : <div className="w-12 h-12 rounded-full bg-brand-primary/10 flex items-center justify-center"><UserIcon className="w-6 h-6 text-brand-primary" /></div>}
-                        <div>
-                            <p className="font-bold text-light-text-primary dark:text-dark-text-primary">{user?.fullName || 'User'}</p>
-                            <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">{getRoleDisplayName(user?.role || 'SEEKER')} · {user?.email}</p>
+                            ? <img src={user.avatarUrl} alt={user.fullName}
+                                   className="w-20 h-20 rounded-2xl object-cover ring-2 ring-white/15 flex-shrink-0" />
+                            : <div className="w-20 h-20 rounded-2xl bg-white/10 ring-2 ring-white/15 flex items-center justify-center flex-shrink-0">
+                                  <UserIcon className="w-9 h-9 text-white/70" />
+                              </div>}
+
+                        <div className="min-w-0 flex-1">
+                            <p className="text-white/50 text-sm">Welcome back,</p>
+                            <h2 className="text-2xl sm:text-3xl font-bold text-white truncate">
+                                {user?.fullName || 'User'}
+                            </h2>
+
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/85 text-xs font-semibold">
+                                    {getRoleDisplayName(user?.role || 'SEEKER')}
+                                </span>
+                                {user?.isVerified && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-400/15 text-emerald-300 text-xs font-semibold">
+                                        <CheckCircleIcon className="w-3.5 h-3.5" /> Verified
+                                    </span>
+                                )}
+                                {user?.isPremium && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-400/15 text-yellow-300 text-xs font-semibold">
+                                        <StarIcon className="w-3.5 h-3.5" /> Premium
+                                    </span>
+                                )}
+                            </div>
+
+                            <p className="mt-2 text-xs text-white/40 truncate">{user?.email}</p>
                         </div>
                     </div>
+                </div>
 
-                    {/* Tabs — horizontally scrollable on mobile */}
-                    <div className="flex overflow-x-auto border-b border-light-border dark:border-dark-border scrollbar-hide">
-                        {TABS.map(t => (
-                            <button
-                                key={t.key}
-                                onClick={() => setActiveTab(t.key)}
-                                className={`shrink-0 px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors ${
-                                    activeTab === t.key
-                                        ? 'text-brand-primary border-b-2 border-brand-primary bg-brand-primary/5'
-                                        : 'text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary'
-                                }`}
-                            >
-                                {t.label}
-                            </button>
+                {/* ── Stats. Kept outside the tab panel so they stay visible
+                       wherever the user is, instead of only on Overview. ──── */}
+                {stats?.stats && (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-4">
+                        {[
+                            { label: 'Active listings', value: String(stats.stats.activeListings ?? 0),
+                              icon: <BuildingStorefrontIcon className="w-4 h-4" />, tone: 'text-blue-500' },
+                            { label: 'Wallet', value: `${Number(stats.stats.walletBalance ?? 0).toLocaleString()} SWC`,
+                              icon: <WalletIcon className="w-4 h-4" />, tone: 'text-purple-500' },
+                            { label: 'Referrals', value: String(stats.stats.referrals ?? 0),
+                              icon: <UsersIcon className="w-4 h-4" />, tone: 'text-brand-primary' },
+                            { label: 'Total earnings', value: formatCurrency(stats.stats.totalEarnings ?? 0),
+                              icon: <TrendingUpIcon className="w-4 h-4" />, tone: 'text-emerald-500' },
+                        ].map(c => (
+                            <div key={c.label}
+                                 className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-4">
+                                <div className={`flex items-center gap-1.5 ${c.tone}`}>
+                                    {c.icon}
+                                    <span className="text-[11px] font-semibold tracking-wide uppercase">{c.label}</span>
+                                </div>
+                                <p className="mt-1.5 text-xl sm:text-2xl font-bold text-light-text-primary dark:text-dark-text-primary truncate">
+                                    {c.value}
+                                </p>
+                            </div>
                         ))}
                     </div>
+                )}
 
-                    {/* Tab content */}
-                    <div className="p-4 md:p-6 max-h-[65vh] overflow-y-auto">
-                        {/* Create button */}
-                        {tabHasCreate && (
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-light-text-primary dark:text-dark-text-primary">My {tabLabel}</h3>
-                                <button
-                                    onClick={openCreate}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-primary text-white rounded-lg text-sm font-semibold hover:bg-brand-secondary transition-colors"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                    New {tabLabel === 'Rental Wahala' ? 'Video' : tabLabel === 'Global Tales' ? 'Story' : tabLabel === 'Community' ? 'Post' : tabLabel.replace(/s$/, '')}
-                                </button>
-                            </div>
-                        )}
-                        {renderTabContent()}
-                    </div>
+                {/* ── Tabs ──────────────────────────────────────────────── */}
+                <div className="mt-6 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                    {TABS.map(t => (
+                        <button
+                            key={t.key}
+                            onClick={() => setActiveTab(t.key)}
+                            aria-current={activeTab === t.key ? 'page' : undefined}
+                            className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors ${
+                                activeTab === t.key
+                                    ? 'bg-brand-primary text-white shadow-sm'
+                                    : 'bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary'
+                            }`}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* ── Panel. No inner scroll container: the old max-h-[65vh]
+                       trapped content in a second scrollbar on short screens. ── */}
+                <div className="mt-4 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-4 sm:p-6">
+                    {tabHasCreate && (
+                        <div className="flex justify-between items-center gap-3 mb-5">
+                            <h3 className="font-bold text-lg text-light-text-primary dark:text-dark-text-primary">
+                                My {tabLabel}
+                            </h3>
+                            <button
+                                onClick={openCreate}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-brand-primary text-white rounded-xl text-sm font-semibold hover:bg-brand-secondary transition-colors flex-shrink-0"
+                            >
+                                <PlusIcon className="w-4 h-4" />
+                                New {singularOf(tabLabel)}
+                            </button>
+                        </div>
+                    )}
+                    {renderTabContent()}
                 </div>
             </div>
 
@@ -700,7 +780,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
                         {/* Modal header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-light-border dark:border-dark-border">
                             <h3 className="font-bold text-light-text-primary dark:text-dark-text-primary">
-                                {modalMode === 'create' ? 'Create New' : 'Edit'} {tabLabel === 'Rental Wahala' ? 'Video' : tabLabel === 'Global Tales' ? 'Story' : tabLabel === 'Community' ? 'Post' : tabLabel.replace(/s$/, '')}
+                                {modalMode === 'create' ? 'Create New' : 'Edit'} {singularOf(tabLabel)}
                             </h3>
                             <button onClick={() => setModalOpen(false)} className="text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">
                                 <CloseIcon className="w-5 h-5" />
