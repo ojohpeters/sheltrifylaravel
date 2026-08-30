@@ -1,32 +1,33 @@
-import React, { useState, createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { useState, useEffect, useContext, createContext, lazy, Suspense, type ReactNode } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import LandingPage from './components/LandingPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import { AuthModal, ProfileModal } from './components/AuthModal';
-import ChatPage from './components/ChatPage';
+const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
+const ProfileModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.ProfileModal })));
+const ChatPage = lazy(() => import('./components/ChatPage'));
 // VideoAssistant disabled — Live API requires direct WebSocket; re-enable when a server-side proxy is available
 // import VideoAssistant from './components/VideoAssistant';
-import CommunityPage from './components/CommunityPage';
-import WalletPage from './components/WalletPage';
-import MarketplacePage from './components/MarketplacePage';
-import ArtisansPage from './components/ArtisansPage';
-import ReferralsPage from './components/ReferralsPage';
-import FeelsPage from './components/FeelsPage';
-import RentalWahalaPage from './components/RentalWahalaPage';
-import AdminDashboard from './components/AdminDashboard';
-import { UserDashboard } from './components/UserDashboard';
-import NotificationsPage from './components/NotificationsPage';
-import ProductDetailPage from './components/ProductDetailPage';
-import ListingDashboardPage from './components/ListingDashboardPage';
-import ProfessionalProfilePage from './components/ProfessionalProfilePage';
-import PaymentVerifyPage from './components/PaymentVerifyPage';
-import CartPage from './components/CartPage';
-import GlobalTalesPage from './components/GlobalTalesPage';
-import AboutPage from './components/AboutPage';
-import ContactPage from './components/ContactPage';
-import PremiumPage from './components/PremiumPage';
-import ProfilePage from './components/ProfilePage';
+const CommunityPage = lazy(() => import('./components/CommunityPage'));
+const WalletPage = lazy(() => import('./components/WalletPage'));
+const MarketplacePage = lazy(() => import('./components/MarketplacePage'));
+const ArtisansPage = lazy(() => import('./components/ArtisansPage'));
+const ReferralsPage = lazy(() => import('./components/ReferralsPage'));
+const FeelsPage = lazy(() => import('./components/FeelsPage'));
+const RentalWahalaPage = lazy(() => import('./components/RentalWahalaPage'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const UserDashboard = lazy(() => import('./components/UserDashboard').then(m => ({ default: m.UserDashboard })));
+const NotificationsPage = lazy(() => import('./components/NotificationsPage'));
+const ProductDetailPage = lazy(() => import('./components/ProductDetailPage'));
+const ListingDashboardPage = lazy(() => import('./components/ListingDashboardPage'));
+const ProfessionalProfilePage = lazy(() => import('./components/ProfessionalProfilePage'));
+const PaymentVerifyPage = lazy(() => import('./components/PaymentVerifyPage'));
+const CartPage = lazy(() => import('./components/CartPage'));
+const GlobalTalesPage = lazy(() => import('./components/GlobalTalesPage'));
+const AboutPage = lazy(() => import('./components/AboutPage'));
+const ContactPage = lazy(() => import('./components/ContactPage'));
+const PremiumPage = lazy(() => import('./components/PremiumPage'));
+const ProfilePage = lazy(() => import('./components/ProfilePage'));
 import BottomNav from './components/BottomNav';
 import { Property } from './types';
 import { authAPI } from './services/api';
@@ -145,6 +146,20 @@ const HASH_TO_PATH: Record<string, string> = {
   notifications: '/notifications',
   productDetail: '/product',
 };
+
+/** Shown while a route's chunk downloads. Mirrors the page rhythm so the
+ *  layout does not jump when the real content lands. */
+const PageFallback: React.FC = () => (
+  <div className="animate-pulse space-y-4 py-8" aria-busy="true" aria-label="Loading page">
+    <div className="h-8 w-1/3 rounded-lg bg-light-card dark:bg-dark-card" />
+    <div className="h-4 w-2/3 rounded bg-light-card dark:bg-dark-card" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+      {[0, 1, 2, 3, 4, 5].map(i => (
+        <div key={i} className="h-44 rounded-2xl bg-light-card dark:bg-dark-card" />
+      ))}
+    </div>
+  </div>
+);
 
 const AppContent: React.FC = () => {
   const { view, auth, cartCount } = usePage<ShellPageProps>().props;
@@ -438,6 +453,10 @@ const AppContent: React.FC = () => {
           onLogoutClick={() => void handleLogout()}
         />
         <main className="flex-grow max-w-screen-xl mx-auto px-4 sm:px-6 py-6 md:py-10 overflow-x-hidden w-full pb-nav page-enter">
+          {/* Pages are code-split, so each one arrives as its own chunk on
+              first visit. The fallback keeps the frame stable rather than
+              collapsing the layout while a chunk downloads. */}
+          <Suspense fallback={<PageFallback />}>
           {currentPage === 'landing' && <LandingPage onStartChatting={() => navigateTo('chat')} onTalkToAnna={() => setIsVideoAssistantOpen(true)} onPremiumUpgrade={handlePremiumUpgrade} />}
           {currentPage === 'chat' && (
             <ChatPage 
@@ -563,6 +582,7 @@ const AppContent: React.FC = () => {
             <ProfessionalProfilePage currentUser={currentUser} />
           )}
           {currentPage === 'paymentVerify' && <PaymentVerifyPage />}
+          </Suspense>
         </main>
         <Footer page={currentPage} />
       </div>
