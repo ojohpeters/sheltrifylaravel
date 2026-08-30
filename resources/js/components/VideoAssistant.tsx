@@ -461,7 +461,7 @@ const VideoAssistant: React.FC<VideoAssistantProps> = ({ onClose }) => {
 
 **ShelTrify Service Categories (Your Knowledge Base):**
 You MUST keep the conversation focused on these services.
-- **Residential & Commercial Properties:** Houses, hotels, offices, business premises, short lets, student hostels.
+- **Residential & Commercial Properties:** Houses, offices, business premises, short lets, student hostels.
 - **Booking & Logistics:** Transport booking, event venues, trip planning.
 - **Financial Services:** Rent-to-own plans, rent loans, investment deals.
 - **Platform Features:** The ShelTrify Wallet, Marketplace, Feels & Rental Wahala feeds, Premium subscription.

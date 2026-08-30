@@ -222,15 +222,13 @@ const PropertyCard: React.FC<{
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-3">
-                    {property.propertyType?.toLowerCase() !== 'hotel' && (
-                        <button 
-                            onClick={(e) => handleButtonClick(e, () => onRequestVirtualTour(property.title))}
-                            className="bg-light-border dark:bg-dark-border text-light-text-primary dark:text-dark-text-primary text-xs font-semibold py-2 px-2 rounded-lg hover:bg-opacity-80 dark:hover:bg-opacity-80 transition-all flex items-center justify-center gap-1"
-                        >
-                            <VideoCameraIcon className="w-4 h-4" />
-                            Virtual Tour
-                        </button>
-                    )}
+                    <button 
+                        onClick={(e) => handleButtonClick(e, () => onRequestVirtualTour(property.title))}
+                        className="bg-light-border dark:bg-dark-border text-light-text-primary dark:text-dark-text-primary text-xs font-semibold py-2 px-2 rounded-lg hover:bg-opacity-80 dark:hover:bg-opacity-80 transition-all flex items-center justify-center gap-1"
+                    >
+                        <VideoCameraIcon className="w-4 h-4" />
+                        Virtual Tour
+                    </button>
                     <button 
                         onClick={(e) => handleButtonClick(e, () => onToggleFavorite(property))}
                         className={`text-xs font-semibold py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1 ${property.isFavorite ? 'bg-red-500/10 text-red-500' : 'bg-light-border dark:bg-dark-border text-light-text-primary dark:text-dark-text-primary hover:bg-opacity-80 dark:hover:bg-opacity-80'}`}

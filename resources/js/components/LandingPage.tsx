@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     CheckCircleIcon, UserIcon, ChevronRightIcon,
     VideoCameraIcon, ChevronLeftIcon,
-    ResidentialHouseIcon, HotelIcon, OfficeIcon, BusinessIcon,
+    ResidentialHouseIcon, OfficeIcon, BusinessIcon,
     EventVenueIcon, StudentHostelIcon, SmartHomeIcon,
     RentToOwnIcon, TripPlannerIcon, RoadNavigationIcon,
     BuildingStorefrontIcon, DocumentTextIcon, UsersIcon, GlobeAltIcon,
@@ -153,7 +153,7 @@ const CORE_SERVICES = [
     {
         title: 'Pay-Forward',
         tagline: 'Send & Receive Money Instantly',
-        bullets: ['Low fees, instant alerts, built for Benue businesses'],
+        bullets: ['Low fees and instant alerts, built for Nigerian businesses'],
         cta: 'Send Money',
         href: '/wallet',
         icon: CreditCardIcon,
@@ -171,10 +171,7 @@ const CORE_SERVICES = [
     {
         title: 'SCAWA',
         tagline: 'Sheltrify Capacity Advancement',
-        bullets: [
-            'Free live training every Saturday, 8:30\u20139:30 PM',
-            'Practical AI and digital skills, open to everyone in Benue',
-        ],
+        bullets: ['Learn AI, Data Analytics, Engineering and Software development.'],
         cta: 'Join Session',
         href: '/community',
         icon: LightbulbIcon,
@@ -192,7 +189,7 @@ const CoreServices: React.FC = () => {
                         Sheltrify Group
                     </h2>
                     <p className="mt-2 text-light-text-secondary dark:text-dark-text-secondary">
-                        Building Benue, One Service at a Time
+                        Building Nigeria, One Service at a Time
                     </p>
                 </div>
 
@@ -243,7 +240,6 @@ const CoreServices: React.FC = () => {
 const ServiceShowcase: React.FC = () => {
     const services = [
         { title: 'Residential House', description: 'Find your long-term home, from duplexes to flats.', icon: <ResidentialHouseIcon className="w-12 h-12" /> },
-        { title: 'Hotels & Guest Houses', description: 'Book short-term stays for travel or leisure.', icon: <HotelIcon className="w-12 h-12" /> },
         { title: 'Office Space', description: 'Secure the perfect workspace for your business.', icon: <OfficeIcon className="w-12 h-12" /> },
         { title: 'Business Premises', description: 'Retail, warehouse, or commercial spaces.', icon: <BusinessIcon className="w-12 h-12" /> },
         { title: 'Event Venue', description: 'Find the ideal space for any occasion.', icon: <EventVenueIcon className="w-12 h-12" /> },

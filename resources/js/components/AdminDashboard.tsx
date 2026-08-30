@@ -2088,7 +2088,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   >
                     <option value="">Select type</option>
                     <option value="RESIDENTIAL_HOUSE">Residential House</option>
-                    <option value="HOTEL">Hotel</option>
                     <option value="OFFICE_SPACE">Office Space</option>
                     <option value="APARTMENT">Apartment</option>
                     <option value="DUPLEX">Duplex</option>
@@ -2396,7 +2395,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   >
                     <option value="">Select type</option>
                     <option value="RESIDENTIAL_HOUSE">Residential House</option>
-                    <option value="HOTEL">Hotel</option>
                     <option value="OFFICE_SPACE">Office Space</option>
                     <option value="APARTMENT">Apartment</option>
                     <option value="DUPLEX">Duplex</option>

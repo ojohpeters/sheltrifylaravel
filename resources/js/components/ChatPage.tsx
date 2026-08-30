@@ -8,7 +8,6 @@ import {
     FilterIcon,
     ChartBarIcon,
     ResidentialHouseIcon, 
-    HotelIcon, 
     OfficeIcon, 
     BusinessIcon, 
     ShortLetIcon, 
@@ -24,7 +23,6 @@ import { Property, FilterValues } from '../types';
 
 const services = [
     { title: 'House', fullTitle: 'Residential House', icon: <ResidentialHouseIcon className="w-7 h-7" /> },
-    { title: 'Hotel', fullTitle: 'Hotel/Motel/Guest Houses', icon: <HotelIcon className="w-7 h-7" /> },
     { title: 'Office', fullTitle: 'Office Space', icon: <OfficeIcon className="w-7 h-7" /> },
     { title: 'Business', fullTitle: 'Business Premises', icon: <BusinessIcon className="w-7 h-7" /> },
     { title: 'Venue', fullTitle: 'Event Venue', icon: <EventVenueIcon className="w-7 h-7" /> },

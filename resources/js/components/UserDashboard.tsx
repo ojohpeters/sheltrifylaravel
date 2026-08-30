@@ -41,7 +41,7 @@ const MARKETPLACE_CATEGORIES = [
 
 const GLOBAL_TALES_CATEGORIES = ['travel','finance','real_estate','lifestyle','technology','culture','other'];
 const COMMUNITY_CATEGORIES = ['general','advice','listings','market','rental','investment'];
-const PROPERTY_TYPES = ['Apartment','Duplex','Bungalow','Self-contain','Office Space','Land','Hotel','Shortlet'];
+const PROPERTY_TYPES = ['Apartment','Duplex','Bungalow','Self-contain','Office Space','Land','Shortlet'];
 
 // ── empty form factory ────────────────────────────────────────────────────────
 

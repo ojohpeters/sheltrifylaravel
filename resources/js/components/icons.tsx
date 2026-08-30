@@ -242,13 +242,6 @@ export const ResidentialHouseIcon: React.FC<{ className?: string }> = ({ classNa
         <path d="M24 44H40V56H24V44Z" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
 );
-export const HotelIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 54V12C10 10.8954 10.8954 10 12 10H52C53.1046 10 54 10.8954 54 12V54" stroke="currentColor" className="text-brand-secondary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M10 54H54" stroke="currentColor" className="text-brand-secondary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M22 22H26" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M38 22H42" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 32H26" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M38 32H42" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 42H42" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-);
 export const OfficeIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M18 10H46V54H18V10Z" stroke="currentColor" className="text-brand-secondary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /><path d="M32 54V10" stroke="currentColor" className="text-brand-secondary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /><path d="M25 18H39" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /><path d="M25 28H39" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /><path d="M25 38H39" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /><path d="M25 48H39" stroke="currentColor" className="text-brand-primary" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
