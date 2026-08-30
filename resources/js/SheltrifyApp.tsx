@@ -11,6 +11,7 @@ import CommunityPage from './components/CommunityPage';
 import WalletPage from './components/WalletPage';
 import MarketplacePage from './components/MarketplacePage';
 import ArtisansPage from './components/ArtisansPage';
+import ReferralsPage from './components/ReferralsPage';
 import FeelsPage from './components/FeelsPage';
 import RentalWahalaPage from './components/RentalWahalaPage';
 import AdminDashboard from './components/AdminDashboard';
@@ -83,7 +84,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'artisans' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'artisans' | 'referrals' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
 
 type ShellPageProps = {
   view: Page;
@@ -98,6 +99,7 @@ const URL_BY_PAGE: Record<Page, string> = {
   wallet: '/wallet',
   marketplace: '/marketplace',
   artisans: '/artisans',
+  referrals: '/referrals',
   feels: '/feels',
   rentalWahala: '/rental-wahala',
   paymentVerify: '/payments/verify',
@@ -122,6 +124,7 @@ const HASH_TO_PATH: Record<string, string> = {
   wallet: '/wallet',
   marketplace: '/marketplace',
   artisans: '/artisans',
+  referrals: '/referrals',
   feels: '/feels',
   rentalWahala: '/rental-wahala',
   paymentVerify: '/payments/verify',
@@ -422,6 +425,7 @@ const AppContent: React.FC = () => {
           onWalletClick={() => navigateTo('wallet')}
           onMarketplaceClick={() => navigateTo('marketplace')}
           onArtisansClick={() => navigateTo('artisans')}
+          onReferralsClick={() => navigateTo('referrals')}
           onFeelsClick={() => navigateTo('feels')}
           onRentalWahalaClick={() => navigateTo('rentalWahala')}
           onGlobalTalesClick={() => navigateTo('globalTales')}
@@ -469,6 +473,7 @@ const AppContent: React.FC = () => {
               currentUser={currentUser}
             />
           )}
+          {currentPage === 'referrals' && <ReferralsPage currentUser={currentUser} />}
           {currentPage === 'artisans' && (
             <ArtisansPage
               isAuthenticated={isAuthenticated}

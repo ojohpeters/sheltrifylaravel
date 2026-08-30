@@ -84,25 +84,39 @@ const BottomNav: React.FC<BottomNavProps> = ({
         setShowMore(false);
     };
 
+    // Signed out, the Wallet slot is a login wall, so it gives way to Artisans —
+    // a page a visitor can actually use. Signed in, Artisans lives in Explore.
+    const EXPLORE_PAGES = ['artisans', 'community', 'feels', 'rentalWahala', 'globalTales',
+        'premium', 'about', 'contact', 'userDashboard', 'adminDashboard', 'profile'];
+
     const tabs = [
-        { id: 'landing',     label: 'Home',      Icon: HomeIcon,   active: currentPage === 'landing' },
-        { id: 'chat',        label: 'Chat',       Icon: ChatIcon,   active: currentPage === 'chat' },
-        { id: 'marketplace', label: 'Store',      Icon: StoreIcon,  active: currentPage === 'marketplace' },
-        { id: 'wallet',      label: 'Wallet',     Icon: WalletIcon, active: currentPage === 'wallet' },
-        { id: 'more',        label: 'Explore',    Icon: GridIcon,   active: showMore || ['artisans','community','feels','rentalWahala','globalTales','premium','about','contact','userDashboard','adminDashboard','profile'].includes(currentPage) },
+        { id: 'landing',     label: 'Home',    Icon: HomeIcon,   active: currentPage === 'landing' },
+        { id: 'chat',        label: 'Chat',    Icon: ChatIcon,   active: currentPage === 'chat' },
+        { id: 'marketplace', label: 'Store',   Icon: StoreIcon,  active: currentPage === 'marketplace' },
+        isAuthenticated
+            ? { id: 'wallet',   label: 'Wallet',   Icon: WalletIcon, active: currentPage === 'wallet' }
+            : { id: 'artisans', label: 'Artisans', Icon: WalletIcon, active: currentPage === 'artisans' },
+        { id: 'more',        label: 'Explore', Icon: GridIcon,
+          active: showMore || EXPLORE_PAGES.filter(p => isAuthenticated || p !== 'artisans').includes(currentPage) },
     ] as const;
 
+    // Account-only destinations are hidden rather than shown-then-blocked: a
+    // signed-out visitor tapping "My Dashboard" only to hit a login wall reads
+    // as broken, not as an invitation.
     const moreItems: MoreItem[] = [
-        { label: 'Local Artisans',  emoji: '🔧', page: 'artisans' },
-        { label: 'Community',       emoji: '💬', page: 'community' },
-        { label: 'Feels',           emoji: '🎬', page: 'feels' },
-        { label: 'Rental Wahala',   emoji: '😤', page: 'rentalWahala' },
-        { label: 'Global Tales',    emoji: '📖', page: 'globalTales' },
-        { label: 'Premium',         emoji: '⭐', page: 'premium' },
-        { label: 'My Dashboard',    emoji: '📊', page: 'userDashboard' },
-        { label: 'My Profile',      emoji: '👤', page: 'profile' },
-        { label: 'About',           emoji: 'ℹ️',  page: 'about' },
-        { label: 'Contact',         emoji: '✉️',  page: 'contact' },
+        ...(isAuthenticated ? [{ label: 'Local Artisans', emoji: '🔧', page: 'artisans' as const }] : []),
+        ...(isAuthenticated ? [
+            { label: 'Community',     emoji: '💬', page: 'community' as const },
+            { label: 'Feels',         emoji: '🎬', page: 'feels' as const },
+            { label: 'Rental Wahala', emoji: '😤', page: 'rentalWahala' as const },
+            { label: 'Global Tales',  emoji: '📖', page: 'globalTales' as const },
+            { label: 'Referrals',     emoji: '🎁', page: 'referrals' as const },
+            { label: 'Premium',       emoji: '⭐', page: 'premium' as const },
+            { label: 'My Dashboard',  emoji: '📊', page: 'userDashboard' as const },
+            { label: 'My Profile',    emoji: '👤', page: 'profile' as const },
+        ] : []),
+        { label: 'About',   emoji: 'ℹ️', page: 'about' as const },
+        { label: 'Contact', emoji: '✉️', page: 'contact' as const },
         ...(!isAuthenticated
             ? [{ label: 'Log In', emoji: '🔑', fn: () => { setShowMore(false); onLoginClick(); } }]
             : [{ label: 'Sign Out', emoji: '🚪', danger: true, fn: () => { setShowMore(false); onNavigate('landing'); } }]

@@ -106,6 +106,60 @@
     @inertiaHead
 </head>
 <body class="antialiased">
+
+{{-- Boot splash. Painted by the server before any JavaScript runs, so the
+     window is branded instead of blank while the bundle downloads — the gap is
+     most visible in the Android app, right after the TWA splash hands over, and
+     on a slow mobile connection. Removed by app.tsx once React mounts, with a
+     CSS-only fallback so a JS failure cannot leave it covering the page. --}}
+<style>
+    #app-boot {
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 18px; background: #EEF2F7;
+        transition: opacity .35s ease;
+    }
+    #app-boot.is-done { opacity: 0; pointer-events: none; }
+    /* Failsafe: if the bundle never executes — blocked script, parse error, dead
+       network — this retires the splash anyway. A spinner that spins forever
+       reads as a hung app; whatever is underneath is more honest. */
+    #app-boot { animation: boot-failsafe 1s ease 15s forwards; }
+    @keyframes boot-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+    @media (prefers-color-scheme: dark) { #app-boot { background: #07090F; } }
+    #app-boot .mark {
+        width: 68px; height: 68px; border-radius: 18px;
+        background: linear-gradient(135deg, #00D4D4, #008A8A);
+        display: flex; align-items: center; justify-content: center;
+        animation: boot-pulse 1.6s ease-in-out infinite;
+    }
+    #app-boot .ring {
+        width: 26px; height: 26px; border-radius: 50%;
+        border: 2.5px solid rgba(0,184,184,.25); border-top-color: #00B8B8;
+        animation: boot-spin .8s linear infinite;
+    }
+    #app-boot .word {
+        font: 600 14px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        letter-spacing: .14em; text-transform: uppercase; color: #8B9EC7;
+    }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @keyframes boot-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+    @media (prefers-reduced-motion: reduce) {
+        #app-boot .mark, #app-boot .ring { animation: none; }
+    }
+</style>
+<div id="app-boot" role="status" aria-live="polite" aria-label="Loading ShelTrify">
+    <div class="mark">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff"
+             stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+            <path d="M3 9.5L12 2L21 9.5V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V9.5Z" stroke-width="2"/>
+            <path d="M12 18C13.1046 18 14 17.1046 14 16C14 14.8954 13.1046 14 12 14C10.8954 14 10 14.8954 10 16C10 17.1046 10.8954 18 12 18Z" stroke-width="1.6"/>
+            <path d="M12 14V11" stroke-width="2"/>
+        </svg>
+    </div>
+    <div class="ring"></div>
+    <div class="word">ShelTrify</div>
+</div>
+
 @inertia
 </body>
 </html>

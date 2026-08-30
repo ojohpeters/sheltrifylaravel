@@ -147,7 +147,7 @@ const CORE_SERVICES = [
         tagline: 'Find Trusted Artisans in 5 Minutes',
         bullets: ['Plumbers, electricians, painters near you in Makurdi'],
         cta: 'Hire Now',
-        href: '/marketplace',
+        href: '/artisans',
         icon: HammerIcon,
     },
     {

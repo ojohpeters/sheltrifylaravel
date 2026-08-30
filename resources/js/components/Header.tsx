@@ -15,6 +15,7 @@ interface HeaderProps {
     onWalletClick: () => void;
     onMarketplaceClick: () => void;
     onArtisansClick: () => void;
+    onReferralsClick?: () => void;
     onFeelsClick: () => void;
     onRentalWahalaClick: () => void;
     onGlobalTalesClick?: () => void;
@@ -62,7 +63,7 @@ const NavLink: React.FC<{ label: string; onClick: () => void; active?: boolean }
 
 const Header: React.FC<HeaderProps> = ({
     isAuthenticated, currentUser, isAdmin, cartCount = 0, currentPage,
-    onLogoClick, onChatClick, onCommunityClick, onWalletClick, onMarketplaceClick, onArtisansClick,
+    onLogoClick, onChatClick, onCommunityClick, onWalletClick, onMarketplaceClick, onArtisansClick, onReferralsClick,
     onFeelsClick, onRentalWahalaClick, onGlobalTalesClick, onAboutClick, onContactClick,
     onPremiumClick, onProfileClick, onDashboardClick, onNotificationsClick, onAdminClick, onCartClick,
     onLoginClick, onSignupClick, onLogoutClick,
@@ -109,6 +110,7 @@ const Header: React.FC<HeaderProps> = ({
     const authItems = isAuthenticated
         ? [
             { label: 'My Dashboard', fn: () => { close(); onDashboardClick?.(); }, danger: false },
+            { label: 'Referrals',    fn: () => { close(); onReferralsClick?.(); },  danger: false },
             { label: 'Sign Out',     fn: () => { close(); onLogoutClick?.(); },    danger: true  },
           ]
         : [
@@ -149,11 +151,13 @@ const Header: React.FC<HeaderProps> = ({
                     {/* ── Desktop Nav ──────────────────────────────────── */}
                     <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center" aria-label="Main navigation">
                         <NavLink label="Chat" onClick={onChatClick} active={currentPage === 'chat'} />
-                        <NavLink label="Community" onClick={onCommunityClick} active={currentPage === 'community'} />
                         <NavLink label="Marketplace" onClick={onMarketplaceClick} active={currentPage === 'marketplace'} />
                         <NavLink label="Artisans" onClick={onArtisansClick} active={currentPage === 'artisans'} />
-                        <NavLink label="Wallet" onClick={onWalletClick} active={currentPage === 'wallet'} />
-                        <NavLink label="Feels" onClick={onFeelsClick} active={currentPage === 'feels'} />
+                        {isAuthenticated && <>
+                            <NavLink label="Community" onClick={onCommunityClick} active={currentPage === 'community'} />
+                            <NavLink label="Wallet" onClick={onWalletClick} active={currentPage === 'wallet'} />
+                            <NavLink label="Feels" onClick={onFeelsClick} active={currentPage === 'feels'} />
+                        </>}
                     </nav>
 
                     {/* ── Right Actions ─────────────────────────────────── */}
@@ -247,24 +251,6 @@ const Header: React.FC<HeaderProps> = ({
                             {isMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-52 origin-top-right animate-slide-down">
                                     <div className="glass dark:glass rounded-2xl shadow-card-lg overflow-hidden">
-                                        {/* Mobile-only quick links */}
-                                        <div className="lg:hidden px-3 pt-3 pb-1.5 space-y-0.5">
-                                            <p className="px-2 py-1 text-[10px] font-semibold tracking-widest uppercase text-light-text-muted dark:text-dark-text-muted">Navigate</p>
-                                            {[
-                                                { label: 'Chat',        fn: () => { close(); onChatClick(); } },
-                                                { label: 'Community',   fn: () => { close(); onCommunityClick(); } },
-                                                { label: 'Marketplace', fn: () => { close(); onMarketplaceClick(); } },
-                                                { label: 'Artisans',    fn: () => { close(); onArtisansClick(); } },
-                                                { label: 'Wallet',      fn: () => { close(); onWalletClick(); } },
-                                            ].map(item => (
-                                                <button key={item.label} onClick={item.fn}
-                                                    className="w-full text-left px-3 py-2 text-sm font-medium rounded-xl text-light-text-primary dark:text-dark-text-primary hover:bg-brand-primary/10 hover:text-brand-primary transition-all"
-                                                >
-                                                    {item.label}
-                                                </button>
-                                            ))}
-                                        </div>
-
                                         {/* Secondary nav */}
                                         <div className="px-3 pt-1.5 pb-1.5 space-y-0.5">
                                             <p className="px-2 py-1 text-[10px] font-semibold tracking-widest uppercase text-light-text-muted dark:text-dark-text-muted">More</p>
