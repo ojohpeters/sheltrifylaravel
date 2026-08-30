@@ -71,7 +71,9 @@ const Lightbox: React.FC<{
             aria-modal="true"
             aria-label={`${alt}${many ? `, image ${index + 1} of ${images.length}` : ''}`}
             tabIndex={-1}
-            className="fixed inset-0 z-[100] bg-black/95 flex flex-col outline-none"
+            // Height comes from the global `.fixed.inset-0` dvh rule in
+            // sheltrify.css — see the note there on the mobile layout viewport.
+            className="fixed inset-0 z-[100] bg-black/95 flex flex-col outline-none overscroll-contain"
             onClick={onClose}
             onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
             onTouchEnd={e => {

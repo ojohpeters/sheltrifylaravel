@@ -162,7 +162,7 @@ const StorySlide: React.FC<{
                 )}
 
                 {/* Content card */}
-                <div className="relative z-10 w-full max-w-3xl px-4 sm:px-6 py-16 md:py-20 flex flex-col h-full">
+                <div className="relative z-10 w-full max-w-3xl px-4 sm:px-6 py-10 sm:py-16 md:py-20 flex flex-col justify-center max-h-full">
                     {/* Header */}
                     <div className="mb-4 sm:mb-6 flex items-center gap-3 text-white">
                         <img
@@ -180,7 +180,7 @@ const StorySlide: React.FC<{
                     </div>
 
                     {/* Scrollable text area */}
-                    <div className="flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 custom-scroll">
+                    <div className="min-h-0 overflow-y-auto pr-1 sm:pr-2 custom-scroll">
                         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-white">
                             {story.title}
                         </h2>

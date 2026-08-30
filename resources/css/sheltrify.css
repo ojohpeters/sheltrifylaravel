@@ -380,3 +380,22 @@ button, a, input, textarea, select {
   padding-bottom: calc(var(--bottom-nav-h) + var(--safe-b));
   animation: sheet-up 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
+
+/* ── Full-screen overlay height ───────────────────────────────────────────
+   `fixed inset-0` sizes against the *layout* viewport, which on mobile stays
+   as tall as the screen would be with the browser chrome hidden. While the
+   address bar is showing, the overlay therefore runs taller than the visible
+   area: content laid out with h-full and centred vertically sits low, leaving
+   a dead band at the top. This showed up as black space above a photo in the
+   image viewer and a long empty stretch under a story in Global Tales.
+
+   `dvh` tracks the actually-visible height. Applied to the pattern rather than
+   to each overlay because `fixed inset-0` already means "cover the screen"
+   everywhere it is used — seven components rely on it — and they should all
+   agree on what the screen is. Guarded by @supports so browsers without dvh
+   keep the previous behaviour rather than losing the height entirely. */
+@supports (height: 100dvh) {
+    .fixed.inset-0 {
+        height: 100dvh;
+    }
+}
