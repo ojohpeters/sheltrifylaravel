@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#0B1524"/>
+      <stop offset="55%"  stop-color="#07090F"/>
+      <stop offset="100%" stop-color="#042A28"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.86" cy="0.78" r="0.62">
+      <stop offset="0%"   stop-color="#00B8B8" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="#00B8B8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#00D4D4"/>
+      <stop offset="100%" stop-color="#008A8A"/>
+    </linearGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#00D4D4"/>
+      <stop offset="100%" stop-color="#00D4D4" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Oversized house watermark, bled off the right edge -->
+  <g transform="translate(742,84) scale(20)" fill="none" stroke="#00B8B8" stroke-opacity="0.10"
+     stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M3 9.5L12 2L21 9.5V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V9.5Z"/>
+    <path d="M12 18C13.1046 18 14 17.1046 14 16C14 14.8954 13.1046 14 12 14C10.8954 14 10 14.8954 10 16C10 17.1046 10.8954 18 12 18Z"/>
+    <path d="M12 14V11"/>
+  </g>
+
+  <!-- Logo mark -->
+  <g transform="translate(86,96)">
+    <rect width="132" height="132" rx="32" fill="url(#mark)"/>
+    <g transform="translate(27,27) scale(3.24)" fill="none" stroke="#FFFFFF"
+       stroke-linejoin="round" stroke-linecap="round">
+      <path d="M3 9.5L12 2L21 9.5V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V9.5Z" stroke-width="2"/>
+      <path d="M12 18C13.1046 18 14 17.1046 14 16C14 14.8954 13.1046 14 12 14C10.8954 14 10 14.8954 10 16C10 17.1046 10.8954 18 12 18Z" stroke-width="1.6"/>
+      <path d="M12 14V11" stroke-width="2"/>
+    </g>
+  </g>
+
+  <g font-family="Liberation Sans, DejaVu Sans, sans-serif">
+    <text x="248" y="176" fill="#FFFFFF" font-size="82" font-weight="bold" letter-spacing="-2">ShelTrify</text>
+    <text x="251" y="222" fill="#7FDCDC" font-size="27" letter-spacing="3.5">NIGERIA&#8217;S PROPERTY MARKETPLACE</text>
+
+    <rect x="88" y="288" width="150" height="5" rx="2.5" fill="url(#rule)"/>
+
+    <text x="86" y="372" fill="#FFFFFF" font-size="46" font-weight="bold">Homes, shortlets, land &amp; trusted</text>
+    <text x="86" y="430" fill="#FFFFFF" font-size="46" font-weight="bold">local services &#8212; in one place.</text>
+
+    <text x="86" y="496" fill="#8FA4C4" font-size="27">Rent &#183; Buy &#183; Sell &#183; Manage &#183; Verify Land &#183; Hire Artisans</text>
+  </g>
+
+  <!-- Pills -->
+  <g font-family="Liberation Sans, DejaVu Sans, sans-serif" font-size="23">
+    <g>
+      <rect x="86"  y="536" width="176" height="50" rx="25" fill="#00B8B8" fill-opacity="0.14" stroke="#00B8B8" stroke-opacity="0.42"/>
+      <text x="174" y="568" fill="#7FDCDC" text-anchor="middle">Verified listings</text>
+    </g>
+    <g>
+      <rect x="278" y="536" width="196" height="50" rx="25" fill="#00B8B8" fill-opacity="0.14" stroke="#00B8B8" stroke-opacity="0.42"/>
+      <text x="376" y="568" fill="#7FDCDC" text-anchor="middle">AI property search</text>
+    </g>
+    <g>
+      <rect x="490" y="536" width="182" height="50" rx="25" fill="#00B8B8" fill-opacity="0.14" stroke="#00B8B8" stroke-opacity="0.42"/>
+      <text x="581" y="568" fill="#7FDCDC" text-anchor="middle">Secure payments</text>
+    </g>
+  </g>
+</svg>
