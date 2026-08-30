@@ -89,10 +89,11 @@ const BottomNav: React.FC<BottomNavProps> = ({
         { id: 'chat',        label: 'Chat',       Icon: ChatIcon,   active: currentPage === 'chat' },
         { id: 'marketplace', label: 'Store',      Icon: StoreIcon,  active: currentPage === 'marketplace' },
         { id: 'wallet',      label: 'Wallet',     Icon: WalletIcon, active: currentPage === 'wallet' },
-        { id: 'more',        label: 'Explore',    Icon: GridIcon,   active: showMore || ['community','feels','rentalWahala','globalTales','premium','about','contact','userDashboard','adminDashboard','profile'].includes(currentPage) },
+        { id: 'more',        label: 'Explore',    Icon: GridIcon,   active: showMore || ['artisans','community','feels','rentalWahala','globalTales','premium','about','contact','userDashboard','adminDashboard','profile'].includes(currentPage) },
     ] as const;
 
     const moreItems: MoreItem[] = [
+        { label: 'Local Artisans',  emoji: '🔧', page: 'artisans' },
         { label: 'Community',       emoji: '💬', page: 'community' },
         { label: 'Feels',           emoji: '🎬', page: 'feels' },
         { label: 'Rental Wahala',   emoji: '😤', page: 'rentalWahala' },

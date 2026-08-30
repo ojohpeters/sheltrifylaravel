@@ -37,6 +37,7 @@ Route::get('/chat', fn () => $shell('chat'))->name('chat');
 Route::get('/community', fn () => $shell('community'))->name('community');
 Route::get('/wallet', fn () => $shell('wallet'))->name('wallet');
 Route::get('/marketplace', fn () => $shell('marketplace'))->name('marketplace');
+Route::get('/artisans', fn () => $shell('artisans'))->name('artisans');
 Route::get('/feels', fn () => $shell('feels'))->name('feels');
 Route::get('/rental-wahala', fn () => $shell('rentalWahala'))->name('rental-wahala');
 Route::get('/cart', fn () => $shell('cart'))->name('cart');

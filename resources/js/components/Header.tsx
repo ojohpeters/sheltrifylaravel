@@ -14,6 +14,7 @@ interface HeaderProps {
     onCommunityClick: () => void;
     onWalletClick: () => void;
     onMarketplaceClick: () => void;
+    onArtisansClick: () => void;
     onFeelsClick: () => void;
     onRentalWahalaClick: () => void;
     onGlobalTalesClick?: () => void;
@@ -61,7 +62,7 @@ const NavLink: React.FC<{ label: string; onClick: () => void; active?: boolean }
 
 const Header: React.FC<HeaderProps> = ({
     isAuthenticated, currentUser, isAdmin, cartCount = 0, currentPage,
-    onLogoClick, onChatClick, onCommunityClick, onWalletClick, onMarketplaceClick,
+    onLogoClick, onChatClick, onCommunityClick, onWalletClick, onMarketplaceClick, onArtisansClick,
     onFeelsClick, onRentalWahalaClick, onGlobalTalesClick, onAboutClick, onContactClick,
     onPremiumClick, onProfileClick, onDashboardClick, onNotificationsClick, onAdminClick, onCartClick,
     onLoginClick, onSignupClick, onLogoutClick,
@@ -150,6 +151,7 @@ const Header: React.FC<HeaderProps> = ({
                         <NavLink label="Chat" onClick={onChatClick} active={currentPage === 'chat'} />
                         <NavLink label="Community" onClick={onCommunityClick} active={currentPage === 'community'} />
                         <NavLink label="Marketplace" onClick={onMarketplaceClick} active={currentPage === 'marketplace'} />
+                        <NavLink label="Artisans" onClick={onArtisansClick} active={currentPage === 'artisans'} />
                         <NavLink label="Wallet" onClick={onWalletClick} active={currentPage === 'wallet'} />
                         <NavLink label="Feels" onClick={onFeelsClick} active={currentPage === 'feels'} />
                     </nav>
@@ -252,6 +254,7 @@ const Header: React.FC<HeaderProps> = ({
                                                 { label: 'Chat',        fn: () => { close(); onChatClick(); } },
                                                 { label: 'Community',   fn: () => { close(); onCommunityClick(); } },
                                                 { label: 'Marketplace', fn: () => { close(); onMarketplaceClick(); } },
+                                                { label: 'Artisans',    fn: () => { close(); onArtisansClick(); } },
                                                 { label: 'Wallet',      fn: () => { close(); onWalletClick(); } },
                                             ].map(item => (
                                                 <button key={item.label} onClick={item.fn}

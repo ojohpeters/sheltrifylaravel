@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AdminApiController;
 use App\Http\Controllers\Api\AiApiController;
+use App\Http\Controllers\Api\ArtisanApiController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\CartApiController;
 use App\Http\Controllers\Api\CommunityApiController;
@@ -38,6 +39,11 @@ Route::get('/marketplace/category/{category}', [MarketplaceApiController::class,
 Route::get('/marketplace/my-products', [MarketplaceApiController::class, 'myProducts'])->middleware('auth');
 Route::get('/marketplace/tipper-drivers', [MarketplaceApiController::class, 'tipperDrivers']);
 Route::get('/marketplace/local-artisans', [MarketplaceApiController::class, 'localArtisans']);
+
+// Local artisans directory. Reads are public so the page works signed-out;
+// writing a review or applying requires an account (see the auth group).
+Route::get('/artisans', [ArtisanApiController::class, 'index']);
+Route::get('/artisans/{id}/reviews', [ArtisanApiController::class, 'reviews'])->where('id', '[0-9]+');
 Route::post('/marketplace/subscribe', [MarketplaceApiController::class, 'subscribe']);
 
 Route::get('/community/posts', [CommunityApiController::class, 'postsIndex']);
@@ -75,6 +81,8 @@ Route::post('/upload/video', [UploadApiController::class, 'video'])->withoutMidd
 Route::post('/upload/media', [UploadApiController::class, 'media'])->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 Route::middleware('auth')->group(function () {
+    Route::post('/artisans/apply', [ArtisanApiController::class, 'apply']);
+    Route::post('/artisans/{id}/reviews', [ArtisanApiController::class, 'storeReview'])->where('id', '[0-9]+');
     Route::post('/auth/logout', [AuthApiController::class, 'logout']);
     Route::get('/auth/me', [AuthApiController::class, 'me']);
 

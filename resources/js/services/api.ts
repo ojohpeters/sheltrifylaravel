@@ -576,6 +576,32 @@ export const subscribeAPI = {
     },
 };
 
+// Local artisans directory. Reads are public; writes require a session.
+export const artisanAPI = {
+  list: async (params?: { search?: string; service?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set('search', params.search);
+    if (params?.service) qs.set('service', params.service);
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return apiRequest(`/artisans${suffix}`);
+  },
+
+  reviews: async (artisanId: string | number) =>
+    apiRequest(`/artisans/${artisanId}/reviews`),
+
+  submitReview: async (artisanId: string | number, rating: number, comment?: string) =>
+    apiRequest(`/artisans/${artisanId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, comment }),
+    }),
+
+  apply: async (data: {
+    fullName: string; service: string; phone: string; whatsapp?: string;
+    experienceYears?: number | null; state: string; lga?: string;
+    bio?: string; avatarUrl?: string;
+  }) => apiRequest('/artisans/apply', { method: 'POST', body: JSON.stringify(data) }),
+};
+
 export const marketplaceAPI = {
   getAll: async (params?: { category?: string; page?: number; limit?: number }) => {
     const queryParams = new URLSearchParams();

@@ -27,6 +27,7 @@ class User extends Authenticatable
         'verification_photo_url', 'verification_id_url', 'verification_id_type',
         'verification_status', 'verification_rejected_at', 'verification_rejection_reason',
         'verified_at', 'artisan_service', 'artisan_location', 'artisan_rating', 'artisan_bio',
+        'artisan_experience_years', 'artisan_reviews_count',
         'nin_number', 'nin_verified',
         'listing_approval_status', 'listing_approval_rejection_reason', 'listing_approved_at',
         'professional_license_url', 'professional_type',
@@ -51,8 +52,16 @@ class User extends Authenticatable
             'last_seen_at'             => 'datetime',
             'notification_preferences' => 'array',
             'artisan_rating'           => 'float',
+            'artisan_experience_years' => 'integer',
+            'artisan_reviews_count'    => 'integer',
             'password'                 => 'hashed',
         ];
+    }
+
+    /** Reviews written about this artisan. */
+    public function artisanReviews(): HasMany
+    {
+        return $this->hasMany(ArtisanReview::class, 'artisan_id');
     }
 
     public function wallet(): HasOne

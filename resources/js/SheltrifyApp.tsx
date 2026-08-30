@@ -10,6 +10,7 @@ import ChatPage from './components/ChatPage';
 import CommunityPage from './components/CommunityPage';
 import WalletPage from './components/WalletPage';
 import MarketplacePage from './components/MarketplacePage';
+import ArtisansPage from './components/ArtisansPage';
 import FeelsPage from './components/FeelsPage';
 import RentalWahalaPage from './components/RentalWahalaPage';
 import AdminDashboard from './components/AdminDashboard';
@@ -82,7 +83,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'artisans' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
 
 type ShellPageProps = {
   view: Page;
@@ -96,6 +97,7 @@ const URL_BY_PAGE: Record<Page, string> = {
   community: '/community',
   wallet: '/wallet',
   marketplace: '/marketplace',
+  artisans: '/artisans',
   feels: '/feels',
   rentalWahala: '/rental-wahala',
   paymentVerify: '/payments/verify',
@@ -119,6 +121,7 @@ const HASH_TO_PATH: Record<string, string> = {
   community: '/community',
   wallet: '/wallet',
   marketplace: '/marketplace',
+  artisans: '/artisans',
   feels: '/feels',
   rentalWahala: '/rental-wahala',
   paymentVerify: '/payments/verify',
@@ -418,6 +421,7 @@ const AppContent: React.FC = () => {
           onCommunityClick={() => navigateTo('community')}
           onWalletClick={() => navigateTo('wallet')}
           onMarketplaceClick={() => navigateTo('marketplace')}
+          onArtisansClick={() => navigateTo('artisans')}
           onFeelsClick={() => navigateTo('feels')}
           onRentalWahalaClick={() => navigateTo('rentalWahala')}
           onGlobalTalesClick={() => navigateTo('globalTales')}
@@ -463,6 +467,20 @@ const AppContent: React.FC = () => {
             <WalletPage 
               isAuthenticated={isAuthenticated}
               currentUser={currentUser}
+            />
+          )}
+          {currentPage === 'artisans' && (
+            <ArtisansPage
+              isAuthenticated={isAuthenticated}
+              onJoinAsArtisan={() => {
+                if (!isAuthenticated) {
+                  setIntendedPage('artisans');
+                  setIsAuthModalOpen(true);
+                  showToast('Create an account to join the verified network.');
+                  return;
+                }
+                navigateTo('professionalProfile');
+              }}
             />
           )}
           {currentPage === 'marketplace' && (
