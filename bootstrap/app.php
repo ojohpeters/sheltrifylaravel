@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \App\Http\Middleware\TrackLastSeen::class,
         ]);
         // Exempt all API routes from CSRF — the SPA uses session cookies,
         // not form-based CSRF tokens, so this is safe for the /api/* prefix.

@@ -11,6 +11,7 @@ use App\Models\Investment;
 use App\Models\UserActivity;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -77,6 +78,43 @@ class User extends Authenticatable
     public function referrals(): HasMany
     {
         return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    /**
+     * A short, unambiguous referral code.
+     *
+     * The alphabet omits O/0 and I/1 because these codes get read aloud and
+     * copied off phone screens, where those pairs are routinely confused.
+     */
+    public static function generateReferralCode(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+        do {
+            $code = '';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+        } while (static::query()->where('referral_code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * Return this user's referral code, creating one on first use.
+     *
+     * Accounts created before referral codes existed have a null column, so the
+     * code is issued lazily rather than in a backfill migration that would have
+     * to touch every row.
+     */
+    public function ensureReferralCode(): string
+    {
+        if (blank($this->referral_code)) {
+            $this->referral_code = static::generateReferralCode();
+            $this->save();
+        }
+
+        return $this->referral_code;
     }
 
     public function communityPosts(): HasMany

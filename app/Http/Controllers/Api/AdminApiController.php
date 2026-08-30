@@ -446,9 +446,21 @@ class AdminApiController extends Controller
         $topLocations = Listing::query()->where('is_active', true)->select('location', DB::raw('count(*) as cnt'))->groupBy('location')->orderByDesc('cnt')->limit(10)->get();
         $roleDistribution = User::query()->select('role', DB::raw('count(*) as cnt'))->groupBy('role')->get();
 
+        // Active users, measured from users.last_seen_at (written by the
+        // TrackLastSeen middleware). Accounts that predate that middleware have
+        // a null timestamp and simply do not count as active until they return.
+        $activity = [
+            'activeToday' => User::query()->where('last_seen_at', '>=', now()->startOfDay())->count(),
+            'activeLast7Days' => User::query()->where('last_seen_at', '>=', now()->subDays(7))->count(),
+            'activeLast30Days' => User::query()->where('last_seen_at', '>=', now()->subDays(30))->count(),
+            'signedUpToday' => User::query()->where('created_at', '>=', now()->startOfDay())->count(),
+            'totalUsers' => User::query()->count(),
+        ];
+
         return $this->jsonOk([
             'userGrowth' => [],
             'listingGrowth' => [],
+            'activity' => $activity,
             'revenue' => [
                 'total' => $revenue->sum('amount'),
                 'transactions' => $revenue->count(),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     CloseIcon, UserIcon, WalletIcon, BuildingStorefrontIcon, ShoppingCartIcon,
     StarIcon, TrendingUpIcon, PencilIcon, TrashIcon, PlusIcon, FilmIcon,
@@ -7,8 +7,10 @@ import {
 import {
     dashboardAPI, feelsAPI, rentalWahalaAPI, globalTalesAPI,
     communityAPI, marketplaceAPI, listingAPI,
+    uploadAPI, PHOTO_UPLOAD_TARGET_BYTES,
 } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import { TRANSPORT_ROLE_LABEL } from '../constants/services';
 
 type TabType = 'overview' | 'listings' | 'marketplace' | 'feels' | 'rental-wahala' | 'global-tales' | 'community' | 'earnings';
 
@@ -76,6 +78,110 @@ const InputField: React.FC<{ label: string; value: string; onChange: (v: string)
         />
     </div>
 );
+
+/**
+ * Pick a photo from the device, downscale it in the browser, upload it, and
+ * hand back the stored URL.
+ *
+ * Phone cameras produce 3-6 MB files, so rejecting anything oversized would
+ * stop most people listing at all. Instead the image is resized and re-encoded
+ * client-side until it fits PHOTO_UPLOAD_TARGET_BYTES, which also means the
+ * upload itself is small — the point of the exercise on a Nigerian mobile
+ * connection. Pasting a URL still works via the sibling field.
+ */
+const ImageUploadField: React.FC<{
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+}> = ({ label, value, onChange }) => {
+    const fileRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadedSize, setUploadedSize] = useState<number | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const handlePick = async (file?: File) => {
+        if (!file) return;
+        setError(null);
+        setUploading(true);
+        try {
+            const res: any = await uploadAPI.uploadImage(file, true, PHOTO_UPLOAD_TARGET_BYTES);
+            const url = res?.data?.url;
+            if (!url) throw new Error('Upload succeeded but returned no URL.');
+            onChange(url);
+            setUploadedSize(res?.data?.size ?? null);
+        } catch (err: any) {
+            setError(err?.message || 'Upload failed. Please try again.');
+        } finally {
+            setUploading(false);
+            // Allow re-picking the same file after a failure.
+            if (fileRef.current) fileRef.current.value = '';
+        }
+    };
+
+    return (
+        <div>
+            <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">
+                {label}
+            </label>
+
+            <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => handlePick(e.target.files?.[0])}
+            />
+
+            {value ? (
+                <div className="flex items-center gap-3">
+                    <img
+                        src={value}
+                        alt="Property preview"
+                        className="w-20 h-16 object-cover rounded-lg border border-light-border dark:border-dark-border flex-shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate">
+                            {uploadedSize !== null
+                                ? `Uploaded \u00b7 ${Math.round(uploadedSize / 1024)} KB`
+                                : 'Image set'}
+                        </p>
+                        <div className="flex gap-3 mt-1">
+                            <button
+                                type="button"
+                                onClick={() => fileRef.current?.click()}
+                                className="text-xs font-semibold text-brand-primary hover:underline"
+                            >
+                                Replace
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { onChange(''); setUploadedSize(null); }}
+                                className="text-xs font-semibold text-red-500 hover:underline"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full border border-dashed border-light-border dark:border-dark-border rounded-lg px-3 py-3 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:border-brand-primary hover:text-brand-primary transition-colors disabled:opacity-60"
+                >
+                    {uploading ? 'Uploading\u2026' : 'Upload a photo'}
+                </button>
+            )}
+
+            {error
+                ? <p className="text-xs text-red-500 mt-1">{error}</p>
+                : <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1">
+                      Resized automatically to about {Math.round(PHOTO_UPLOAD_TARGET_BYTES / 1024)} KB.
+                  </p>}
+        </div>
+    );
+};
 
 const TextareaField: React.FC<{ label: string; value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }> = ({ label, value, onChange, placeholder, rows = 3 }) => (
     <div>
@@ -265,7 +371,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
     const getRoleDisplayName = (role: string) => ({
         SEEKER: 'Seeker/Tenant', LANDLORD: 'Landlord', AGENT: 'CC/Agent',
         REFERRER: 'Referrer', TENANT: 'Tenant', INVESTOR: 'Investor',
-        ARTISAN: 'Local Artisan', ADMIN: 'Administrator', TIPPER_DRIVER: 'Tipper Driver',
+        ARTISAN: 'Local Artisan', ADMIN: 'Administrator', TIPPER_DRIVER: TRANSPORT_ROLE_LABEL,
     }[role] || role);
 
     // ── item card ─────────────────────────────────────────────────────────────
@@ -488,7 +594,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
                         <InputField label="Location" value={form.location} onChange={set('location')} placeholder="e.g. Lekki Phase 1, Lagos" required />
                         <TextareaField label="Description" value={form.description} onChange={set('description')} placeholder="Describe the property..." />
                         <InputField label="Bedrooms" value={form.bedrooms} onChange={set('bedrooms')} placeholder="e.g. 3" type="number" />
-                        <InputField label="Image URL (optional)" value={form.imageUrl} onChange={set('imageUrl')} placeholder="https://..." />
+                        <ImageUploadField label="Property Photo" value={form.imageUrl} onChange={set('imageUrl')} />
+                        <InputField label="Or paste an image URL" value={form.imageUrl} onChange={set('imageUrl')} placeholder="https://..." />
                         <InputField label="Video URL (optional)" value={form.videoUrl} onChange={set('videoUrl')} placeholder="https://youtube.com/..." />
                     </div>
                 );

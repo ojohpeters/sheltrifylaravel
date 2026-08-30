@@ -27,6 +27,7 @@ interface User {
   id: string;
   email: string;
   fullName: string | null;
+  phone: string | null;
   role: string;
   isPremium: boolean;
   createdAt: string;
@@ -1576,6 +1577,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 <h3 className="text-xl font-bold text-light-text-primary dark:text-dark-text-primary mb-4">
                   Analytics Dashboard
                 </h3>
+                {analytics?.activity && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-light-text-secondary dark:text-dark-text-secondary mb-3 uppercase tracking-wide">
+                      User Activity
+                    </h4>
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                      {[
+                        { label: 'Active Today', value: analytics.activity.activeToday, accent: true },
+                        { label: 'Active — 7 Days', value: analytics.activity.activeLast7Days },
+                        { label: 'Active — 30 Days', value: analytics.activity.activeLast30Days },
+                        { label: 'Signed Up Today', value: analytics.activity.signedUpToday },
+                        { label: 'Total Users', value: analytics.activity.totalUsers },
+                      ].map(stat => (
+                        <div key={stat.label} className={`p-4 rounded-lg border ${stat.accent
+                          ? 'bg-brand-primary/10 border-brand-primary/30'
+                          : 'bg-light-bg dark:bg-dark-bg border-light-border dark:border-dark-border'}`}>
+                          <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-1">{stat.label}</p>
+                          <p className="text-2xl font-bold text-brand-primary">{(stat.value ?? 0).toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-2">
+                      Activity is counted from each user's last request. Accounts that have not
+                      returned since activity tracking was switched on are not counted yet.
+                    </p>
+                  </div>
+                )}
                 {analytics && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div className="bg-light-bg dark:bg-dark-bg p-4 rounded-lg border border-light-border dark:border-dark-border">
@@ -2291,151 +2319,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   Cancel
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit User View */}
-      {currentView === 'edit' && activeTab === 'users' && editingUser && (
-        <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-light-text-primary dark:text-dark-text-primary">Edit User</h2>
-            <button onClick={() => { setCurrentView('list'); setEditingUser(null); }} className="text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">
-              <CloseIcon className="w-6 h-6" />
-            </button>
-            <h2 className="text-2xl font-bold mb-4 text-light-text-primary dark:text-dark-text-primary">Edit User</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Email</label>
-                <input
-                  type="email"
-                  value={editUserData.email}
-                  onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
-                  className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={editUserData.fullName}
-                  onChange={(e) => setEditUserData({ ...editUserData, fullName: e.target.value })}
-                  className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Role</label>
-                <select
-                  value={editUserData.role}
-                  onChange={(e) => setEditUserData({ ...editUserData, role: e.target.value })}
-                  className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none"
-                >
-                  <option value="SEEKER">Seeker</option>
-                  <option value="LANDLORD">Landlord</option>
-                  <option value="AGENT">Agent</option>
-                  <option value="REFERRER">Referrer</option>
-                  <option value="TENANT">Tenant</option>
-                  <option value="INVESTOR">Investor</option>
-                  <option value="ARTISAN">Artisan</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-sm text-light-text-primary dark:text-dark-text-primary">
-                  <input
-                    type="checkbox"
-                    checked={editUserData.isPremium}
-                    onChange={(e) => setEditUserData({ ...editUserData, isPremium: e.target.checked })}
-                    className="w-4 h-4"
-                  />
-                  Premium User
-                </label>
-                <label className="flex items-center gap-2 text-sm text-light-text-primary dark:text-dark-text-primary">
-                  <input
-                    type="checkbox"
-                    checked={editUserData.isVerified}
-                    onChange={(e) => setEditUserData({ ...editUserData, isVerified: e.target.checked })}
-                    className="w-4 h-4"
-                  />
-                  Verified
-                </label>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleSaveUser}
-                  disabled={loading || !editUserData.email.trim()}
-                  className="flex-1 bg-brand-primary text-white py-2 rounded-lg hover:bg-brand-secondary disabled:bg-brand-secondary/50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button
-                  onClick={() => { setCurrentView('list'); setEditingUser(null); }}
-                  className="px-4 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-text-primary dark:text-dark-text-primary rounded-lg hover:bg-light-border dark:hover:bg-dark-border"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              {editingUser && (editingUser as any).role !== 'ADMIN' && (
-                <div className="border-t border-light-border dark:border-dark-border pt-4 space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-light-text-secondary dark:text-dark-text-secondary">Account Controls</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {(editingUser as any).isSuspended || (editingUser as any).is_suspended ? (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const r = await adminNotificationsAPI.unsuspendUser(String(editingUser.id));
-                          if (r.success) {
-                            showSuccess('User reactivated');
-                            setEditingUser({ ...editingUser, isSuspended: false, is_suspended: false } as any);
-                            loadUsers();
-                          } else { showError(r.message || 'Failed'); }
-                        }}
-                        className="flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-semibold"
-                      >
-                        <CheckCircleIcon className="w-4 h-4" /> Reactivate Account
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const reason = window.prompt('Reason for suspension (shown to the user):', '') || '';
-                          const r = await adminNotificationsAPI.suspendUser(String(editingUser.id), reason);
-                          if (r.success) {
-                            showSuccess('User suspended');
-                            setEditingUser({ ...editingUser, isSuspended: true, is_suspended: true, suspensionReason: reason } as any);
-                            loadUsers();
-                          } else { showError(r.message || 'Failed'); }
-                        }}
-                        className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-semibold"
-                      >
-                        <NoSymbolIcon className="w-4 h-4" /> Suspend Account
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const title = window.prompt('Notification title:', 'A message from ShelTrify support');
-                        if (!title) return;
-                        const body = window.prompt('Message body:', '');
-                        if (!body) return;
-                        const r = await adminNotificationsAPI.notifyUser(String(editingUser.id), { title, body, email: true });
-                        if (r.success) showSuccess('Notification sent (in-app + email)');
-                        else showError(r.message || 'Failed');
-                      }}
-                      className="flex items-center justify-center gap-2 px-3 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-secondary text-sm font-semibold"
-                    >
-                      <BellIcon className="w-4 h-4" /> Send Direct Message
-                    </button>
-                  </div>
-                  {((editingUser as any).isSuspended || (editingUser as any).is_suspended) && (
-                    <p className="text-xs text-red-500">
-                      Currently suspended{(editingUser as any).suspensionReason ? ` — Reason: ${(editingUser as any).suspensionReason}` : ''}.
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>

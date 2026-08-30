@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { CloseIcon, LogoIcon, BookmarkSolidIcon, UserIcon, XIcon, PhotoIcon, EyeIcon } from './icons';
 import { Property } from '../types';
 import { authAPI, uploadAPI } from '../services/api';
+import { ARTISAN_CATEGORIES, TRANSPORT_CATEGORIES, TRANSPORT_ROLE_LABEL } from '../constants/services';
+import { getReferralCode, clearReferralCode } from '../referral';
 
 interface AuthModalProps {
     onClose: () => void;
@@ -149,8 +151,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                     avatarUrl
                 };
 
-                // Add artisan-specific fields
-                if (formData.role === 'ARTISAN') {
+                // Service-provider fields. Transport/logistics providers reuse the
+                // same artisan_* columns, so both roles submit them.
+                if (formData.role === 'ARTISAN' || formData.role === 'TIPPER_DRIVER') {
                     if (formData.artisanService) {
                         signupData.artisanService = formData.artisanService;
                     }
@@ -162,8 +165,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                     }
                 }
 
+                // Credits whoever shared the /join link this user arrived on.
+                const referralCode = getReferralCode();
+                if (referralCode) {
+                    signupData.referralCode = referralCode;
+                }
+
                 const response = await authAPI.signup(signupData);
                 if (response.success) {
+                    clearReferralCode();
                     onLoginSuccess(response.data.user);
                     onClose();
                 } else {
@@ -307,12 +317,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                                     <option value="REFERRER">Referrer</option>
                                     <option value="INVESTOR">Investor</option>
                                     <option value="ARTISAN">Local Artisan</option>
-                                    <option value="TIPPER_DRIVER">Tipper Driver</option>
+                                    <option value="TIPPER_DRIVER">{TRANSPORT_ROLE_LABEL}</option>
                                 </select>
                             </div>
 
                             {/* Artisan-specific fields */}
-                            {formData.role === 'ARTISAN' && (
+                            {(formData.role === 'ARTISAN' || formData.role === 'TIPPER_DRIVER') && (
                                 <>
                                     <div>
                                         <label className="block text-sm font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Service Type</label>
@@ -322,15 +332,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                                             className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-primary focus:outline-none transition"
                                         >
                                             <option value="">Select service</option>
-                                            <option value="MECHANIC">Mechanic</option>
-                                            <option value="ELECTRICIAN">Electrician</option>
-                                            <option value="PLUMBER">Plumber</option>
-                                            <option value="PAINTER">Painter</option>
-                                            <option value="CARPENTER">Carpenter</option>
-                                            <option value="MASON">Mason</option>
-                                            <option value="TILER">Tiler</option>
-                                            <option value="WELDER">Welder</option>
-                                            <option value="OTHER">Other</option>
+                                            {(formData.role === 'TIPPER_DRIVER' ? TRANSPORT_CATEGORIES : ARTISAN_CATEGORIES).map(s => (
+                                                <option key={s.value} value={s.value}>{s.label}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>

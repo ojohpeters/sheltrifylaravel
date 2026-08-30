@@ -8,6 +8,17 @@ const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const IMAGE_UPLOAD_TARGET_BYTES = 2 * 1024 * 1024; // 2 MB target after compression
 
 /**
+ * Tighter target for gallery photography — property, product, and cover images.
+ *
+ * Deliberately NOT the default. The same upload path carries government ID
+ * scans, verification selfies, professional licences, and CAC certificates,
+ * where a reviewer has to read small print like an NIN or licence number.
+ * Compressing those to 200 KB would quietly destroy the thing they exist for,
+ * so documents keep the 2 MB target and only photos opt in to this one.
+ */
+export const PHOTO_UPLOAD_TARGET_BYTES = 200 * 1024; // 200 KB
+
+/**
  * Compress an image File to stay under targetBytes.
  * Uses Canvas API — works in all modern mobile browsers.
  * Falls back to the original file if Canvas is unavailable.
@@ -27,8 +38,11 @@ async function compressImage(file: File, targetBytes = IMAGE_UPLOAD_TARGET_BYTES
       const canvas = document.createElement('canvas');
       let { width, height } = img;
 
-      // Scale down so neither dimension exceeds 1920px
-      const MAX_DIM = 1920;
+      // Scale down before re-encoding. A tight byte target is far better spent
+      // on fewer, cleaner pixels than on many heavily-quantised ones: 200 KB at
+      // 1920px forces quality to the 0.4 floor and still blocks visibly, while
+      // the same 200 KB at 1600px lands around 0.65 and stays sharp.
+      const MAX_DIM = targetBytes <= 512 * 1024 ? 1600 : 1920;
       if (width > MAX_DIM || height > MAX_DIM) {
         const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
         width = Math.round(width * ratio);
@@ -650,11 +664,11 @@ export const cartAPI = {
 
 // Upload API — all uploads handled by Laravel PHP (no third-party handler)
 export const uploadAPI = {
-  uploadImage: async (file: File, _requireAuth?: boolean) => {
+  uploadImage: async (file: File, _requireAuth?: boolean, targetBytes?: number) => {
     if (file.size > IMAGE_MAX_BYTES) {
       throw new Error('Image must be 10 MB or smaller.');
     }
-    const compressed = await compressImage(file);
+    const compressed = await compressImage(file, targetBytes ?? IMAGE_UPLOAD_TARGET_BYTES);
     const formData = new FormData();
     formData.append('image', compressed);
 

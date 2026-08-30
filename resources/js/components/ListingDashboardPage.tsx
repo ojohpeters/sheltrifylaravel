@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { userAPI, uploadAPI, listingAPI } from '../services/api';
+import { TRANSPORT_ROLE_LABEL } from '../constants/services';
 
 // ── Role config ──────────────────────────────────────────────────────────────
 const LISTING_ROLES = ['LANDLORD', 'AGENT', 'REFERRER', 'INVESTOR', 'ESTATE_MANAGER', 'TIPPER_DRIVER'];
@@ -9,7 +10,7 @@ const ROLE_LABELS: Record<string, string> = {
     REFERRER:       'Referrer',
     INVESTOR:       'Investor',
     ESTATE_MANAGER: 'Estate Manager',
-    TIPPER_DRIVER:  'Tipper Driver',
+    TIPPER_DRIVER:  TRANSPORT_ROLE_LABEL,
 };
 
 const ID_TYPES = [

@@ -40,7 +40,18 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => fn () => $request->user() ? $request->user()->toArray() : null,
+                // Accounts predating referral codes have a null column, so the
+                // code is issued on first page load rather than in a backfill
+                // migration touching every row.
+                'user' => function () use ($request) {
+                    $user = $request->user();
+                    if (! $user) {
+                        return null;
+                    }
+                    $user->ensureReferralCode();
+
+                    return $user->toArray();
+                },
             ],
             'cartCount' => fn () => $request->user()
                 ? (int) Cart::query()->where('user_id', $request->user()->id)->sum('quantity')

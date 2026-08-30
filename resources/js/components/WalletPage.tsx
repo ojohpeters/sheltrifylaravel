@@ -19,6 +19,8 @@ import {
 } from './icons';
 import { dashboardAPI, authAPI, paymentAPI, listingsAPI, investmentAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import { digitalPurchasesAllowed } from '../platform';
+import { referralLinkFor } from '../referral';
 
 // --- CONSTANTS & RATES ---
 const SWC_TO_NGN_RATE = 90; // 1 SWC = 90 NGN
@@ -91,7 +93,11 @@ const AgentDashboard: React.FC<{
                      currentTierName === 'silver' ? agentTiers.gold : 
                      currentTierName === 'gold' ? agentTiers.platinum : agentTiers.platinum;
     const progressToNextTier = nextTier ? (referrals / nextTier.referrals) * 100 : 100;
-    const referralLink = `sheltrify.com/join/${userData?.email?.split('@')[0] || 'user'}`;
+    // Was derived from the email local-part, so two people at different domains
+    // with the same username shared one link and neither could be attributed.
+    const referralLink = userData?.referralCode
+        ? referralLinkFor(userData.referralCode)
+        : 'Generating your link…';
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in text-light-text-primary dark:text-dark-text-primary">
@@ -139,11 +145,15 @@ const AgentDashboard: React.FC<{
                             label="Request Cash"
                             onClick={() => showInfo('Request cash feature coming soon!')}
                         />
-                        <WalletActionButton 
-                            icon={<ArrowUpCircleIcon className="w-6 h-6 text-purple-500 mb-1"/>}
-                            label="Deposit"
-                            onClick={onDeposit}
-                        />
+                        {/* Wallet top-ups buy SWC, which Google Play treats as digital
+                            content. Hidden in the Play build — see platform.ts. */}
+                        {digitalPurchasesAllowed() && (
+                            <WalletActionButton 
+                                icon={<ArrowUpCircleIcon className="w-6 h-6 text-purple-500 mb-1"/>}
+                                label="Deposit"
+                                onClick={onDeposit}
+                            />
+                        )}
                     </div>
                 </InfoCard>
             </div>
@@ -188,7 +198,11 @@ const ReferrerDashboard: React.FC<{
                      currentTierName === 'silver' ? agentTiers.gold : 
                      currentTierName === 'gold' ? agentTiers.platinum : agentTiers.platinum;
     const progressToNextTier = nextTier ? (referrals / nextTier.referrals) * 100 : 100;
-    const referralLink = `sheltrify.com/join/${userData?.email?.split('@')[0] || 'user'}`;
+    // Was derived from the email local-part, so two people at different domains
+    // with the same username shared one link and neither could be attributed.
+    const referralLink = userData?.referralCode
+        ? referralLinkFor(userData.referralCode)
+        : 'Generating your link…';
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in text-light-text-primary dark:text-dark-text-primary">
@@ -234,11 +248,15 @@ const ReferrerDashboard: React.FC<{
                             label="Transfer"
                             onClick={() => showInfo('Transfer feature coming soon!')}
                         />
-                        <WalletActionButton 
-                            icon={<ArrowUpCircleIcon className="w-6 h-6 text-purple-500 mb-1"/>}
-                            label="Deposit"
-                            onClick={onDeposit}
-                        />
+                        {/* Wallet top-ups buy SWC, which Google Play treats as digital
+                            content. Hidden in the Play build — see platform.ts. */}
+                        {digitalPurchasesAllowed() && (
+                            <WalletActionButton 
+                                icon={<ArrowUpCircleIcon className="w-6 h-6 text-purple-500 mb-1"/>}
+                                label="Deposit"
+                                onClick={onDeposit}
+                            />
+                        )}
                     </div>
                 </InfoCard>
             </div>
@@ -715,11 +733,15 @@ const InvestorDashboard: React.FC<{
                 {/* Wallet Actions */}
                 <InfoCard icon={<WalletIcon className="w-8 h-8"/>} title="Wallet Actions">
                     <div className="grid grid-cols-2 gap-3">
-                        <WalletActionButton 
-                            icon={<ArrowUpCircleIcon className="w-6 h-6 text-green-500 mb-1"/>}
-                            label="Deposit"
-                            onClick={onDeposit}
-                        />
+                        {/* Wallet top-ups buy SWC, which Google Play treats as digital
+                            content. Hidden in the Play build — see platform.ts. */}
+                        {digitalPurchasesAllowed() && (
+                            <WalletActionButton 
+                                icon={<ArrowUpCircleIcon className="w-6 h-6 text-green-500 mb-1"/>}
+                                label="Deposit"
+                                onClick={onDeposit}
+                            />
+                        )}
                         <WalletActionButton 
                             icon={<ArrowPathIcon className="w-6 h-6 text-blue-500 mb-1"/>}
                             label="Withdraw"
@@ -878,6 +900,32 @@ const DepositModal: React.FC<{ isOpen: boolean; onClose: () => void; onSuccess: 
     };
 
     if (!isOpen) return null;
+
+    // Safety net behind the hidden Deposit buttons: if any other path opens
+    // this modal in the Play build, explain rather than start a Paystack flow
+    // for digital content, which would breach Google's billing policy.
+    if (!digitalPurchasesAllowed()) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="relative bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg shadow-2xl w-full max-w-md p-6">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary">
+                        <CloseIcon className="w-6 h-6" />
+                    </button>
+                    <h2 className="text-2xl font-bold mb-3 text-light-text-primary dark:text-dark-text-primary">Not available here</h2>
+                    <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-5">
+                        Wallet top-ups aren't available in the Android app. Your existing SWC balance
+                        works normally, and you can still withdraw at any time.
+                    </p>
+                    <button
+                        onClick={onClose}
+                        className="w-full bg-brand-primary text-white py-2 rounded-lg hover:bg-brand-secondary"
+                    >
+                        Got it
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">

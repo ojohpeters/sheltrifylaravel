@@ -323,6 +323,27 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
     );
 };
 
+/**
+ * Open the surrounding area on Google Maps, from which the viewer can drop into
+ * Street View.
+ *
+ * Listings carry no latitude/longitude — `location` is free text like
+ * "Lekki Phase 1, Lagos" — so this is a place search rather than a Street View
+ * deep link, which needs coordinates. Once listings gain real coordinates this
+ * can become a `map_action=pano` link to the exact frontage.
+ */
+const virtualTourUrl = (location: string): string =>
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+
+/** Google Maps' pin, in its own brand colours, so the button reads as theirs. */
+const GoogleMapPinIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-5' }) => (
+    <svg className={className} viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 18 12 18s12-9 12-18c0-6.6-5.4-12-12-12z" fill="#EA4335" />
+        <path d="M12 0c3.9 0 7.3 1.9 9.5 4.8L12 12 2.5 4.8C4.7 1.9 8.1 0 12 0z" fill="#4285F4" />
+        <circle cx="12" cy="12" r="4.5" fill="#FFFFFF" />
+    </svg>
+);
+
 const ProductCard: React.FC<{
     product: any;
     category: string;
@@ -395,6 +416,18 @@ const ProductCard: React.FC<{
                     >
                         👋 Request
                     </button>
+                    {product.location && (
+                        <a
+                            href={virtualTourUrl(product.location)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="col-span-2 flex items-center justify-center gap-1.5 px-2 py-2 font-semibold text-xs rounded-xl bg-white text-[#1a73e8] border border-[#dadce0] hover:bg-[#f8f9fa] shadow-sm transition-all touch-manipulation"
+                        >
+                            <GoogleMapPinIcon className="w-3.5 h-4" />
+                            VIRTUAL TOUR
+                        </a>
+                    )}
                 </div>
             </div>
         </div>
@@ -868,7 +901,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         { key: 'electronics', label: 'Electronics', icon: '📱' },
         { key: 'furniture', label: 'Furniture', icon: '🛋️' },
         { key: 'materials', label: 'Materials', icon: '🧱' },
-        { key: 'drivers', label: 'Tipper Drivers', icon: '🚛' },
+        { key: 'drivers', label: 'Transport & Logistics', icon: '🚛' },
         { key: 'artisans', label: 'Local Artisans', icon: '🔧' },
         { key: 'buy', label: 'Buy Properties', icon: '🏦' },
         { key: 'sales', label: 'Sales Properties', icon: '💰' },
@@ -948,10 +981,10 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     {shouldShow('sales') && <SectionGrid title="Sales Properties" icon="💰" items={allProducts.salesProperties} renderItem={renderProduct('salesProperties')} />}
                     {shouldShow('management') && <SectionGrid title="Property Management" icon="📋" items={allProducts.propertyManagement} renderItem={renderProduct('propertyManagement')} />}
                     {shouldShow('drivers') && (
-                        <SectionGrid title="Tipper Drivers Near You" icon="🚛" items={tipperDrivers} renderItem={(driver) => <DriverCard driver={driver} />} />
+                        <SectionGrid title="Transport & Logistics Near You" icon="🚛" items={tipperDrivers} renderItem={(driver) => <DriverCard driver={driver} />} />
                     )}
                     {shouldShow('drivers') && allProducts.tipperDriverProducts.length > 0 && (
-                        <SectionGrid title="Tipper Driver Services" icon="🚛" items={allProducts.tipperDriverProducts} renderItem={renderProduct('tipperDriverServices')} />
+                        <SectionGrid title="Transport & Logistics Services" icon="🚛" items={allProducts.tipperDriverProducts} renderItem={renderProduct('tipperDriverServices')} />
                     )}
                     {shouldShow('artisans') && (
                         <SectionGrid title="Local Artisans Near You" icon="🔧" items={localArtisans} renderItem={(artisan) => <ArtisanCard artisan={artisan} />} />

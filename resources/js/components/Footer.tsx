@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, FacebookIcon, LinkedInIcon, YouTubeIcon, CloseIcon } from './icons';
 import type { Page } from '../SheltrifyApp';
+import { subscribeAPI } from '../services/api';
 
 // Modal Component for displaying link information
 const InfoModal: React.FC<{ title: string; content: string; onClose: () => void }> = ({ title, content, onClose }) => {
@@ -50,6 +51,30 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ page }) => {
     const [modalContent, setModalContent] = useState<{ title: string; content: string } | null>(null);
 
+    // Newsletter signup. Previously this fired a browser alert() and threw the
+    // address away — the email was never stored anywhere.
+    const [subEmail, setSubEmail] = useState('');
+    const [subState, setSubState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+    const [subMessage, setSubMessage] = useState<string | null>(null);
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!subEmail.trim()) return;
+        setSubState('sending');
+        setSubMessage(null);
+        try {
+            const res: any = await subscribeAPI.subscribe({ email: subEmail.trim() });
+            setSubState('done');
+            // The API reports an already-subscribed address as a success, and
+            // its message says so — surface it rather than overwriting it.
+            setSubMessage(res?.message || 'Subscribed. Watch your inbox for new listings.');
+            setSubEmail('');
+        } catch (err: any) {
+            setSubState('error');
+            setSubMessage(err?.message || 'Could not subscribe. Please try again.');
+        }
+    };
+
     const links = {
         quickLinks: [
             { name: 'About Us', href: '#', description: `ShelTrify is a pioneering real estate technology company dedicated to creating a seamless, intelligent, and secure rental ecosystem. Our mission is to eliminate the friction and uncertainty of finding a home by leveraging advanced AI. We provide users with a personalized AI assistant, verified listings, and a suite of tools that cover every aspect of the rental journey, from discovery to payment.` },
@@ -59,10 +84,11 @@ const Footer: React.FC<FooterProps> = ({ page }) => {
         ],
         policies: [
             { name: 'Payment Policy', href: '#', description: `Our payment system is built on security and trust. We use industry-standard encryption to protect your financial data. All transactions are processed through a secure gateway. We accept major credit/debit cards, bank transfers, and payments through the ShelTrify Wallet. Payments for rent are held in escrow and released to the landlord 24 hours after a successful check-in to ensure your satisfaction and security.` },
-            { name: 'Terms of Service', href: '#', description: `By using ShelTrify, you agree to our Terms of Service. This agreement outlines your rights and responsibilities as a user, our role as a platform provider, and the rules governing listings, bookings, and community interactions. We encourage you to read the full terms to understand the legal framework of our services.` },
-            { name: 'Privacy Policy', href: '#', description: `Your privacy is our priority. Our Privacy Policy explains what personal data we collect, how we use it to improve your experience, and the measures we take to protect it. We are committed to transparency and giving you control over your information. We do not sell your personal data to third parties.` },
+            { name: 'Terms of Service', href: '#', url: '/terms', description: `By using ShelTrify, you agree to our Terms of Service. This agreement outlines your rights and responsibilities as a user, our role as a platform provider, and the rules governing listings, bookings, and community interactions. We encourage you to read the full terms to understand the legal framework of our services.` },
+            { name: 'Privacy Policy', href: '#', url: '/privacy', description: `Your privacy is our priority. Our Privacy Policy explains what personal data we collect, how we use it to improve your experience, and the measures we take to protect it. We are committed to transparency and giving you control over your information. We do not sell your personal data to third parties.` },
             { name: 'Refund Policy', href: '#', description: `We offer a transparent refund policy to protect our users. You may be eligible for a full or partial refund if a property is significantly misrepresented, if a booking is canceled by the landlord, or in other specific circumstances outlined in the policy. All refund requests must be submitted within 24 hours of check-in through our support channel.` },
             { name: 'Legal Agreement', href: '#', description: `This document constitutes a binding legal agreement between you and ShelTrify. It governs your use of the platform and all associated services. It includes our Terms of Service, Privacy Policy, and other guidelines that ensure a safe, fair, and reliable environment for all users.` },
+            { name: 'Delete My Account', href: '#', url: '/account-deletion', description: `You can permanently delete your ShelTrify account and personal data at any time.` },
             { name: 'Report Scam', href: '#', description: `Help us keep the community safe. If you encounter a suspicious listing, user, or payment request, please report it immediately. When reporting, include the property link, user's name, and a description of the suspicious activity. Our trust and safety team will investigate promptly and take appropriate action. Your vigilance protects everyone.` },
         ],
     };
@@ -87,22 +113,35 @@ const Footer: React.FC<FooterProps> = ({ page }) => {
                   <p className="font-semibold text-light-text-primary dark:text-dark-text-primary">Stay in the loop</p>
                   <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mt-0.5">Get the latest listings and platform updates.</p>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <input
-                    type="email"
-                    placeholder="your@email.com"
-                    className="input-base flex-1 sm:w-56 text-sm py-2.5"
-                  />
-                  <button
-                    onClick={() => {
-                      const input = document.querySelector('footer input[type="email"]') as HTMLInputElement;
-                      if (input?.value) { alert(`Thanks! Updates will be sent to ${input.value}`); input.value = ''; }
-                      else { alert('Please enter a valid email.'); }
-                    }}
-                    className="btn-primary text-sm py-2.5 px-5 rounded-xl flex-shrink-0"
-                  >
-                    Subscribe
-                  </button>
+                <div className="w-full sm:w-auto">
+                  <form onSubmit={handleSubscribe} className="flex gap-2 w-full sm:w-auto">
+                    <input
+                      type="email"
+                      required
+                      value={subEmail}
+                      onChange={e => { setSubEmail(e.target.value); setSubState('idle'); }}
+                      placeholder="your@email.com"
+                      className="input-base flex-1 sm:w-56 text-sm py-2.5"
+                    />
+                    <button
+                      type="submit"
+                      disabled={subState === 'sending'}
+                      className="btn-primary text-sm py-2.5 px-5 rounded-xl flex-shrink-0 disabled:opacity-60"
+                    >
+                      {subState === 'sending' ? 'Subscribing…' : 'Subscribe'}
+                    </button>
+                  </form>
+                  {subMessage && (
+                    <p className={`text-xs mt-2 ${subState === 'error' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>
+                      {subMessage}
+                    </p>
+                  )}
+                  <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-2">
+                    Or email us at{' '}
+                    <a href="mailto:support@sheltrify.com" className="text-brand-primary hover:underline">
+                      support@sheltrify.com
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>
@@ -148,12 +187,23 @@ const Footer: React.FC<FooterProps> = ({ page }) => {
                   <ul className="space-y-2">
                     {links.policies.map(link => (
                       <li key={link.name}>
-                        <button
-                          onClick={() => setModalContent({ title: link.name, content: link.description })}
-                          className="text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary transition-colors text-left"
-                        >
-                          {link.name}
-                        </button>
+                        {'url' in link && link.url ? (
+                          // Server-rendered Blade pages, so a real navigation
+                          // rather than an Inertia visit.
+                          <a
+                            href={link.url}
+                            className="text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary transition-colors text-left"
+                          >
+                            {link.name}
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => setModalContent({ title: link.name, content: link.description })}
+                            className="text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary transition-colors text-left"
+                          >
+                            {link.name}
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
