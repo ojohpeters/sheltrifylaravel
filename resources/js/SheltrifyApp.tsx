@@ -268,61 +268,43 @@ const AppContent: React.FC = () => {
       setIsProfileModalOpen(false);
   };
 
+  /**
+   * Pages that require a session. Everything absent from this set is public.
+   *
+   * This used to be a hand-written if/else chain that named every page, with a
+   * final `else` that sent anything unrecognised to the homepage. Adding a page
+   * and forgetting to add a branch therefore produced a silent redirect home
+   * rather than an error — which is exactly what happened to /artisans,
+   * /referrals, /login and /register. Driving it from a set means a new page
+   * works by default, and URL_BY_PAGE (already a Record<Page, string>, so the
+   * compiler enforces an entry) stays the single source of truth.
+   */
+  const AUTH_REQUIRED: ReadonlySet<Page> = new Set<Page>([
+    'chat', 'community', 'wallet', 'marketplace', 'feels', 'rentalWahala',
+    'cart', 'userDashboard', 'adminDashboard', 'profile', 'notifications',
+    'referrals',
+  ]);
+
   const navigateTo = (page: Page) => {
     const go = (p: Page) => {
       router.visit(URL_BY_PAGE[p], { preserveScroll: false });
       window.scrollTo(0, 0);
     };
 
-    if (
-      page === 'chat' ||
-      page === 'community' ||
-      page === 'wallet' ||
-      page === 'marketplace' ||
-      page === 'feels' ||
-      page === 'rentalWahala' ||
-      page === 'cart' ||
-      page === 'globalTales'
-    ) {
-      if (isAuthenticated || page === 'globalTales') {
-        go(page);
-      } else {
-        setIntendedPage(page);
-        navigateTo('login');
-      }
-    } else if (page === 'about' || page === 'contact' || page === 'premium') {
-      go(page);
-    } else if (page === 'adminDashboard' || page === 'userDashboard') {
-      if (isAuthenticated) {
-        if (page === 'adminDashboard' && currentUser?.role !== 'ADMIN') {
-          go('userDashboard');
-        } else {
-          go(page);
-        }
-      } else {
-        setIntendedPage(page);
-        navigateTo('login');
-      }
-    } else if (page === 'profile' || page === 'notifications') {
-      if (isAuthenticated) {
-        go(page);
-      } else {
-        setIntendedPage(page);
-        navigateTo('login');
-      }
-    } else if (page === 'productDetail') {
-      // Anyone can view a product; auth gate is on the "I'm Interested" action.
-      go(page);
-    } else if (page === 'paymentVerify') {
-      router.visit(URL_BY_PAGE[page], { preserveScroll: false });
-      window.scrollTo(0, 0);
-    } else if (page === 'landing') {
-      router.visit('/', { preserveScroll: false });
-      window.scrollTo(0, 0);
-    } else {
-      router.visit('/', { preserveScroll: false });
-      window.scrollTo(0, 0);
+    if (AUTH_REQUIRED.has(page) && !isAuthenticated) {
+      setIntendedPage(page);
+      go('login');
+      return;
     }
+
+    // Non-admins asking for the admin dashboard get their own instead of a
+    // dead end.
+    if (page === 'adminDashboard' && currentUser?.role !== 'ADMIN') {
+      go('userDashboard');
+      return;
+    }
+
+    go(page);
   };
 
   const refreshCart = () => {

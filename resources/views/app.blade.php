@@ -3,6 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {{-- Critical paint colour, deliberately the first style in the document.
+         The browser paints its default white before any stylesheet arrives, so
+         without this there is a white flash ahead of the boot splash — most
+         obvious in the Android app, where it follows the dark TWA splash. This
+         must stay inline and ahead of the Vite bundle to land on first paint. --}}
+    <style>
+        html { background: #EEF2F7; }
+        @media (prefers-color-scheme: dark) { html { background: #07090F; } }
+    </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="ShelTrify — Nigeria's trusted marketplace for property, homes, shortlets, land, building materials, tipper drivers, and local services. Buy, rent, invest, and connect with verified professionals.">
     <meta name="keywords" content="ShelTrify, Nigeria real estate, property listing, rent in Nigeria, buy land Nigeria, shortlet apartment, building materials, tipper driver, local artisans, property investment">
@@ -116,7 +126,7 @@
     #app-boot {
         position: fixed; inset: 0; z-index: 9999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 18px; background: #EEF2F7;
+        gap: 18px; background: inherit;
         transition: opacity .35s ease;
     }
     #app-boot.is-done { opacity: 0; pointer-events: none; }
@@ -125,7 +135,6 @@
        reads as a hung app; whatever is underneath is more honest. */
     #app-boot { animation: boot-failsafe 1s ease 15s forwards; }
     @keyframes boot-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
-    @media (prefers-color-scheme: dark) { #app-boot { background: #07090F; } }
     #app-boot .mark {
         width: 68px; height: 68px; border-radius: 18px;
         background: linear-gradient(135deg, #00D4D4, #008A8A);
