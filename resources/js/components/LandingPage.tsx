@@ -6,8 +6,9 @@ import {
     EventVenueIcon, StudentHostelIcon, SmartHomeIcon,
     RentToOwnIcon, TripPlannerIcon, RoadNavigationIcon,
     BuildingStorefrontIcon, DocumentTextIcon, UsersIcon, GlobeAltIcon,
-    MegaphoneIcon,
+    MegaphoneIcon, HammerIcon, CreditCardIcon, ShieldCheckIcon,
 } from './icons';
+import { router } from '@inertiajs/react';
 
 interface LandingPageProps {
   onStartChatting: () => void;
@@ -130,6 +131,118 @@ const Hero: React.FC<Pick<LandingPageProps, 'onStartChatting'>> = ({ onStartChat
     </div>
   </section>
 );
+
+/**
+ * The Sheltrify Group flyer's core services.
+ *
+ * Layout mirrors the flyer: flat navy icon, heading, supporting line, bullets,
+ * and an orange pill CTA. The navy and orange are the flyer's own brand colours
+ * rather than the app's teal, so the section reads as the same campaign — but
+ * text colours fall back to the app tokens in dark mode, where navy on a dark
+ * ground is unreadable.
+ */
+const CORE_SERVICES = [
+    {
+        title: 'Artisans Services',
+        tagline: 'Find Trusted Artisans in 5 Minutes',
+        bullets: ['Plumbers, electricians, painters near you in Makurdi'],
+        cta: 'Hire Now',
+        href: '/marketplace',
+        icon: HammerIcon,
+    },
+    {
+        title: 'Pay-Forward',
+        tagline: 'Send & Receive Money Instantly',
+        bullets: ['Low fees, instant alerts, built for Benue businesses'],
+        cta: 'Send Money',
+        href: '/wallet',
+        icon: CreditCardIcon,
+    },
+    {
+        title: 'Land Verification',
+        tagline: 'Verify Land Documents Before You Pay',
+        bullets: ['Check C of O and survey plans, and avoid land scams'],
+        cta: 'Verify Land',
+        // No dedicated land-verification page exists yet; the AI assistant is
+        // the current entry point for property enquiries. Repoint when one lands.
+        href: '/chat',
+        icon: ShieldCheckIcon,
+    },
+    {
+        // FOURTH SERVICE — SCAWA.
+        // Intentionally has no copy: the flyer only shows three services and
+        // nothing in the repo or the Todos images says what SCAWA stands for,
+        // what it does, or what its CTA should be. Entries without a tagline are
+        // filtered out below, so this stays invisible until the copy is filled
+        // in — inventing marketing text for a real service would be worse than
+        // shipping three. Fill in tagline/bullets/cta/href/icon to publish it.
+        title: 'SCAWA',
+        tagline: '',
+        bullets: [],
+        cta: '',
+        href: '',
+        icon: ShieldCheckIcon,
+    },
+] as const;
+
+const CoreServices: React.FC = () => {
+    const services = CORE_SERVICES.filter(s => s.tagline && s.cta);
+
+    return (
+        <section className="px-4">
+            <div className="max-w-4xl mx-auto">
+                <div className="text-center mb-10">
+                    <h2 className="text-3xl md:text-4xl font-bold text-[#17386B] dark:text-dark-text-primary">
+                        Sheltrify Group
+                    </h2>
+                    <p className="mt-2 text-light-text-secondary dark:text-dark-text-secondary">
+                        Building Benue, One Service at a Time
+                    </p>
+                </div>
+
+                <div className="space-y-5">
+                    {services.map(service => {
+                        const Icon = service.icon;
+                        return (
+                            <div
+                                key={service.title}
+                                className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 md:p-7 flex flex-col sm:flex-row sm:items-center gap-5"
+                            >
+                                <div className="flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-2xl bg-[#17386B]/8 dark:bg-brand-primary/10">
+                                    <Icon className="w-11 h-11 text-[#17386B] dark:text-brand-primary" />
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-xl md:text-2xl font-bold text-[#17386B] dark:text-dark-text-primary">
+                                        {service.title}
+                                    </h3>
+                                    <p className="mt-1 font-semibold text-[#17386B]/85 dark:text-brand-primary">
+                                        {service.tagline}
+                                    </p>
+                                    <ul className="mt-2 space-y-1">
+                                        {service.bullets.map(b => (
+                                            <li key={b} className="text-sm text-light-text-secondary dark:text-dark-text-secondary flex gap-2">
+                                                <span aria-hidden="true">&bull;</span>
+                                                <span>{b}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <button
+                                    onClick={() => router.visit(service.href)}
+                                    className="flex-shrink-0 self-start sm:self-center px-6 py-2.5 rounded-full bg-[#F07C22] text-white font-semibold text-sm hover:bg-[#d86a15] transition-colors shadow-sm"
+                                >
+                                    {service.cta}
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </section>
+    );
+};
 
 const ServiceShowcase: React.FC = () => {
     const services = [
@@ -689,6 +802,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onTalkToAnna
   return (
     <div className="space-y-16 md:space-y-24 overflow-x-hidden w-full">
       <Hero onStartChatting={onStartChatting} />
+      <CoreServices />
       <ServiceShowcase />
       <HowItWorks />
       <VideoShowcase />

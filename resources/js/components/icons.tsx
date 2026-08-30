@@ -595,3 +595,9 @@ export const FilmIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-
     <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
   </svg>
 );
+/** Solid hammer, matching the artisan-services icon on the Sheltrify Group flyer. */
+export const HammerIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+    <svg className={className} viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M30.6 4.2a2 2 0 0 1 2.6-.5l11 6.6a2 2 0 0 1 .7 2.8l-3.6 6a2 2 0 0 1-2.8.7l-3.9-2.3-2.2 3.6a2 2 0 0 1-2.7.7l-2.4-1.4-14.7 21a4.3 4.3 0 0 1-7.1-4.8l.2-.3 17-18.6-1.9-1.1a2 2 0 0 1-.7-2.8l2.2-3.6-3-1.8a2 2 0 0 1-.7-2.7l1.5-2.6a2 2 0 0 1 2.7-.7l7.8 4.6z"/>
+    </svg>
+);
