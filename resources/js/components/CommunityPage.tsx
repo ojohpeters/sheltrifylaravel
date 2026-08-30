@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { communityAPI, uploadAPI } from '../services/api';
+import Lightbox, { useLightbox } from './Lightbox';
 import { 
     ResidentialHouseIcon, 
     OfficeIcon, 
@@ -275,6 +276,7 @@ const PostCard: React.FC<{
     onAddComment: (postId: number, text: string) => void;
     currentUser: User;
 }> = ({ post, onToggleLike, onToggleLove, onAddComment, currentUser }) => {
+    const { lightbox, openLightbox, closeLightbox } = useLightbox();
     const [isCommentsOpen, setIsCommentsOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [likeAnimation, setLikeAnimation] = useState(false);
@@ -352,9 +354,14 @@ const PostCard: React.FC<{
                     {post.content && <p className="text-sm md:text-base text-light-text-primary dark:text-dark-text-primary mt-2 whitespace-pre-wrap break-words">{post.content}</p>}
                     
                     {post.imageUrl && (
-                        <div className="mt-3 rounded-lg overflow-hidden border border-light-border dark:border-dark-border">
+                        <button
+                            type="button"
+                            onClick={() => openLightbox([post.imageUrl], 0, `Post by ${post.author?.name ?? 'user'}`)}
+                            aria-label="View image full screen"
+                            className="mt-3 block w-full rounded-lg overflow-hidden border border-light-border dark:border-dark-border cursor-zoom-in"
+                        >
                             <img src={post.imageUrl} alt="Post content" className="w-full h-auto object-cover" />
-                        </div>
+                        </button>
                     )}
                     {post.videoUrl && (
                         <div className="mt-3 rounded-lg overflow-hidden border border-light-border dark:border-dark-border relative group cursor-pointer aspect-video">
@@ -418,6 +425,15 @@ const PostCard: React.FC<{
                     {isCommentsOpen && <CommentSection comments={post.comments} onAddComment={(text) => onAddComment(post.id, text)} currentUser={currentUser} />}
                 </div>
             </div>
+
+            {lightbox && (
+                <Lightbox
+                    images={lightbox.images}
+                    startIndex={lightbox.index}
+                    alt={lightbox.alt}
+                    onClose={closeLightbox}
+                />
+            )}
         </div>
     );
 };

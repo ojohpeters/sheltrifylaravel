@@ -5,6 +5,7 @@ import {
 } from './icons';
 import { marketplaceAPI, subscribeAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import Lightbox, { useLightbox } from './Lightbox';
 
 interface ProductDetailPageProps {
     product: any;
@@ -41,6 +42,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, onBack, 
     const { showSuccess, showError } = useToast();
     const [currentImg, setCurrentImg] = useState(0);
     const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+    const { lightbox, openLightbox, closeLightbox } = useLightbox();
     const [subscribed, setSubscribed] = useState(false);
     const [email, setEmail] = useState('');
     const [interestSending, setInterestSending] = useState(false);
@@ -146,7 +148,8 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, onBack, 
                                         key={idx}
                                         src={src}
                                         alt={`${product.name} ${idx + 1}`}
-                                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${idx === currentImg ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                                        onClick={() => openLightbox(allImages, idx, product.name)}
+                                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in ${idx === currentImg ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                                         onError={() => setImageErrors(p => ({ ...p, [idx]: true }))}
                                         style={{ display: imageErrors[idx] ? 'none' : 'block' }}
                                     />
@@ -291,6 +294,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, onBack, 
                     </div>
                 </div>
             </div>
+
+            {lightbox && (
+                <Lightbox
+                    images={lightbox.images}
+                    startIndex={lightbox.index}
+                    alt={lightbox.alt}
+                    onClose={closeLightbox}
+                />
+            )}
         </div>
     );
 };
