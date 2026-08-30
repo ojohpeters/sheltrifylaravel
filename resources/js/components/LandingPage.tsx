@@ -6,7 +6,7 @@ import {
     EventVenueIcon, StudentHostelIcon, SmartHomeIcon,
     RentToOwnIcon, TripPlannerIcon, RoadNavigationIcon,
     BuildingStorefrontIcon, DocumentTextIcon, UsersIcon, GlobeAltIcon,
-    MegaphoneIcon, HammerIcon, CreditCardIcon, ShieldCheckIcon,
+    MegaphoneIcon, HammerIcon, CreditCardIcon, ShieldCheckIcon, LightbulbIcon,
 } from './icons';
 import { router } from '@inertiajs/react';
 
@@ -169,19 +169,15 @@ const CORE_SERVICES = [
         icon: ShieldCheckIcon,
     },
     {
-        // FOURTH SERVICE — SCAWA.
-        // Intentionally has no copy: the flyer only shows three services and
-        // nothing in the repo or the Todos images says what SCAWA stands for,
-        // what it does, or what its CTA should be. Entries without a tagline are
-        // filtered out below, so this stays invisible until the copy is filled
-        // in — inventing marketing text for a real service would be worse than
-        // shipping three. Fill in tagline/bullets/cta/href/icon to publish it.
         title: 'SCAWA',
-        tagline: '',
-        bullets: [],
-        cta: '',
-        href: '',
-        icon: ShieldCheckIcon,
+        tagline: 'Sheltrify Capacity Advancement',
+        bullets: [
+            'Free live training every Saturday, 8:30\u20139:30 PM',
+            'Practical AI and digital skills, open to everyone in Benue',
+        ],
+        cta: 'Join Session',
+        href: '/community',
+        icon: LightbulbIcon,
     },
 ] as const;
 
