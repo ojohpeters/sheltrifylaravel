@@ -31,6 +31,9 @@ class ArtisanApiController extends Controller
             'service' => 'nullable|string|max:60',
         ]);
 
+        $page = max(1, (int) $request->query('page', 1));
+        $limit = max(1, min(60, (int) $request->query('limit', 12)));
+
         $query = User::query()
             ->where('role', 'ARTISAN')
             ->where('is_verified', true)
@@ -49,12 +52,24 @@ class ArtisanApiController extends Controller
                 ->orWhere('artisan_service', 'like', $term));
         }
 
+        $total = (clone $query)->count();
+
         $artisans = $query
             ->orderByDesc('artisan_rating')
             ->orderByDesc('created_at')
+            ->skip(($page - 1) * $limit)
+            ->take($limit)
             ->get(self::PUBLIC_COLUMNS);
 
-        return $this->jsonOk(['artisans' => $artisans]);
+        return $this->jsonOk([
+            'artisans' => $artisans,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'totalPages' => (int) ceil($total / $limit),
+            ],
+        ]);
     }
 
     /** Reviews for one artisan, newest first. */

@@ -84,7 +84,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'artisans' | 'referrals' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'artisans' | 'referrals' | 'login' | 'register' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
 
 type ShellPageProps = {
   view: Page;
@@ -100,6 +100,8 @@ const URL_BY_PAGE: Record<Page, string> = {
   marketplace: '/marketplace',
   artisans: '/artisans',
   referrals: '/referrals',
+  login: '/login',
+  register: '/register',
   feels: '/feels',
   rentalWahala: '/rental-wahala',
   paymentVerify: '/payments/verify',
@@ -125,6 +127,8 @@ const HASH_TO_PATH: Record<string, string> = {
   marketplace: '/marketplace',
   artisans: '/artisans',
   referrals: '/referrals',
+  login: '/login',
+  register: '/register',
   feels: '/feels',
   rentalWahala: '/rental-wahala',
   paymentVerify: '/payments/verify',
@@ -154,7 +158,6 @@ const AppContent: React.FC = () => {
       new Date(currentUser.premiumExpiryDate) > new Date())
   );
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isVideoAssistantOpen, setIsVideoAssistantOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(() => {
@@ -285,7 +288,7 @@ const AppContent: React.FC = () => {
         go(page);
       } else {
         setIntendedPage(page);
-        setIsAuthModalOpen(true);
+        navigateTo('login');
       }
     } else if (page === 'about' || page === 'contact' || page === 'premium') {
       go(page);
@@ -298,14 +301,14 @@ const AppContent: React.FC = () => {
         }
       } else {
         setIntendedPage(page);
-        setIsAuthModalOpen(true);
+        navigateTo('login');
       }
     } else if (page === 'profile' || page === 'notifications') {
       if (isAuthenticated) {
         go(page);
       } else {
         setIntendedPage(page);
-        setIsAuthModalOpen(true);
+        navigateTo('login');
       }
     } else if (page === 'productDetail') {
       // Anyone can view a product; auth gate is on the "I'm Interested" action.
@@ -327,7 +330,6 @@ const AppContent: React.FC = () => {
   };
 
   const handleLoginSuccess = async (_user: any) => {
-    setIsAuthModalOpen(false);
     const dest = intendedPage;
     setIntendedPage(null);
     const path = dest ? URL_BY_PAGE[dest] : '/chat';
@@ -362,7 +364,7 @@ const AppContent: React.FC = () => {
     // Check if user is authenticated
     if (!isAuthenticated) {
       setIntendedPage('premium');
-      setIsAuthModalOpen(true);
+      navigateTo('login');
       showToast('Please log in to upgrade to premium.');
       return;
     }
@@ -395,7 +397,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const isModalOpen = isAuthModalOpen || isVideoAssistantOpen || isProfileModalOpen;
+  const isModalOpen = isVideoAssistantOpen || isProfileModalOpen;
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -444,11 +446,11 @@ const AppContent: React.FC = () => {
           onAdminClick={() => navigateTo('adminDashboard')}
           onCartClick={() => navigateTo('cart')}
           onLoginClick={() => {
-            setIsAuthModalOpen(true);
+            navigateTo('login');
             sessionStorage.setItem('authModalTab', 'login');
           }}
           onSignupClick={() => {
-            setIsAuthModalOpen(true);
+            navigateTo('login');
             sessionStorage.setItem('authModalTab', 'signup');
           }}
           onLogoutClick={() => void handleLogout()}
@@ -474,13 +476,21 @@ const AppContent: React.FC = () => {
             />
           )}
           {currentPage === 'referrals' && <ReferralsPage currentUser={currentUser} />}
+          {(currentPage === 'login' || currentPage === 'register') && (
+            <AuthModal
+              variant="page"
+              initialTab={currentPage === 'login' ? 'login' : 'signup'}
+              onClose={() => navigateTo('landing')}
+              onLoginSuccess={handleLoginSuccess}
+            />
+          )}
           {currentPage === 'artisans' && (
             <ArtisansPage
               isAuthenticated={isAuthenticated}
               onJoinAsArtisan={() => {
                 if (!isAuthenticated) {
                   setIntendedPage('artisans');
-                  setIsAuthModalOpen(true);
+                  navigateTo('login');
                   showToast('Create an account to join the verified network.');
                   return;
                 }
@@ -582,20 +592,11 @@ const AppContent: React.FC = () => {
         cartCount={cartCount}
         onNavigate={navigateTo}
         onLoginClick={() => {
-          setIsAuthModalOpen(true);
+          navigateTo('login');
           sessionStorage.setItem('authModalTab', 'login');
         }}
       />
 
-      {isAuthModalOpen && (
-        <AuthModal 
-          onClose={() => {
-            setIsAuthModalOpen(false);
-            setIntendedPage(null);
-          }} 
-          onLoginSuccess={handleLoginSuccess}
-        />
-      )}
       {isProfileModalOpen && (
         <ProfileModal 
           onClose={() => setIsProfileModalOpen(false)}

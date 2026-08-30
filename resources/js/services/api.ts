@@ -578,10 +578,12 @@ export const subscribeAPI = {
 
 // Local artisans directory. Reads are public; writes require a session.
 export const artisanAPI = {
-  list: async (params?: { search?: string; service?: string }) => {
+  list: async (params?: { search?: string; service?: string; page?: number; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params?.search) qs.set('search', params.search);
     if (params?.service) qs.set('service', params.service);
+    if (params?.page) qs.set('page', String(params.page));
+    if (params?.limit) qs.set('limit', String(params.limit));
     const suffix = qs.toString() ? `?${qs}` : '';
     return apiRequest(`/artisans${suffix}`);
   },

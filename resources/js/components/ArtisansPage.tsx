@@ -6,6 +6,7 @@ import {
 import { artisanAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { ARTISAN_CATEGORIES, serviceLabel } from '../constants/services';
+import Pagination, { PageMeta } from './Pagination';
 
 interface Artisan {
     id: number;
@@ -320,24 +321,35 @@ const ArtisansPage: React.FC<{
     const [search, setSearch] = useState('');
     const [service, setService] = useState<string>('');
     const [active, setActive] = useState<Artisan | null>(null);
+    const [page, setPage] = useState(1);
+    const [meta, setMeta] = useState<PageMeta | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const res: any = await artisanAPI.list({ search: search || undefined, service: service || undefined });
+            const res: any = await artisanAPI.list({
+                search: search || undefined,
+                service: service || undefined,
+                page,
+            });
             setArtisans(res?.success ? (res.data.artisans || []) : []);
+            setMeta(res?.success ? (res.data.pagination ?? null) : null);
         } catch {
             setArtisans([]);
+            setMeta(null);
         } finally {
             setLoading(false);
         }
-    }, [search, service]);
+    }, [search, service, page]);
 
     // Debounced so typing in the search box does not fire a request per keystroke.
     useEffect(() => {
         const t = setTimeout(load, 300);
         return () => clearTimeout(t);
     }, [load]);
+
+    // A narrower filter can make the current page not exist any more.
+    useEffect(() => { setPage(1); }, [search, service]);
 
     // Chips are driven by the trades actually present, so the filter row never
     // offers a category that returns nothing.
@@ -436,6 +448,8 @@ const ArtisansPage: React.FC<{
                     </div>
                 )}
             </div>
+
+            {meta && !loading && <Pagination meta={meta} onChange={setPage} />}
 
             {active && (
                 <ReviewsModal

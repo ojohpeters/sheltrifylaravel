@@ -5,12 +5,22 @@ import { authAPI, uploadAPI } from '../services/api';
 import { ARTISAN_CATEGORIES, TRANSPORT_CATEGORIES, TRANSPORT_ROLE_LABEL } from '../constants/services';
 import { getReferralCode, clearReferralCode } from '../referral';
 
+/**
+ * Rendered two ways from one implementation.
+ *
+ * `variant="page"` presents the same form as a full-page split layout, which is
+ * how /login and /register are served. Duplicating this component to build
+ * those pages would have meant maintaining login, signup, forgot-password and
+ * reset-password flows twice, and they would have drifted.
+ */
 interface AuthModalProps {
+    variant?: 'modal' | 'page';
+    initialTab?: 'login' | 'signup';
     onClose: () => void;
     onLoginSuccess: (user: any) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess, variant = 'modal', initialTab }) => {
     // Check sessionStorage for which tab to show (set by SheltrifyApp when opening modal)
     const getInitialTab = () => {
         if (typeof window !== 'undefined') {
@@ -20,7 +30,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
         return true;
     };
     
-    const [isLogin, setIsLogin] = useState(getInitialTab);
+    const [isLogin, setIsLogin] = useState(initialTab ? initialTab === 'login' : getInitialTab);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
@@ -193,18 +203,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
         onClose();
     };
 
-    return (
+    const isPage = variant === 'page';
+
+    const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => isPage ? (
+        <div className="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
+            {/* Brand panel. Hidden on phones, where it would push the form
+                below the fold — the form is the reason anyone is on this page. */}
+            <div className="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-[#0B1524] via-[#07090F] to-[#042A28] text-white">
+                <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00D4D4] to-[#008A8A] flex items-center justify-center">
+                        <LogoIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xl font-bold">ShelTrify</span>
+                </div>
+
+                <div>
+                    <h2 className="text-4xl font-bold leading-tight">
+                        Homes, land &amp; trusted<br />local services.
+                    </h2>
+                    <p className="mt-4 text-white/70 max-w-md">
+                        Join thousands finding verified property and skilled artisans across
+                        Nigeria — all in one place.
+                    </p>
+                    <ul className="mt-8 space-y-3">
+                        {['Verified listings and artisans', 'AI-powered property search', 'Secure payments with Paystack'].map(f => (
+                            <li key={f} className="flex items-center gap-3 text-white/85">
+                                <span className="w-5 h-5 rounded-full bg-[#00B8B8]/25 flex items-center justify-center flex-shrink-0">
+                                    <span className="w-2 h-2 rounded-full bg-[#00D4D4]" />
+                                </span>
+                                {f}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <p className="text-xs text-white/40">
+                    &copy; {new Date().getFullYear()} Sheltrify Company Limited
+                </p>
+            </div>
+
+            <div className="flex items-center justify-center p-6 sm:p-10 bg-light-bg dark:bg-dark-bg">
+                <div className="w-full max-w-md text-light-text-primary dark:text-dark-text-primary">
+                    {children}
+                </div>
+            </div>
+        </div>
+    ) : (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-            onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                    handleClose();
-                }
-            }}
-            style={{ 
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                backdropFilter: 'blur(4px)'
-            }}
+            onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
         >
             <div
                 className="relative bg-gradient-to-br from-light-card to-light-bg dark:from-dark-card dark:to-dark-bg border border-light-border dark:border-dark-border rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-8 text-light-text-primary dark:text-dark-text-primary my-auto max-h-[90vh] overflow-y-auto animate-scale-in"
@@ -213,6 +261,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                 <button onClick={handleClose} className="absolute top-4 right-4 text-light-text-secondary dark:text-dark-text-secondary hover:text-light-text-primary dark:hover:text-dark-text-primary">
                     <CloseIcon className="w-6 h-6" />
                 </button>
+                {children}
+            </div>
+        </div>
+    );
+
+    return (
+        <Shell>
+            <>
                 <div className="text-center mb-6">
                     <LogoIcon className="w-10 h-10 mx-auto text-brand-primary" />
                     <h2 className="text-2xl font-bold mt-2">Welcome to ShelTrify</h2>
@@ -611,10 +667,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                 )}
 
                  <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary text-center mt-6">
-                    By continuing, you agree to ShelTrify's <button type="button" onClick={(e) => { e.preventDefault(); alert('Terms of Service: By using ShelTrify, you agree to our terms. This is a demo version.'); }} className="underline hover:text-brand-primary">Terms of Service</button> and <button type="button" onClick={(e) => { e.preventDefault(); alert('Privacy Policy: We respect your privacy. Your data is securely stored and encrypted.'); }} className="underline hover:text-brand-primary">Privacy Policy</button>.
+                    By continuing, you agree to ShelTrify's <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">Privacy Policy</a>.
                 </p>
-            </div>
-        </div>
+            </>
+        </Shell>
     );
 };
 
