@@ -205,7 +205,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess, v
 
     const isPage = variant === 'page';
 
-    const Shell: React.FC<{ children: React.ReactNode }> = ({ children }) => isPage ? (
+    /**
+     * Wraps the form in either the page or the modal chrome.
+     *
+     * Deliberately a plain function called during render, NOT a component
+     * defined in the component body. Declaring a component inside the render
+     * gives it a fresh identity on every state change, so React unmounts and
+     * remounts the whole subtree on each keystroke — which dropped focus from
+     * the input and made the mobile keyboard open and immediately close.
+     */
+    const wrap = (children: React.ReactNode) => isPage ? (
         <div className="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
             {/* Brand panel. Hidden on phones, where it would push the form
                 below the fold — the form is the reason anyone is on this page. */}
@@ -266,8 +275,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess, v
         </div>
     );
 
-    return (
-        <Shell>
+    return wrap(
+        (
             <>
                 <div className="text-center mb-6">
                     <LogoIcon className="w-10 h-10 mx-auto text-brand-primary" />
@@ -670,7 +679,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess, v
                     By continuing, you agree to ShelTrify's <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">Privacy Policy</a>.
                 </p>
             </>
-        </Shell>
+        )
     );
 };
 
