@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\MarketplaceApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\PaymentApiController;
 use App\Http\Controllers\Api\ReferralApiController;
+use App\Http\Controllers\Api\StatsApiController;
 use App\Http\Controllers\Api\RentalWahalaApiController;
 use App\Http\Controllers\Api\UploadApiController;
 use App\Http\Controllers\Api\UserApiController;
@@ -43,6 +44,9 @@ Route::get('/marketplace/local-artisans', [MarketplaceApiController::class, 'loc
 
 // Local artisans directory. Reads are public so the page works signed-out;
 // writing a review or applying requires an account (see the auth group).
+// Real headline counts for the landing page.
+Route::get('/stats', [StatsApiController::class, 'index']);
+
 // Invite lookup. Public because the invitee has no account yet; throttled
 // because it is an unauthenticated endpoint that returns a person's name.
 Route::get('/referrals/{code}', [ReferralApiController::class, 'show'])

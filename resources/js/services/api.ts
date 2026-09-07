@@ -577,6 +577,11 @@ export const subscribeAPI = {
 };
 
 // Local artisans directory. Reads are public; writes require a session.
+// Real headline counts for the landing page.
+export const statsAPI = {
+  public: async () => apiRequest('/stats'),
+};
+
 // Invite lookup — public, used before the visitor has an account.
 export const referralAPI = {
   lookup: async (code: string) => apiRequest(`/referrals/${encodeURIComponent(code)}`),

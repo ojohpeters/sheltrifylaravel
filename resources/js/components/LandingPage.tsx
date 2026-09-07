@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     CheckCircleIcon, UserIcon, ChevronRightIcon,
     VideoCameraIcon, ChevronLeftIcon,
@@ -9,6 +9,8 @@ import {
     MegaphoneIcon, HammerIcon, CreditCardIcon, ShieldCheckIcon, LightbulbIcon,
 } from './icons';
 import { router } from '@inertiajs/react';
+import { statsAPI } from '../services/api';
+import { ARTISAN_CATEGORIES, TRANSPORT_CATEGORIES } from '../constants/services';
 
 interface LandingPageProps {
   onStartChatting: () => void;
@@ -17,25 +19,57 @@ interface LandingPageProps {
 }
 
 // --- ARTISAN DATA & TYPES ---
-interface Artisan {
-  id: number;
-  name: string;
-  service: string;
-  email: string;
-  phone: string;
-  avatarUrl: string;
-}
 
-const artisans: Artisan[] = [
-    { id: 1, name: 'Tunde Adebayo', service: 'Plumber', email: 't.adebayo@email.com', phone: '08012345678', avatarUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=256' },
-    { id: 2, name: 'Amina Salisu', service: 'Electrician', email: 'a.salisu@email.com', phone: '08023456789', avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=256' },
-    { id: 3, name: 'Chike Obi', service: 'Carpenter', email: 'c.obi@email.com', phone: '08034567890', avatarUrl: 'https://images.unsplash.com/photo-1564564321837-a57b7070ac4f?q=80&w=256' },
-    { id: 4, name: 'Fatima Bello', service: 'Painter', email: 'f.bello@email.com', phone: '08045678901', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256' },
-    { id: 5, name: 'Samuel Kalu', service: 'AC Repair', email: 's.kalu@email.com', phone: '08056789012', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256' },
-    { id: 6, name: 'Ngozi Eze', service: 'Mover', email: 'n.eze@email.com', phone: '08067890123', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256' },
-    { id: 7, name: 'Musa Ibrahim', service: 'Cleaner', email: 'm.ibrahim@email.com', phone: '08078901234', avatarUrl: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?q=80&w=256' },
-    { id: 8, name: 'Bola Ahmed', service: 'Tutor', email: 'b.ahmed@email.com', phone: '08089012345', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=256' }
-];
+/**
+ * Headline counts, read from the database.
+ *
+ * The bar used to claim "50K+ listings" and "12K+ happy tenants" against a
+ * handful of real rows. It now shows what is actually there — and hides itself
+ * entirely below MIN_TO_SHOW, because a bar reading "1 listing" damages
+ * confidence more than no bar at all. It reappears on its own as the platform
+ * fills up, with no code change.
+ */
+const MIN_TO_SHOW = 10;
+
+const LiveStats: React.FC = () => {
+    const [stats, setStats] = useState<{ listings: number; artisans: number; products: number; members: number } | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        statsAPI.public()
+            .then((res: any) => { if (!cancelled && res?.success) setStats(res.data.stats); })
+            .catch(() => { /* the bar simply does not render */ });
+        return () => { cancelled = true; };
+    }, []);
+
+    if (!stats) return null;
+
+    const cards = [
+        { value: stats.listings, label: stats.listings === 1 ? 'Listing' : 'Listings' },
+        { value: stats.artisans, label: stats.artisans === 1 ? 'Verified artisan' : 'Verified artisans' },
+        { value: stats.members, label: stats.members === 1 ? 'Member' : 'Members' },
+    ].filter(c => c.value > 0);
+
+    // Nothing worth boasting about yet.
+    if (cards.length < 2 || stats.members < MIN_TO_SHOW) return null;
+
+    return (
+        <div className="max-w-3xl mx-auto px-4">
+            <div className={`grid gap-px bg-light-border dark:bg-dark-border rounded-2xl overflow-hidden ${cards.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                {cards.map(stat => (
+                    <div key={stat.label} className="flex flex-col items-center py-4 bg-light-card dark:bg-dark-card">
+                        <span className="text-2xl md:text-3xl font-extrabold text-brand-primary">
+                            {stat.value.toLocaleString()}
+                        </span>
+                        <span className="text-xs md:text-sm text-light-text-secondary dark:text-dark-text-secondary mt-0.5">
+                            {stat.label}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 const Hero: React.FC<Pick<LandingPageProps, 'onStartChatting'>> = ({ onStartChatting }) => (
   <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24">
@@ -85,21 +119,7 @@ const Hero: React.FC<Pick<LandingPageProps, 'onStartChatting'>> = ({ onStartChat
       </button>
     </div>
 
-    {/* Stats bar */}
-    <div className="max-w-3xl mx-auto px-4">
-      <div className="grid grid-cols-3 gap-px bg-light-border dark:bg-dark-border rounded-2xl overflow-hidden">
-        {[
-          { value: '50K+', label: 'Listings' },
-          { value: '12K+', label: 'Happy Tenants' },
-          { value: '98%',  label: 'Verified Listings' },
-        ].map(stat => (
-          <div key={stat.label} className="flex flex-col items-center py-4 bg-light-card dark:bg-dark-card">
-            <span className="text-2xl md:text-3xl font-extrabold text-brand-primary">{stat.value}</span>
-            <span className="text-xs md:text-sm text-light-text-secondary dark:text-dark-text-secondary mt-0.5">{stat.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <LiveStats />
 
     {/* Hero image */}
     <div className="relative max-w-5xl mx-auto mt-12 px-4">
@@ -385,7 +405,14 @@ const VideoShowcase: React.FC = () => {
 
 
 const ArtisanServicesMarquee: React.FC = () => {
-    const uniqueServices = [...new Set(artisans.map(artisan => artisan.service))];
+    // Driven by the real taxonomy rather than a sample dataset, so the marquee
+    // advertises trades the platform actually has and stays in step when the
+    // list changes. It previously scrolled Tutor, Cleaner and AC Repair, none
+    // of which are services on the site.
+    const uniqueServices = [
+        ...ARTISAN_CATEGORIES.map(c => c.label),
+        ...TRANSPORT_CATEGORIES.map(c => c.label),
+    ];
     const servicesForMarquee = [...uniqueServices, ...uniqueServices];
 
     return (
