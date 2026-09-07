@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ListingApiController;
 use App\Http\Controllers\Api\MarketplaceApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\PaymentApiController;
+use App\Http\Controllers\Api\ReferralApiController;
 use App\Http\Controllers\Api\RentalWahalaApiController;
 use App\Http\Controllers\Api\UploadApiController;
 use App\Http\Controllers\Api\UserApiController;
@@ -42,6 +43,12 @@ Route::get('/marketplace/local-artisans', [MarketplaceApiController::class, 'loc
 
 // Local artisans directory. Reads are public so the page works signed-out;
 // writing a review or applying requires an account (see the auth group).
+// Invite lookup. Public because the invitee has no account yet; throttled
+// because it is an unauthenticated endpoint that returns a person's name.
+Route::get('/referrals/{code}', [ReferralApiController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->where('code', '[A-Za-z0-9]{4,32}');
+
 Route::get('/artisans', [ArtisanApiController::class, 'index']);
 Route::get('/artisans/{id}/reviews', [ArtisanApiController::class, 'reviews'])->where('id', '[0-9]+');
 Route::post('/marketplace/subscribe', [MarketplaceApiController::class, 'subscribe']);

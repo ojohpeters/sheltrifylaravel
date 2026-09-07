@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, createContext, lazy, Suspense, 
 import { router, usePage } from '@inertiajs/react';
 import LandingPage from './components/LandingPage';
 import WelcomeShareModal from './components/WelcomeShareModal';
+import ReferralInviteBanner from './components/ReferralInviteBanner';
 import Header from './components/Header';
 import Footer from './components/Footer';
 const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
@@ -465,6 +466,7 @@ const AppContent: React.FC = () => {
           }}
           onLogoutClick={() => void handleLogout()}
         />
+        {!isAuthenticated && <ReferralInviteBanner onJoin={() => navigateTo('register')} />}
         <main className="flex-grow max-w-screen-xl mx-auto px-4 sm:px-6 py-6 md:py-10 overflow-x-hidden w-full pb-nav page-enter">
           {/* Pages are code-split, so each one arrives as its own chunk on
               first visit. The fallback keeps the frame stable rather than

@@ -577,6 +577,11 @@ export const subscribeAPI = {
 };
 
 // Local artisans directory. Reads are public; writes require a session.
+// Invite lookup — public, used before the visitor has an account.
+export const referralAPI = {
+  lookup: async (code: string) => apiRequest(`/referrals/${encodeURIComponent(code)}`),
+};
+
 export const artisanAPI = {
   list: async (params?: { search?: string; service?: string; page?: number; limit?: number }) => {
     const qs = new URLSearchParams();
