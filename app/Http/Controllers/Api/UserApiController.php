@@ -139,13 +139,14 @@ class UserApiController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'professionalType'   => 'required|in:SURVEYOR,DEVELOPER',
-            'companyName'        => 'required|string|max:255',
-            'licenseNumber'      => 'required|string|max:100',
-            'licenseUrl'         => 'required|string',
-            'ninNumber'          => 'required|string|min:11|max:11',
-            'cacNumber'          => 'nullable|string|max:20',
-            'cacDocumentUrl'     => 'nullable|string',
+            // NIN is the only hard requirement. Most local artisans have no
+            // company, no licence number and no professional body — demanding
+            // them kept exactly the people this page exists for from applying.
+            'professionalType'   => 'required|string|max:60',
+            'companyName'        => 'nullable|string|max:255',
+            'licenseNumber'      => 'nullable|string|max:100',
+            'licenseUrl'         => 'nullable|string',
+            'ninNumber'          => 'required|digits:11',
             'professionalBody'   => 'nullable|string|max:100',
             'membershipId'       => 'nullable|string|max:100',
             'membershipDocUrl'   => 'nullable|string',
@@ -158,12 +159,10 @@ class UserApiController extends Controller
             ['user_id' => $user->id],
             [
                 'professional_type' => $data['professionalType'],
-                'company_name'      => $data['companyName'],
-                'license_number'    => $data['licenseNumber'],
-                'license_url'       => $data['licenseUrl'],
+                'company_name'      => $data['companyName'] ?? null,
+                'license_number'    => $data['licenseNumber'] ?? null,
+                'license_url'       => $data['licenseUrl'] ?? null,
                 'nin_number'        => $data['ninNumber'],
-                'cac_number'        => $data['cacNumber'] ?? null,
-                'cac_document_url'  => $data['cacDocumentUrl'] ?? null,
                 'professional_body' => $data['professionalBody'] ?? null,
                 'membership_id'     => $data['membershipId'] ?? null,
                 'membership_doc_url'=> $data['membershipDocUrl'] ?? null,
@@ -179,8 +178,14 @@ class UserApiController extends Controller
 
         // Also update user role and NIN
         $user->update([
-            'role'                   => $data['professionalType'],
+            // Role stays ARTISAN; the trade lives in professional_type and
+            // artisan_service. professionalType used to be SURVEYOR/DEVELOPER
+            // and was written straight into `role` — now that it carries a
+            // trade, doing that would set role to something like PLUMBER and
+            // break every role comparison in the app.
+            'role'                   => 'ARTISAN',
             'professional_type'      => $data['professionalType'],
+            'artisan_service'        => $data['professionalType'],
             'nin_number'             => $data['ninNumber'],
             'listing_approval_status'=> 'pending',
         ]);

@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { userAPI, uploadAPI } from '../services/api';
-
-const PROFESSIONAL_BODIES: Record<string, string[]> = {
-    SURVEYOR:  ['NIESV (Nigerian Institution of Estate Surveyors & Valuers)', 'NIS (Nigerian Institution of Surveyors)', 'NIQS (Nigerian Institute of Quantity Surveyors)', 'Other'],
-    DEVELOPER: ['NIA (Nigerian Institute of Architects)', 'NIOB (Nigerian Institute of Building)', 'NSE (Nigerian Society of Engineers)', 'CORBON', 'Other'],
-};
+import { ARTISAN_CATEGORIES } from '../constants/services';
 
 const StatusCard: React.FC<{ profile: any }> = ({ profile }) => {
     const s = profile?.status;
@@ -34,22 +30,21 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
     const [success, setSuccess] = useState(false);
 
     const [form, setForm] = useState({
-        professionalType: 'SURVEYOR',
+        professionalType: ARTISAN_CATEGORIES[0]?.value ?? 'PLUMBER',
         companyName: '', licenseNumber: '', ninNumber: '',
-        cacNumber: '', professionalBody: '', membershipId: '',
+        professionalBody: '', membershipId: '',
         businessAddress: '', yearsExperience: '', bio: '',
     });
 
     const [licenseFile, setLicenseFile]   = useState<File | null>(null);
-    const [cacFile, setCacFile]           = useState<File | null>(null);
     const [membershipFile, setMembershipFile] = useState<File | null>(null);
     const [licensePrev, setLicensePrev]   = useState<string | null>(null);
-    const [cacPrev, setCacPrev]           = useState<string | null>(null);
     const [membershipPrev, setMembershipPrev] = useState<string | null>(null);
 
     const licenseRef    = useRef<HTMLInputElement>(null);
-    const cacRef        = useRef<HTMLInputElement>(null);
     const membershipRef = useRef<HTMLInputElement>(null);
+    const licenseCamRef    = useRef<HTMLInputElement>(null);
+    const membershipCamRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         userAPI.getProfessionalProfile().then(r => {
@@ -72,21 +67,24 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!licenseFile) { setError('Please upload your professional license document.'); return; }
         if (form.ninNumber.length !== 11 || !/^\d+$/.test(form.ninNumber)) { setError('NIN must be exactly 11 digits.'); return; }
         setSubmitting(true); setError(null);
 
         try {
-            const uploads: Promise<any>[] = [uploadAPI.uploadImage(licenseFile, true)];
-            if (cacFile) uploads.push(uploadAPI.uploadImage(cacFile, true));
-            if (membershipFile) uploads.push(uploadAPI.uploadImage(membershipFile, true));
-            const [licRes, cacRes, memRes] = await Promise.all(uploads);
+            // Uploaded by name rather than positionally. The previous code
+            // destructured a conditionally-built array, so submitting a
+            // membership card without a licence stored it under the wrong URL.
+            const [licRes, memRes] = await Promise.all([
+                licenseFile ? uploadAPI.uploadImage(licenseFile, true) : Promise.resolve(null),
+                membershipFile ? uploadAPI.uploadImage(membershipFile, true) : Promise.resolve(null),
+            ]);
 
-            if (!licRes.success) throw new Error('License upload failed');
+            if (licenseFile && !licRes?.success) throw new Error('Licence upload failed');
+            if (membershipFile && !memRes?.success) throw new Error('Membership card upload failed');
+
             const payload: any = {
                 ...form,
-                licenseUrl: licRes.data.url,
-                cacDocumentUrl: cacRes?.data?.url ?? undefined,
+                licenseUrl: licRes?.data?.url ?? undefined,
                 membershipDocUrl: memRes?.data?.url ?? undefined,
             };
 
@@ -114,9 +112,9 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
             {/* Header */}
             <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-brand-primary px-4 sm:px-6 pt-6 pb-16">
                 <div className="max-w-3xl mx-auto">
-                    <p className="text-white/70 text-sm font-semibold uppercase tracking-wider">Professional Registration</p>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white mt-1">Licensed Surveyors & Developers</h1>
-                    <p className="text-white/70 text-sm mt-1">Submit your credentials for verification to list properties on Sheltrify</p>
+                    <p className="text-white/70 text-sm font-semibold uppercase tracking-wider">Artisan Verification</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mt-1">Professional Skills Artisans</h1>
+                    <p className="text-white/70 text-sm mt-1">Verify your identity to be listed and start getting hired on Sheltrify</p>
                 </div>
             </div>
 
@@ -124,13 +122,17 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
                 {/* What you need card */}
                 {!hasSubmitted && (
                     <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-5 mb-6 shadow-sm">
-                        <h3 className="font-bold text-light-text-primary dark:text-dark-text-primary mb-3">What you need to submit</h3>
+                        <h3 className="font-bold text-light-text-primary dark:text-dark-text-primary mb-1">What you need</h3>
+                        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-3">
+                            Only your NIN is required. Everything else is optional — you can snap a
+                            photo now or add it later.
+                        </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {[
-                                { icon: '🪪', text: '11-digit NIN number' },
-                                { icon: '📜', text: 'Professional license document' },
-                                { icon: '🏢', text: 'CAC certificate (optional for companies)' },
-                                { icon: '🎓', text: 'Professional body membership card' },
+                                { icon: '🪪', text: 'Your 11-digit NIN — required' },
+                                { icon: '🛠️', text: 'The trade you practise' },
+                                { icon: '📜', text: 'Trade certificate or licence — optional' },
+                                { icon: '🎓', text: 'Membership card, if you have one — optional' },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary">
                                     <span>{item.icon}</span><span>{item.text}</span>
@@ -161,13 +163,13 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* Type */}
                             <div>
-                                <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Professional Type <span className="text-red-500">*</span></label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {['SURVEYOR', 'DEVELOPER'].map(type => (
-                                        <button key={type} type="button"
-                                            onClick={() => setForm({ ...form, professionalType: type, professionalBody: '' })}
-                                            className={`py-3 rounded-xl border-2 text-sm font-bold transition-all ${form.professionalType === type ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-light-border dark:border-dark-border text-light-text-secondary dark:text-dark-text-secondary hover:border-brand-primary/50'}`}>
-                                            {type === 'SURVEYOR' ? '📐 Surveyor' : '🏗️ Developer'}
+                                <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Your Trade <span className="text-red-500">*</span></label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    {ARTISAN_CATEGORIES.map(trade => (
+                                        <button key={trade.value} type="button"
+                                            onClick={() => setForm({ ...form, professionalType: trade.value })}
+                                            className={`py-2.5 px-2 rounded-xl border-2 text-xs sm:text-sm font-semibold transition-all ${form.professionalType === trade.value ? 'border-brand-primary bg-brand-primary/10 text-brand-primary' : 'border-light-border dark:border-dark-border text-light-text-secondary dark:text-dark-text-secondary hover:border-brand-primary/50'}`}>
+                                            {trade.label}
                                         </button>
                                     ))}
                                 </div>
@@ -175,12 +177,12 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="sm:col-span-2">
-                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Company / Firm Name <span className="text-red-500">*</span></label>
-                                    <input required value={form.companyName} onChange={e => setForm({ ...form, companyName: e.target.value })} placeholder="Adeyemi Surveyors Ltd" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none" />
+                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Business Name <span className="text-light-text-secondary dark:text-dark-text-secondary font-normal">(optional)</span></label>
+                                    <input value={form.companyName} onChange={e => setForm({ ...form, companyName: e.target.value })} placeholder="e.g. Musa Plumbing Services" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">License Number <span className="text-red-500">*</span></label>
-                                    <input required value={form.licenseNumber} onChange={e => setForm({ ...form, licenseNumber: e.target.value })} placeholder="NIESV/2024/001" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none" />
+                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Licence Number <span className="text-light-text-secondary dark:text-dark-text-secondary font-normal">(optional)</span></label>
+                                    <input value={form.licenseNumber} onChange={e => setForm({ ...form, licenseNumber: e.target.value })} placeholder="If you have one" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">NIN Number <span className="text-red-500">*</span></label>
@@ -188,19 +190,13 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
                                         onChange={e => setForm({ ...form, ninNumber: e.target.value.replace(/\D/g, '') })}
                                         placeholder="12345678901" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none font-mono tracking-widest" />
                                 </div>
+                                
                                 <div>
-                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">CAC Number <span className="text-light-text-secondary dark:text-dark-text-secondary font-normal">(optional)</span></label>
-                                    <input value={form.cacNumber} onChange={e => setForm({ ...form, cacNumber: e.target.value })} placeholder="RC123456" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none" />
+                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Professional Body <span className="text-light-text-secondary dark:text-dark-text-secondary font-normal">(optional)</span></label>
+                                    <input value={form.professionalBody} onChange={e => setForm({ ...form, professionalBody: e.target.value })} placeholder="Association or union, if any" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Professional Body</label>
-                                    <select value={form.professionalBody} onChange={e => setForm({ ...form, professionalBody: e.target.value })} className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none">
-                                        <option value="">Select...</option>
-                                        {(PROFESSIONAL_BODIES[form.professionalType] || []).map(b => <option key={b} value={b}>{b}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Membership ID</label>
+                                    <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Membership ID <span className="text-light-text-secondary dark:text-dark-text-secondary font-normal">(optional)</span></label>
                                     <input value={form.membershipId} onChange={e => setForm({ ...form, membershipId: e.target.value })} placeholder="MEM/2024/001" className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none" />
                                 </div>
                                 <div>
@@ -222,28 +218,54 @@ const ProfessionalProfilePage: React.FC<{ currentUser: any }> = ({ currentUser }
 
                             {/* Document uploads */}
                             <div className="border-t border-light-border dark:border-dark-border pt-5 space-y-4">
-                                <h3 className="font-bold text-light-text-primary dark:text-dark-text-primary">Document Uploads</h3>
+                                <h3 className="font-bold text-light-text-primary dark:text-dark-text-primary">Supporting Documents</h3>
+                                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary -mt-2">
+                                    Both are optional. Adding them helps your profile get approved faster.
+                                </p>
 
                                 {[
-                                    { label: 'Professional License / Certificate', required: true, ref: licenseRef, file: licenseFile, preview: licensePrev, setter: setLicenseFile, prevSetter: setLicensePrev, icon: '📜' },
-                                    { label: 'CAC Certificate', required: false, ref: cacRef, file: cacFile, preview: cacPrev, setter: setCacFile, prevSetter: setCacPrev, icon: '🏢' },
-                                    { label: 'Membership Card / Certificate', required: false, ref: membershipRef, file: membershipFile, preview: membershipPrev, setter: setMembershipFile, prevSetter: setMembershipPrev, icon: '🎓' },
+                                    { label: 'Trade Certificate or Licence', ref: licenseRef, camRef: licenseCamRef,
+                                      file: licenseFile, preview: licensePrev, setter: setLicenseFile, prevSetter: setLicensePrev, icon: '📜' },
+                                    { label: 'Membership Card', ref: membershipRef, camRef: membershipCamRef,
+                                      file: membershipFile, preview: membershipPrev, setter: setMembershipFile, prevSetter: setMembershipPrev, icon: '🎓' },
                                 ].map((doc) => (
                                     <div key={doc.label}>
                                         <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">
-                                            {doc.label} {doc.required && <span className="text-red-500">*</span>}
+                                            {doc.label}{' '}
+                                            <span className="text-light-text-secondary dark:text-dark-text-secondary font-normal">(optional)</span>
                                         </label>
-                                        <input type="file" accept="image/*,.pdf" ref={doc.ref} onChange={e => handleFile(e, doc.setter, doc.prevSetter)} className="hidden" />
-                                        <div className="flex items-center gap-3">
+
+                                        {/* Two inputs per document: `capture` opens the camera
+                                            straight away on a phone but hides the gallery, so the
+                                            plain input stays for anyone picking an existing file
+                                            or a PDF. */}
+                                        <input type="file" accept="image/*,.pdf" ref={doc.ref}
+                                            onChange={e => handleFile(e, doc.setter, doc.prevSetter)} className="hidden" />
+                                        <input type="file" accept="image/*" capture="environment" ref={doc.camRef}
+                                            onChange={e => handleFile(e, doc.setter, doc.prevSetter)} className="hidden" />
+
+                                        <div className="flex items-center gap-3 flex-wrap">
                                             {doc.preview
-                                                ? <img src={doc.preview} className="w-20 h-20 object-cover rounded-xl border border-light-border dark:border-dark-border" alt="doc" />
+                                                ? <img src={doc.preview} className="w-20 h-20 object-cover rounded-xl border border-light-border dark:border-dark-border" alt="" />
                                                 : <div className="w-20 h-20 rounded-xl bg-light-bg dark:bg-dark-bg border-2 border-dashed border-light-border dark:border-dark-border flex items-center justify-center text-2xl">{doc.icon}</div>
                                             }
-                                            <button type="button" onClick={() => doc.ref.current?.click()} className="px-4 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-sm font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-border dark:hover:bg-dark-border transition">
-                                                {doc.file ? 'Change File' : 'Upload File'}
+                                            <button type="button" onClick={() => doc.camRef.current?.click()}
+                                                className="px-4 py-2 bg-brand-primary text-white rounded-xl text-sm font-semibold hover:bg-brand-secondary transition">
+                                                📷 Take photo
                                             </button>
-                                            {doc.file && <span className="text-xs text-green-600 dark:text-green-400 font-semibold">✓ {doc.file.name}</span>}
+                                            <button type="button" onClick={() => doc.ref.current?.click()}
+                                                className="px-4 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-sm font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-border dark:hover:bg-dark-border transition">
+                                                {doc.file ? 'Change file' : 'Choose file'}
+                                            </button>
+                                            {doc.file && (
+                                                <button type="button"
+                                                    onClick={() => { doc.setter(null); doc.prevSetter(null); }}
+                                                    className="text-xs font-semibold text-red-500 hover:underline">
+                                                    Remove
+                                                </button>
+                                            )}
                                         </div>
+                                        {doc.file && <p className="mt-1.5 text-xs text-green-600 dark:text-green-400 font-semibold truncate">✓ {doc.file.name}</p>}
                                     </div>
                                 ))}
                             </div>
