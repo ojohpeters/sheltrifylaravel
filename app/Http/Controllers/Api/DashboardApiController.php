@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardApiController extends Controller
 {
@@ -88,10 +89,20 @@ class DashboardApiController extends Controller
             'date' => $r->created_at?->toIso8601String(),
         ]);
 
+        // Clicks vs signups. Without both, there is no way to tell a link
+        // nobody opened from one that gets opened and never converts.
+        $clicks = $user->referral_code
+            ? (int) DB::table('referral_clicks')->where('referral_code', $user->referral_code)->count()
+            : 0;
+        $signups = $history->count();
+
         return $this->jsonOk([
             'totalEarnings' => $history->sum('amount'),
             'earningsHistory' => $history,
             'walletBalance' => $user->wallet?->swc_balance ?? 0,
+            'referralClicks' => $clicks,
+            'referralSignups' => $signups,
+            'referralConversion' => $clicks > 0 ? round($signups / $clicks * 100, 1) : null,
         ]);
     }
 }

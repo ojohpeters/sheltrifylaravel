@@ -45,6 +45,10 @@ class ReferralApiController extends Controller
                 'firstName' => $first,
                 'avatarUrl' => $inviter->avatar_url,
             ],
+            // Sent so the invite banner can state the reward rather than make a
+            // vague promise, and so changing the amount in config changes the
+            // wording everywhere at once.
+            'inviteeBonus' => (float) config('referral.invitee_bonus'),
         ]);
     }
 }

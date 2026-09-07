@@ -24,6 +24,7 @@ interface Inviter {
  */
 const ReferralInviteBanner: React.FC<{ onJoin: () => void }> = ({ onJoin }) => {
     const [inviter, setInviter] = useState<Inviter | null>(null);
+    const [bonus, setBonus] = useState(0);
     const [dismissed, setDismissed] = useState(() => {
         try { return sessionStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; }
     });
@@ -41,6 +42,7 @@ const ReferralInviteBanner: React.FC<{ onJoin: () => void }> = ({ onJoin }) => {
                 // shown and nothing is said — the visitor never asked about it.
                 if (!cancelled && res?.success && res.data?.inviter?.firstName) {
                     setInviter(res.data.inviter);
+                    setBonus(Number(res.data.inviteeBonus) || 0);
                 }
             })
             .catch(() => { /* the invite is a nicety; never surface a failure */ });
@@ -72,7 +74,10 @@ const ReferralInviteBanner: React.FC<{ onJoin: () => void }> = ({ onJoin }) => {
 
                 <p className="min-w-0 flex-1 text-sm text-light-text-primary dark:text-dark-text-primary truncate">
                     <span className="font-semibold">{inviter.firstName}</span>
-                    <span className="text-light-text-secondary dark:text-dark-text-secondary"> invited you to ShelTrify</span>
+                    <span className="text-light-text-secondary dark:text-dark-text-secondary">
+                        {' '}invited you to ShelTrify
+                        {bonus > 0 && <> &mdash; get <span className="font-semibold text-brand-primary">{bonus.toLocaleString()} SWC</span> when you join</>}
+                    </span>
                 </p>
 
                 <button

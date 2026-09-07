@@ -9,6 +9,7 @@ use App\Models\Wallet;
 use App\Services\JwtService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AuthApiController extends Controller
@@ -94,12 +95,37 @@ class AuthApiController extends Controller
                 return;
             }
 
-            Referral::create([
-                'referrer_id' => $referrer->id,
-                'referred_user_id' => $user->id,
-                'status' => 'pending',
-                'reward_earned' => 0,
-            ]);
+            $referrerReward = (float) config('referral.referrer_reward');
+            $inviteeBonus = (float) config('referral.invitee_bonus');
+
+            // Referral rows were previously created 'pending' with a zero
+            // reward and nothing ever completed them, so referrers were never
+            // paid however many people they brought in — and the dashboard,
+            // which counts only completed referrals, always showed nothing.
+            // The reward is settled here, in one transaction with the wallet
+            // credits, so a row can never claim a payment that did not land.
+            DB::transaction(function () use ($user, $referrer, $referrerReward, $inviteeBonus) {
+                Referral::create([
+                    'referrer_id' => $referrer->id,
+                    'referred_user_id' => $user->id,
+                    'status' => 'completed',
+                    'reward_earned' => $referrerReward,
+                ]);
+
+                if ($referrerReward > 0) {
+                    // Incremented in SQL rather than read-modify-write, so two
+                    // signups landing together cannot overwrite each other.
+                    Wallet::query()
+                        ->where('user_id', $referrer->id)
+                        ->increment('swc_balance', $referrerReward);
+                }
+
+                if ($inviteeBonus > 0) {
+                    Wallet::query()
+                        ->where('user_id', $user->id)
+                        ->increment('swc_balance', $inviteeBonus);
+                }
+            });
         } catch (\Throwable $e) {
             Log::warning('Referral attribution failed', [
                 'user_id' => $user->id,

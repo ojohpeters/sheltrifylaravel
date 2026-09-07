@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AccountDeletionController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -60,7 +63,26 @@ Route::get('/product', fn () => $shell('productDetail'))->name('product');
 // Referral entry point. Someone opening a shared link lands on the site with
 // the code in the query string, where the SPA stashes it until they finish
 // signing up. Redirect (not a render) so the code survives client-side routing.
-Route::get('/join/{code}', function (string $code) {
+Route::get('/join/{code}', function (Request $request, string $code) {
+    // Record the visit so referral performance is measurable — without it there
+    // is no way to tell a link nobody opened from one that converts badly.
+    // Failures are swallowed: a tracking problem must never break the invite.
+    try {
+        DB::table('referral_clicks')->insertOrIgnore([
+            'referral_code' => strtoupper($code),
+            // Salted with the app key so the table cannot be reversed into a
+            // list of IP addresses belonging to people who never signed up.
+            'visitor_hash' => hash_hmac(
+                'sha256',
+                $request->ip().'|'.$request->userAgent(),
+                (string) config('app.key')
+            ),
+            'created_at' => now(),
+        ]);
+    } catch (\Throwable $e) {
+        Log::warning('Referral click tracking failed', ['error' => $e->getMessage()]);
+    }
+
     return redirect('/?ref=' . urlencode($code));
 })->where('code', '[A-Za-z0-9]{4,32}')->name('join');
 

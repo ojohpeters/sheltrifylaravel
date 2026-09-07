@@ -25,6 +25,8 @@ const ReferralsPage: React.FC<{ currentUser?: { referralCode?: string | null } |
     const { showSuccess, showError } = useToast();
     const [history, setHistory] = useState<EarningEntry[]>([]);
     const [total, setTotal] = useState(0);
+    const [clicks, setClicks] = useState(0);
+    const [conversion, setConversion] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
 
@@ -38,6 +40,8 @@ const ReferralsPage: React.FC<{ currentUser?: { referralCode?: string | null } |
                 const entries: EarningEntry[] = (res.data.earningsHistory || []);
                 setHistory(entries);
                 setTotal(res.data.totalEarnings || 0);
+                setClicks(res.data.referralClicks || 0);
+                setConversion(res.data.referralConversion ?? null);
             }
         } catch {
             setHistory([]);
@@ -134,11 +138,21 @@ const ReferralsPage: React.FC<{ currentUser?: { referralCode?: string | null } |
                 )}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Stat
-                    label="Total referrals"
+                    label="Link opens"
+                    value={loading ? '—' : clicks.toLocaleString()}
+                    icon={<LinkIcon className="w-4 h-4" />}
+                />
+                <Stat
+                    label="Signed up"
                     value={loading ? '—' : String(history.length)}
                     icon={<UsersIcon className="w-4 h-4" />}
+                />
+                <Stat
+                    label="Conversion"
+                    value={loading ? '—' : conversion === null ? '—' : `${conversion}%`}
+                    icon={<CheckCircleIcon className="w-4 h-4" />}
                 />
                 <Stat
                     label="Earned"
