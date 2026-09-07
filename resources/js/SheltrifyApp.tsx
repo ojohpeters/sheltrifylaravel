@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, createContext, lazy, Suspense, type ReactNode } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import LandingPage from './components/LandingPage';
+import WelcomeShareModal from './components/WelcomeShareModal';
 import Header from './components/Header';
 import Footer from './components/Footer';
 const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
@@ -185,6 +186,18 @@ const AppContent: React.FC = () => {
     } catch { return null; }
   });
   const [intendedPage, setIntendedPage] = useState<Page | null>(null);
+
+  // Prompt a brand-new account to share its referral link. Read once and
+  // cleared immediately, so a refresh does not show it again.
+  const [showWelcomeShare, setShowWelcomeShare] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('sheltrify:justSignedUp') === '1') {
+        sessionStorage.removeItem('sheltrify:justSignedUp');
+        setShowWelcomeShare(true);
+      }
+    } catch { /* private mode */ }
+  }, []);
   const [favorites, setFavorites] = useState<Property[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -599,6 +612,14 @@ const AppContent: React.FC = () => {
         }}
       />
 
+      {showWelcomeShare && currentUser?.referralCode && (
+        <WelcomeShareModal
+          code={currentUser.referralCode}
+          firstName={(currentUser.fullName || '').trim().split(' ')[0] || undefined}
+          onClose={() => setShowWelcomeShare(false)}
+          onViewReferrals={() => { setShowWelcomeShare(false); navigateTo('referrals'); }}
+        />
+      )}
       {isProfileModalOpen && (
         <ProfileModal 
           onClose={() => setIsProfileModalOpen(false)}

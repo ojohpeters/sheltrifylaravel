@@ -184,6 +184,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess, v
                 const response = await authAPI.signup(signupData);
                 if (response.success) {
                     clearReferralCode();
+                    // Login navigates via a full page load, so the prompt has to
+                    // survive it — hence a stored flag rather than component state.
+                    try { sessionStorage.setItem('sheltrify:justSignedUp', '1'); } catch { /* private mode */ }
                     onLoginSuccess(response.data.user);
                     onClose();
                 } else {

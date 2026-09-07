@@ -10,6 +10,7 @@ import {
     uploadAPI, PHOTO_UPLOAD_TARGET_BYTES,
 } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import { router } from '@inertiajs/react';
 import { TRANSPORT_ROLE_LABEL } from '../constants/services';
 
 type TabType = 'overview' | 'listings' | 'marketplace' | 'feels' | 'rental-wahala' | 'global-tales' | 'community' | 'earnings';
@@ -732,6 +733,28 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
                             </div>
                         ))}
                     </div>
+                )}
+
+                {/* Standing referral prompt. The post-signup modal is a single
+                    moment; growth needs the ask to stay reachable afterwards. */}
+                {user?.referralCode && (
+                    <button
+                        onClick={() => router.visit('/referrals')}
+                        className="mt-4 w-full text-left rounded-2xl border border-brand-primary/25 bg-brand-primary/[0.06] p-4 sm:p-5 flex items-center gap-4 hover:border-brand-primary/50 transition-colors"
+                    >
+                        <div className="w-11 h-11 rounded-xl bg-brand-primary/15 flex items-center justify-center flex-shrink-0">
+                            <UsersIcon className="w-5 h-5 text-brand-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="font-bold text-light-text-primary dark:text-dark-text-primary">
+                                Invite friends, earn SWC
+                            </p>
+                            <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary truncate">
+                                Share your link &mdash; code <span className="font-mono font-semibold">{user.referralCode}</span>
+                            </p>
+                        </div>
+                        <span className="text-sm font-semibold text-brand-primary flex-shrink-0">Share</span>
+                    </button>
                 )}
 
                 {/* ── Tabs ──────────────────────────────────────────────── */}
