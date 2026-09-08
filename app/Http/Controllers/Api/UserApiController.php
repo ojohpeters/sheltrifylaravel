@@ -183,7 +183,12 @@ class UserApiController extends Controller
             // and was written straight into `role` — now that it carries a
             // trade, doing that would set role to something like PLUMBER and
             // break every role comparison in the app.
-            'role'                   => 'ARTISAN',
+            // Never demote an administrator. Submitting this form used to
+            // overwrite `role` unconditionally, so an admin who filled it in
+            // lost admin access entirely and could not reach the dashboard to
+            // undo it. Everyone else becomes an artisan; the trade itself lives
+            // in professional_type and artisan_service, never in `role`.
+            'role'                   => $user->role === 'ADMIN' ? 'ADMIN' : 'ARTISAN',
             'professional_type'      => $data['professionalType'],
             'artisan_service'        => $data['professionalType'],
             'nin_number'             => $data['ninNumber'],

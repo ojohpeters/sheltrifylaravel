@@ -5,6 +5,7 @@ interface BottomNavProps {
     currentPage: Page;
     isAuthenticated: boolean;
     cartCount?: number;
+    isAdmin?: boolean;
     onNavigate: (page: Page) => void;
     onLoginClick: () => void;
 }
@@ -61,7 +62,7 @@ interface MoreItem {
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({
-    currentPage, isAuthenticated, cartCount = 0, onNavigate, onLoginClick,
+    currentPage, isAuthenticated, isAdmin = false, cartCount = 0, onNavigate, onLoginClick,
 }) => {
     const [showMore, setShowMore] = useState(false);
 
@@ -113,6 +114,11 @@ const BottomNav: React.FC<BottomNavProps> = ({
             { label: 'Referrals',     emoji: '🎁', page: 'referrals' as const },
             { label: 'Premium',       emoji: '⭐', page: 'premium' as const },
             { label: 'My Dashboard',  emoji: '📊', page: 'userDashboard' as const },
+        ] : []),
+        ...(isAuthenticated && isAdmin ? [
+            { label: 'Admin Dashboard', emoji: '🛡️', page: 'adminDashboard' as const },
+        ] : []),
+        ...(isAuthenticated ? [
             { label: 'My Profile',    emoji: '👤', page: 'profile' as const },
         ] : []),
         { label: 'About',   emoji: 'ℹ️', page: 'about' as const },

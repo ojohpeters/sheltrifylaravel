@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\PaymentApiController;
 use App\Http\Controllers\Api\ReferralApiController;
 use App\Http\Controllers\Api\StatsApiController;
+use App\Http\Controllers\Api\TestimonialApiController;
 use App\Http\Controllers\Api\RentalWahalaApiController;
 use App\Http\Controllers\Api\UploadApiController;
 use App\Http\Controllers\Api\UserApiController;
@@ -44,6 +45,9 @@ Route::get('/marketplace/local-artisans', [MarketplaceApiController::class, 'loc
 
 // Local artisans directory. Reads are public so the page works signed-out;
 // writing a review or applying requires an account (see the auth group).
+// Approved user feedback shown on the landing page.
+Route::get('/testimonials', [TestimonialApiController::class, 'index']);
+
 // Real headline counts for the landing page.
 Route::get('/stats', [StatsApiController::class, 'index']);
 
@@ -92,6 +96,8 @@ Route::post('/upload/video', [UploadApiController::class, 'video'])->withoutMidd
 Route::post('/upload/media', [UploadApiController::class, 'media'])->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 Route::middleware('auth')->group(function () {
+    Route::get('/testimonials/mine', [TestimonialApiController::class, 'mine']);
+    Route::post('/testimonials', [TestimonialApiController::class, 'store']);
     Route::post('/artisans/apply', [ArtisanApiController::class, 'apply']);
     Route::post('/artisans/{id}/reviews', [ArtisanApiController::class, 'storeReview'])->where('id', '[0-9]+');
     Route::post('/auth/logout', [AuthApiController::class, 'logout']);
@@ -209,6 +215,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{id}/notify', [AdminApiController::class, 'sendUserNotification'])->where('id', '[0-9]+');
         Route::post('/notifications/broadcast', [AdminApiController::class, 'broadcastNotification']);
         Route::get('/notifications', [AdminApiController::class, 'allNotifications']);
+
+        Route::get('/testimonials/pending', [TestimonialApiController::class, 'pending']);
+        Route::put('/testimonials/{id}', [TestimonialApiController::class, 'moderate'])->where('id', '[0-9]+');
 
         Route::get('/analytics', [AdminApiController::class, 'analytics']);
         Route::get('/system-health', [AdminApiController::class, 'systemHealth']);

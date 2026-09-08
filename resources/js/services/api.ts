@@ -577,6 +577,14 @@ export const subscribeAPI = {
 };
 
 // Local artisans directory. Reads are public; writes require a session.
+// User feedback shown on the landing page.
+export const testimonialAPI = {
+  list: async () => apiRequest('/testimonials'),
+  mine: async () => apiRequest('/testimonials/mine'),
+  submit: async (data: { rating: number; body: string; location?: string }) =>
+    apiRequest('/testimonials', { method: 'POST', body: JSON.stringify(data) }),
+};
+
 // Real headline counts for the landing page.
 export const statsAPI = {
   public: async () => apiRequest('/stats'),

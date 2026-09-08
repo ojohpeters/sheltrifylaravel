@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, createContext, lazy, Suspense, 
 import { router, usePage } from '@inertiajs/react';
 import LandingPage from './components/LandingPage';
 import WelcomeShareModal from './components/WelcomeShareModal';
+import FeedbackModal from './components/FeedbackModal';
 import ReferralInviteBanner from './components/ReferralInviteBanner';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -190,6 +191,7 @@ const AppContent: React.FC = () => {
 
   // Prompt a brand-new account to share its referral link. Read once and
   // cleared immediately, so a refresh does not show it again.
+  const [showFeedback, setShowFeedback] = useState(false);
   const [showWelcomeShare, setShowWelcomeShare] = useState(false);
   useEffect(() => {
     try {
@@ -472,7 +474,18 @@ const AppContent: React.FC = () => {
               first visit. The fallback keeps the frame stable rather than
               collapsing the layout while a chunk downloads. */}
           <Suspense fallback={<PageFallback />}>
-          {currentPage === 'landing' && <LandingPage onStartChatting={() => navigateTo('chat')} onTalkToAnna={() => setIsVideoAssistantOpen(true)} onPremiumUpgrade={handlePremiumUpgrade} />}
+          {currentPage === 'landing' && (
+            <LandingPage
+              onStartChatting={() => navigateTo('chat')}
+              onTalkToAnna={() => setIsVideoAssistantOpen(true)}
+              onPremiumUpgrade={handlePremiumUpgrade}
+              isAuthenticated={isAuthenticated}
+              onLeaveFeedback={() => {
+                if (!isAuthenticated) { setIntendedPage('landing'); navigateTo('login'); return; }
+                setShowFeedback(true);
+              }}
+            />
+          )}
           {currentPage === 'chat' && (
             <ChatPage 
               isPremium={isPremium}
@@ -606,6 +619,7 @@ const AppContent: React.FC = () => {
       <BottomNav
         currentPage={currentPage}
         isAuthenticated={isAuthenticated}
+        isAdmin={currentUser?.role === 'ADMIN'}
         cartCount={cartCount}
         onNavigate={navigateTo}
         onLoginClick={() => {
@@ -614,6 +628,7 @@ const AppContent: React.FC = () => {
         }}
       />
 
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
       {showWelcomeShare && currentUser?.referralCode && (
         <WelcomeShareModal
           code={currentUser.referralCode}

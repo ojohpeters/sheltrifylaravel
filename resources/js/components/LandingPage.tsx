@@ -9,13 +9,15 @@ import {
     MegaphoneIcon, HammerIcon, CreditCardIcon, ShieldCheckIcon, LightbulbIcon,
 } from './icons';
 import { router } from '@inertiajs/react';
-import { statsAPI } from '../services/api';
+import { statsAPI, testimonialAPI } from '../services/api';
 import { ARTISAN_CATEGORIES, TRANSPORT_CATEGORIES } from '../constants/services';
 
 interface LandingPageProps {
   onStartChatting: () => void;
   onTalkToAnna: () => void;
   onPremiumUpgrade?: () => void;
+  onLeaveFeedback?: () => void;
+  isAuthenticated?: boolean;
 }
 
 // --- ARTISAN DATA & TYPES ---
@@ -24,12 +26,13 @@ interface LandingPageProps {
  * Headline counts, read from the database.
  *
  * The bar used to claim "50K+ listings" and "12K+ happy tenants" against a
- * handful of real rows. It now shows what is actually there — and hides itself
- * entirely below MIN_TO_SHOW, because a bar reading "1 listing" damages
- * confidence more than no bar at all. It reappears on its own as the platform
- * fills up, with no code change.
+ * handful of real rows. It now shows what is actually there, however small —
+ * the figures are the point, and an honest small number is the trade the
+ * business chose over an invented large one.
+ *
+ * A category with nothing in it is still dropped rather than shown as a zero:
+ * "0 Verified artisans" advertises an absence rather than reporting a fact.
  */
-const MIN_TO_SHOW = 10;
 
 const LiveStats: React.FC = () => {
     const [stats, setStats] = useState<{ listings: number; artisans: number; products: number; members: number } | null>(null);
@@ -50,12 +53,11 @@ const LiveStats: React.FC = () => {
         { value: stats.members, label: stats.members === 1 ? 'Member' : 'Members' },
     ].filter(c => c.value > 0);
 
-    // Nothing worth boasting about yet.
-    if (cards.length < 2 || stats.members < MIN_TO_SHOW) return null;
+    if (cards.length === 0) return null;
 
     return (
         <div className="max-w-3xl mx-auto px-4">
-            <div className={`grid gap-px bg-light-border dark:bg-dark-border rounded-2xl overflow-hidden ${cards.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            <div className={`grid gap-px bg-light-border dark:bg-dark-border rounded-2xl overflow-hidden ${cards.length === 3 ? 'grid-cols-3' : cards.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 {cards.map(stat => (
                     <div key={stat.label} className="flex flex-col items-center py-4 bg-light-card dark:bg-dark-card">
                         <span className="text-2xl md:text-3xl font-extrabold text-brand-primary">
@@ -689,12 +691,60 @@ const SustainabilitySection: React.FC = () => {
 };
 
 
-const Testimonials: React.FC = () => {
-    const testimonials = [
-        { name: 'Adebayo T.', location: 'Lagos, Nigeria', text: 'ShelTrify made my apartment hunt in Lagos so much easier. The AI understood exactly what I wanted and saved me weeks of searching!' },
-        { name: 'Emily R.', location: 'New York, USA', text: 'As a student moving to a new city, the roommate matching feature was a lifesaver. Found a great place and a great roommate.' },
-        { name: 'Kwame A.', location: 'Accra, Ghana', text: 'Booking a short-let for my business trip was seamless. The payment was secure, and the property was exactly as described.' },
-    ];
+interface Testimonial {
+    id: number;
+    rating: number;
+    body: string;
+    location?: string | null;
+    user?: { fullName?: string | null; avatarUrl?: string | null } | null;
+}
+
+/**
+ * Real, admin-approved user feedback.
+ *
+ * This section used to ship three invented reviews — including one from
+ * "New York, USA" on a Nigerian property platform. It now renders what people
+ * actually submitted, and offers everyone a way to add theirs.
+ */
+const Testimonials: React.FC<{ isAuthenticated?: boolean; onLeaveFeedback: () => void }> = ({ isAuthenticated, onLeaveFeedback }) => {
+    const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        testimonialAPI.list()
+            .then((res: any) => { if (!cancelled && res?.success) setTestimonials(res.data.testimonials || []); })
+            .catch(() => { /* section falls back to the invitation below */ })
+            .finally(() => { if (!cancelled) setLoaded(true); });
+        return () => { cancelled = true; };
+    }, []);
+
+    // Until the first review is approved, invite one instead of showing an
+    // empty grid — and never fill the gap with invented copy.
+    if (loaded && testimonials.length === 0) {
+        return (
+            <section className="py-16 md:py-24">
+                <div className="text-center max-w-xl mx-auto">
+                    <span className="badge badge-brand mb-3">Testimonials</span>
+                    <h2 className="text-3xl md:text-4xl font-bold text-light-text-primary dark:text-dark-text-primary">
+                        Used ShelTrify? Tell us how it went
+                    </h2>
+                    <p className="mt-3 text-light-text-secondary dark:text-dark-text-secondary">
+                        We publish real feedback from real users. Yours could be the first.
+                    </p>
+                    <button
+                        onClick={onLeaveFeedback}
+                        className="mt-6 px-6 py-3 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-secondary transition-colors"
+                    >
+                        {isAuthenticated ? 'Share your experience' : 'Sign in to share'}
+                    </button>
+                </div>
+            </section>
+        );
+    }
+
+    if (!loaded) return null;
+
     return (
         <section className="py-16 md:py-24">
             <div className="text-center mb-10">
@@ -702,8 +752,8 @@ const Testimonials: React.FC = () => {
                 <h2 className="text-3xl md:text-4xl font-bold text-light-text-primary dark:text-dark-text-primary">What Our Users Say</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {testimonials.map((t, i) => (
-                    <div key={i} className="relative p-6 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl flex flex-col gap-4 hover:border-brand-primary/30 hover:shadow-brand-sm transition-all">
+                {testimonials.map((t) => (
+                    <div key={t.id} className="relative p-6 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl flex flex-col gap-4 hover:border-brand-primary/30 hover:shadow-brand-sm transition-all">
                         {/* Stars */}
                         <div className="flex gap-0.5">
                             {[...Array(5)].map((_, s) => (
@@ -712,14 +762,14 @@ const Testimonials: React.FC = () => {
                                 </svg>
                             ))}
                         </div>
-                        <p className="text-light-text-primary dark:text-dark-text-primary text-sm leading-relaxed flex-1">"{t.text}"</p>
+                        <p className="text-light-text-primary dark:text-dark-text-primary text-sm leading-relaxed flex-1">&ldquo;{t.body}&rdquo;</p>
                         <div className="flex items-center gap-3 pt-2 border-t border-light-border dark:border-dark-border">
                             <div className="w-9 h-9 rounded-full bg-brand-primary/10 flex items-center justify-center flex-shrink-0">
                                 <UserIcon className="w-5 h-5 text-brand-primary" />
                             </div>
                             <div>
-                                <p className="text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">{t.name}</p>
-                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted">{t.location}</p>
+                                <p className="text-sm font-semibold text-light-text-primary dark:text-dark-text-primary">{t.user?.fullName || 'ShelTrify user'}</p>
+                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted">{t.location || ""}</p>
                             </div>
                         </div>
                     </div>
@@ -817,7 +867,7 @@ const AdSpace: React.FC = () => (
 );
 
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onTalkToAnna, onPremiumUpgrade }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onTalkToAnna, onPremiumUpgrade, onLeaveFeedback, isAuthenticated }) => {
   return (
     <div className="space-y-16 md:space-y-24 overflow-x-hidden w-full">
       <Hero onStartChatting={onStartChatting} />
@@ -830,7 +880,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onTalkToAnna
       <Features />
       <FAQ />
       <SustainabilitySection />
-      <Testimonials />
+      <Testimonials isAuthenticated={isAuthenticated} onLeaveFeedback={() => onLeaveFeedback?.()} />
       <Premium onStartChatting={onStartChatting} onPremiumUpgrade={onPremiumUpgrade} />
       <AdSpace />
     </div>
