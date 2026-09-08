@@ -1,14 +1,14 @@
 {
-  "_Lightbox-FeQyG7WX.js": {
-    "file": "assets/Lightbox-FeQyG7WX.js",
+  "_Lightbox-DIk2Pl4T.js": {
+    "file": "assets/Lightbox-DIk2Pl4T.js",
     "name": "Lightbox",
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ]
   },
-  "_Shell-Bj1LDVOj.js": {
-    "file": "assets/Shell-Bj1LDVOj.js",
+  "_Shell-DV7HlVt5.js": {
+    "file": "assets/Shell-DV7HlVt5.js",
     "name": "Shell",
     "isDynamicEntry": true,
     "imports": [
@@ -45,7 +45,7 @@
     "name": "geminiService"
   },
   "resources/css/app.css": {
-    "file": "assets/app-K0QxdUnb.css",
+    "file": "assets/app-BLVsFHbD.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -55,332 +55,332 @@
     "isEntry": true
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-B55iAtkv.js",
+    "file": "assets/app-BguC0pH7.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
     "dynamicImports": [
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/AboutPage.tsx": {
-    "file": "assets/AboutPage-CqfrLrDB.js",
+    "file": "assets/AboutPage-BmjHbSDm.js",
     "name": "AboutPage",
     "src": "resources/js/components/AboutPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/AdminDashboard.tsx": {
-    "file": "assets/AdminDashboard-BB31Su0X.js",
+    "file": "assets/AdminDashboard-Bi9rsZOa.js",
     "name": "AdminDashboard",
     "src": "resources/js/components/AdminDashboard.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ArtisansPage.tsx": {
-    "file": "assets/ArtisansPage-cwZYi1Pq.js",
+    "file": "assets/ArtisansPage-CEuLPkW4.js",
     "name": "ArtisansPage",
     "src": "resources/js/components/ArtisansPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/AuthModal.tsx": {
-    "file": "assets/AuthModal-DSVZms1o.js",
+    "file": "assets/AuthModal-CpIikIzn.js",
     "name": "AuthModal",
     "src": "resources/js/components/AuthModal.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/CartPage.tsx": {
-    "file": "assets/CartPage-YpVQFDgQ.js",
+    "file": "assets/CartPage-By1ohI_g.js",
     "name": "CartPage",
     "src": "resources/js/components/CartPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ChatPage.tsx": {
-    "file": "assets/ChatPage-rbFJjyej.js",
+    "file": "assets/ChatPage-CtDGmpm_.js",
     "name": "ChatPage",
     "src": "resources/js/components/ChatPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
       "_geminiService-C_DmOKhp.js",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "dynamicImports": [
-      "_Shell-Bj1LDVOj.js",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js",
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/CommunityPage.tsx": {
-    "file": "assets/CommunityPage-CPgcQnao.js",
+    "file": "assets/CommunityPage-Czy9MxYV.js",
     "name": "CommunityPage",
     "src": "resources/js/components/CommunityPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js",
-      "_Lightbox-FeQyG7WX.js"
+      "_Shell-DV7HlVt5.js",
+      "_Lightbox-DIk2Pl4T.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ContactPage.tsx": {
-    "file": "assets/ContactPage-DbryMVOj.js",
+    "file": "assets/ContactPage-Bo0nHM11.js",
     "name": "ContactPage",
     "src": "resources/js/components/ContactPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/FeelsPage.tsx": {
-    "file": "assets/FeelsPage-CPbjKH3i.js",
+    "file": "assets/FeelsPage-DgHeNaVk.js",
     "name": "FeelsPage",
     "src": "resources/js/components/FeelsPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js",
+      "_Shell-DV7HlVt5.js",
       "_geminiService-C_DmOKhp.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/GlobalTalesPage.tsx": {
-    "file": "assets/GlobalTalesPage-VK93aOb3.js",
+    "file": "assets/GlobalTalesPage-Dg-0mi4M.js",
     "name": "GlobalTalesPage",
     "src": "resources/js/components/GlobalTalesPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ListingDashboardPage.tsx": {
-    "file": "assets/ListingDashboardPage-DlluaRIT.js",
+    "file": "assets/ListingDashboardPage-gMtFw7af.js",
     "name": "ListingDashboardPage",
     "src": "resources/js/components/ListingDashboardPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/MarketplacePage.tsx": {
-    "file": "assets/MarketplacePage-CJ3iw8CT.js",
+    "file": "assets/MarketplacePage-Dw80f3Zl.js",
     "name": "MarketplacePage",
     "src": "resources/js/components/MarketplacePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/NotificationsPage.tsx": {
-    "file": "assets/NotificationsPage-Do6HszbI.js",
+    "file": "assets/NotificationsPage-DiC0trsv.js",
     "name": "NotificationsPage",
     "src": "resources/js/components/NotificationsPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/PaymentVerifyPage.tsx": {
-    "file": "assets/PaymentVerifyPage-ClgiB7kf.js",
+    "file": "assets/PaymentVerifyPage-DfbJ70E1.js",
     "name": "PaymentVerifyPage",
     "src": "resources/js/components/PaymentVerifyPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/PremiumPage.tsx": {
-    "file": "assets/PremiumPage-DbmBwRuA.js",
+    "file": "assets/PremiumPage-DcqyE54w.js",
     "name": "PremiumPage",
     "src": "resources/js/components/PremiumPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ProductDetailPage.tsx": {
-    "file": "assets/ProductDetailPage-8SkXAwTj.js",
+    "file": "assets/ProductDetailPage-C99rkNzk.js",
     "name": "ProductDetailPage",
     "src": "resources/js/components/ProductDetailPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js",
-      "_Lightbox-FeQyG7WX.js"
+      "_Shell-DV7HlVt5.js",
+      "_Lightbox-DIk2Pl4T.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ProfessionalProfilePage.tsx": {
-    "file": "assets/ProfessionalProfilePage-BNF9Kw7h.js",
+    "file": "assets/ProfessionalProfilePage-D990skQz.js",
     "name": "ProfessionalProfilePage",
     "src": "resources/js/components/ProfessionalProfilePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ProfilePage.tsx": {
-    "file": "assets/ProfilePage-Bk2ddbid.js",
+    "file": "assets/ProfilePage-CAO-0hlP.js",
     "name": "ProfilePage",
     "src": "resources/js/components/ProfilePage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/ReferralsPage.tsx": {
-    "file": "assets/ReferralsPage-BeI3gwTO.js",
+    "file": "assets/ReferralsPage-De4wB0vv.js",
     "name": "ReferralsPage",
     "src": "resources/js/components/ReferralsPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/RentalWahalaPage.tsx": {
-    "file": "assets/RentalWahalaPage-BmjwO09T.js",
+    "file": "assets/RentalWahalaPage-B2mhsdXZ.js",
     "name": "RentalWahalaPage",
     "src": "resources/js/components/RentalWahalaPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js",
+      "_Shell-DV7HlVt5.js",
       "_geminiService-C_DmOKhp.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/UserDashboard.tsx": {
-    "file": "assets/UserDashboard-BCNaXvEr.js",
+    "file": "assets/UserDashboard-D17vKsqX.js",
     "name": "UserDashboard",
     "src": "resources/js/components/UserDashboard.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   },
   "resources/js/components/WalletPage.tsx": {
-    "file": "assets/WalletPage-DFL_vB1Q.js",
+    "file": "assets/WalletPage-_s4LjH-i.js",
     "name": "WalletPage",
     "src": "resources/js/components/WalletPage.tsx",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.tsx",
-      "_Shell-Bj1LDVOj.js"
+      "_Shell-DV7HlVt5.js"
     ],
     "css": [
-      "assets/app-K0QxdUnb.css",
+      "assets/app-BLVsFHbD.css",
       "assets/sheltrify-CpgSZf5J.css"
     ]
   }

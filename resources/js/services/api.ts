@@ -411,6 +411,11 @@ export const adminAPI = {
     });
   },
 
+  getPendingTestimonials: async () => apiRequest('/admin/testimonials/pending'),
+
+  moderateTestimonial: async (id: number | string, status: 'approved' | 'rejected') =>
+    apiRequest(`/admin/testimonials/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+
   getPendingMarketplaceProducts: async () => {
     return apiRequest('/admin/marketplace/pending');
   },

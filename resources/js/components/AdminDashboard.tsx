@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { adminAPI, adminNotificationsAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI } from '../services/api';
-import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon, BellIcon, MegaphoneIcon, NoSymbolIcon } from './icons';
+import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon, BellIcon, MegaphoneIcon, NoSymbolIcon, StarIcon } from './icons';
 import { useToast } from '../contexts/ToastContext';
 
 interface AdminDashboardProps {
@@ -94,7 +94,7 @@ interface MarketplaceProduct {
   };
 }
 
-type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala' | 'broadcast' | 'notifications';
+type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala' | 'broadcast' | 'testimonials' | 'notifications';
 type AdminView = 'list' | 'edit' | 'create' | 'upload';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
@@ -109,6 +109,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [rentalWahalaVideos, setRentalWahalaVideos] = useState<any[]>([]);
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([]);
   const [pendingProducts, setPendingProducts] = useState<MarketplaceProduct[]>([]);
+  const [pendingTestimonials, setPendingTestimonials] = useState<any[]>([]);
   const [allMarketplaceProducts, setAllMarketplaceProducts] = useState<any[]>([]);
   const [marketplaceTab, setMarketplaceTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -175,6 +176,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       loadAllMarketplaceProducts();
     } else if (currentPage === 'requests') {
       loadAppointments();
+    } else if (currentPage === 'testimonials') {
+      loadPendingTestimonials();
     } else if (currentPage === 'analytics') {
       loadAnalytics();
     } else if (currentPage === 'ai') {
@@ -245,6 +248,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       }
     } catch (err: any) {
       console.error('Failed to load marketplace products:', err);
+    }
+  };
+
+  const loadPendingTestimonials = async () => {
+    try {
+      const res: any = await adminAPI.getPendingTestimonials();
+      setPendingTestimonials(res?.success ? (res.data.testimonials || []) : []);
+    } catch { setPendingTestimonials([]); }
+  };
+
+  const moderateTestimonial = async (id: number, status: 'approved' | 'rejected') => {
+    try {
+      const res: any = await adminAPI.moderateTestimonial(id, status);
+      if (!res?.success) throw new Error(res?.message || 'Could not update');
+      showSuccess(res.message || 'Updated');
+      // Dropped locally rather than refetched: the row leaves the pending queue
+      // either way, and the queue is small.
+      setPendingTestimonials(prev => prev.filter(t => t.id !== id));
+    } catch (e: any) {
+      showError(e?.message || 'Could not update testimonial');
     }
   };
 
@@ -707,6 +730,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     { id: 'rental-wahala', label: 'Rental Wahala', icon: VideoCameraIcon },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon, badge: pendingProducts.length },
     { id: 'requests', label: 'Property Requests', icon: DocumentCheckIcon, badge: appointments.filter((a: any) => a.status === 'pending').length },
+    { id: 'testimonials', label: 'Testimonials', icon: StarIcon, badge: pendingTestimonials.length },
     { id: 'broadcast', label: 'Broadcast', icon: MegaphoneIcon },
     { id: 'notifications', label: 'All Notifications', icon: BellIcon },
     { id: 'analytics', label: 'Analytics', icon: TrendingUpIcon },
@@ -1561,6 +1585,71 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           )}
 
           {/* Broadcast Tab */}
+          {currentPage === 'testimonials' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-light-text-primary dark:text-dark-text-primary">Pending testimonials</h3>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  Nothing appears on the landing page until it is published here.
+                </p>
+              </div>
+
+              {pendingTestimonials.length === 0 ? (
+                <div className="text-center py-14 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl">
+                  <StarIcon className="w-10 h-10 mx-auto text-light-text-muted dark:text-dark-text-muted" />
+                  <p className="mt-2 font-semibold text-light-text-primary dark:text-dark-text-primary">Queue is empty</p>
+                  <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    New feedback from users will land here for review.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingTestimonials.map((t: any) => (
+                    <div key={t.id} className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-4 sm:p-5">
+                      <div className="flex items-start gap-3">
+                        {t.user?.avatarUrl
+                          ? <img src={t.user.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                          : <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center flex-shrink-0"><UserIcon className="w-5 h-5 text-brand-primary" /></div>}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-light-text-primary dark:text-dark-text-primary truncate">
+                            {t.user?.fullName || 'ShelTrify user'}
+                          </p>
+                          <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate">
+                            {t.user?.email}{t.location ? ` \u00b7 ${t.location}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          {[1, 2, 3, 4, 5].map(i => (
+                            <StarIcon key={i} className={`w-4 h-4 ${i <= t.rating ? 'text-yellow-400' : 'text-light-border dark:text-dark-border'}`} />
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="mt-3 text-sm text-light-text-primary dark:text-dark-text-primary whitespace-pre-wrap break-words">
+                        {t.body}
+                      </p>
+
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={() => moderateTestimonial(t.id, 'approved')}
+                          className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                        >
+                          Publish
+                        </button>
+                        <button
+                          onClick={() => moderateTestimonial(t.id, 'rejected')}
+                          className="px-4 py-2 rounded-xl border border-light-border dark:border-dark-border text-sm font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-bg dark:hover:bg-dark-bg transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {currentPage === 'broadcast' && (
             <BroadcastPanel />
           )}
