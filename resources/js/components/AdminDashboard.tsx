@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { adminAPI, adminNotificationsAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI } from '../services/api';
+import { adminAPI, adminNotificationsAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI, PHOTO_UPLOAD_TARGET_BYTES } from '../services/api';
 import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon, BellIcon, MegaphoneIcon, NoSymbolIcon, StarIcon } from './icons';
 import { useToast } from '../contexts/ToastContext';
 
@@ -110,6 +110,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([]);
   const [pendingProducts, setPendingProducts] = useState<MarketplaceProduct[]>([]);
   const [pendingTestimonials, setPendingTestimonials] = useState<any[]>([]);
+  const [listingImageUploading, setListingImageUploading] = useState(false);
+  const listingImageRef = useRef<HTMLInputElement>(null);
+  const listingImageCamRef = useRef<HTMLInputElement>(null);
   const [allMarketplaceProducts, setAllMarketplaceProducts] = useState<any[]>([]);
   const [marketplaceTab, setMarketplaceTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -248,6 +251,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       }
     } catch (err: any) {
       console.error('Failed to load marketplace products:', err);
+    }
+  };
+
+  // Accommodation photo upload. The form only accepted a pasted URL, so an
+  // admin with a photo on their phone had nowhere to put it.
+  const handleListingImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setListingImageUploading(true);
+    try {
+      const res: any = await uploadAPI.uploadImage(file, true, PHOTO_UPLOAD_TARGET_BYTES);
+      const url = res?.data?.url;
+      if (!url) throw new Error('Upload returned no URL');
+      setListingFormData(prev => ({ ...prev, imageUrl: url }));
+      showSuccess('Photo uploaded.');
+    } catch (err: any) {
+      showError(err?.message || 'Could not upload the photo.');
+    } finally {
+      setListingImageUploading(false);
+      // Allow re-picking the same file after a failure.
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -2187,8 +2211,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Image URL</label>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Property Photo</label>
+
+                  {/* Two inputs: `capture` opens the camera straight away on a
+                      phone but hides the gallery, so the plain picker stays for
+                      choosing an existing file. */}
+                  <input type="file" accept="image/*" ref={listingImageRef} onChange={handleListingImage} className="hidden" />
+                  <input type="file" accept="image/*" capture="environment" ref={listingImageCamRef} onChange={handleListingImage} className="hidden" />
+
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {listingFormData.imageUrl ? (
+                      <img src={listingFormData.imageUrl} alt="" className="w-20 h-16 object-cover rounded-lg border border-light-border dark:border-dark-border" />
+                    ) : (
+                      <div className="w-20 h-16 rounded-lg bg-light-bg dark:bg-dark-bg border-2 border-dashed border-light-border dark:border-dark-border flex items-center justify-center text-light-text-muted dark:text-dark-text-muted text-xs">
+                        No photo
+                      </div>
+                    )}
+                    <button type="button" disabled={listingImageUploading}
+                      onClick={() => listingImageCamRef.current?.click()}
+                      className="px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-semibold hover:bg-brand-secondary disabled:opacity-60 transition">
+                      {listingImageUploading ? 'Uploading\u2026' : '\ud83d\udcf7 Take photo'}
+                    </button>
+                    <button type="button" disabled={listingImageUploading}
+                      onClick={() => listingImageRef.current?.click()}
+                      className="px-4 py-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-sm font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-border dark:hover:bg-dark-border disabled:opacity-60 transition">
+                      {listingFormData.imageUrl ? 'Change file' : 'Choose file'}
+                    </button>
+                    {listingFormData.imageUrl && (
+                      <button type="button"
+                        onClick={() => setListingFormData(prev => ({ ...prev, imageUrl: '' }))}
+                        className="text-xs font-semibold text-red-500 hover:underline">
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mt-3 mb-1">Or paste an image URL</label>
                   <input
                     type="url"
                     value={listingFormData.imageUrl}
@@ -2196,6 +2255,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                     placeholder="https://..."
                     className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none"
                   />
+                  <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1">
+                    Resized automatically to about {Math.round(PHOTO_UPLOAD_TARGET_BYTES / 1024)} KB.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Video URL</label>
@@ -2494,8 +2556,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Image URL</label>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Property Photo</label>
+
+                  {/* Two inputs: `capture` opens the camera straight away on a
+                      phone but hides the gallery, so the plain picker stays for
+                      choosing an existing file. */}
+                  <input type="file" accept="image/*" ref={listingImageRef} onChange={handleListingImage} className="hidden" />
+                  <input type="file" accept="image/*" capture="environment" ref={listingImageCamRef} onChange={handleListingImage} className="hidden" />
+
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {listingFormData.imageUrl ? (
+                      <img src={listingFormData.imageUrl} alt="" className="w-20 h-16 object-cover rounded-lg border border-light-border dark:border-dark-border" />
+                    ) : (
+                      <div className="w-20 h-16 rounded-lg bg-light-bg dark:bg-dark-bg border-2 border-dashed border-light-border dark:border-dark-border flex items-center justify-center text-light-text-muted dark:text-dark-text-muted text-xs">
+                        No photo
+                      </div>
+                    )}
+                    <button type="button" disabled={listingImageUploading}
+                      onClick={() => listingImageCamRef.current?.click()}
+                      className="px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-semibold hover:bg-brand-secondary disabled:opacity-60 transition">
+                      {listingImageUploading ? 'Uploading\u2026' : '\ud83d\udcf7 Take photo'}
+                    </button>
+                    <button type="button" disabled={listingImageUploading}
+                      onClick={() => listingImageRef.current?.click()}
+                      className="px-4 py-2 rounded-lg bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-sm font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-border dark:hover:bg-dark-border disabled:opacity-60 transition">
+                      {listingFormData.imageUrl ? 'Change file' : 'Choose file'}
+                    </button>
+                    {listingFormData.imageUrl && (
+                      <button type="button"
+                        onClick={() => setListingFormData(prev => ({ ...prev, imageUrl: '' }))}
+                        className="text-xs font-semibold text-red-500 hover:underline">
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mt-3 mb-1">Or paste an image URL</label>
                   <input
                     type="url"
                     value={listingFormData.imageUrl}
@@ -2503,6 +2600,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                     placeholder="https://..."
                     className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-4 py-2 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none"
                   />
+                  <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1">
+                    Resized automatically to about {Math.round(PHOTO_UPLOAD_TARGET_BYTES / 1024)} KB.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-2">Video URL</label>
