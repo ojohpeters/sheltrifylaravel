@@ -6,7 +6,10 @@
  * build output. HTML and /api/* always hit the network — caching either would
  * serve one user's authenticated shell or data to another.
  */
-const VERSION     = 'v1';
+// Bump this to retire every previously cached asset. The activate handler
+// deletes caches whose name does not match, so changing the version is the only
+// way to force clients holding stale build output onto the current one.
+const VERSION     = 'v2';
 const ASSET_CACHE = `sheltrify-assets-${VERSION}`;
 const SHELL_CACHE = `sheltrify-shell-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
