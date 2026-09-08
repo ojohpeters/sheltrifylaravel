@@ -49,6 +49,7 @@ const LiveStats: React.FC = () => {
 
     const cards = [
         { value: stats.listings, label: stats.listings === 1 ? 'Listing' : 'Listings' },
+        { value: stats.products, label: stats.products === 1 ? 'Product' : 'Products' },
         { value: stats.artisans, label: stats.artisans === 1 ? 'Verified artisan' : 'Verified artisans' },
         { value: stats.members, label: stats.members === 1 ? 'Member' : 'Members' },
     ].filter(c => c.value > 0);
@@ -57,7 +58,9 @@ const LiveStats: React.FC = () => {
 
     return (
         <div className="max-w-3xl mx-auto px-4">
-            <div className={`grid gap-px bg-light-border dark:bg-dark-border rounded-2xl overflow-hidden ${cards.length === 3 ? 'grid-cols-3' : cards.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`grid gap-px bg-light-border dark:bg-dark-border rounded-2xl overflow-hidden grid-cols-2 ${
+                cards.length >= 4 ? 'sm:grid-cols-4' : cards.length === 3 ? 'sm:grid-cols-3' : cards.length === 1 ? 'grid-cols-1' : 'sm:grid-cols-2'
+            }`}>
                 {cards.map(stat => (
                     <div key={stat.label} className="flex flex-col items-center py-4 bg-light-card dark:bg-dark-card">
                         <span className="text-2xl md:text-3xl font-extrabold text-brand-primary">
