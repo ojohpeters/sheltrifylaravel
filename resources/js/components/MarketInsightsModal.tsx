@@ -13,40 +13,46 @@ const LoadingSpinner: React.FC = () => (
     </div>
 );
 
+/**
+ * A small markdown-like renderer for the insight text.
+ *
+ * Module level rather than inside ResultDisplay, where it got a new component
+ * identity on every render and remounted its whole output each time.
+ */
+const SimpleMarkdown: React.FC<{ text: string }> = ({ text: markdownText }) => {
+    const lines = markdownText.split('\n');
+    return (
+        <div className="prose prose-sm max-w-none dark:prose-invert text-inherit">
+            {lines.map((line, i) => {
+                if (line.startsWith('* ')) {
+                    return <li key={i} className="my-1 ml-4">{line.substring(2)}</li>;
+                }
+                 if (line.startsWith('### ')) {
+                    return <h3 key={i} className="text-lg font-semibold mt-3 mb-1">{line.substring(4)}</h3>;
+                }
+                if (line.startsWith('## ')) {
+                    return <h2 key={i} className="text-xl font-bold mt-4 mb-2">{line.substring(3)}</h2>
+                }
+                if (!line.trim()) {
+                     return <p key={i} className="my-1">&nbsp;</p>;
+                }
+                const parts = line.split(/(\*\*.*?\*\*)/g);
+                return (
+                    <p key={i} className="my-1">
+                        {parts.filter(part => part).map((part, j) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                                return <strong key={j}>{part.slice(2, -2)}</strong>;
+                            }
+                            return part;
+                        })}
+                    </p>
+                );
+            })}
+        </div>
+    );
+};
+
 const ResultDisplay: React.FC<{ text: string, sources: GroundingChunk[] }> = ({ text, sources }) => {
-    // A simple markdown-like renderer to handle basic formatting
-    const SimpleMarkdown: React.FC<{ text: string }> = ({ text: markdownText }) => {
-        const lines = markdownText.split('\n');
-        return (
-            <div className="prose prose-sm max-w-none dark:prose-invert text-inherit">
-                {lines.map((line, i) => {
-                    if (line.startsWith('* ')) {
-                        return <li key={i} className="my-1 ml-4">{line.substring(2)}</li>;
-                    }
-                     if (line.startsWith('### ')) {
-                        return <h3 key={i} className="text-lg font-semibold mt-3 mb-1">{line.substring(4)}</h3>;
-                    }
-                    if (line.startsWith('## ')) {
-                        return <h2 key={i} className="text-xl font-bold mt-4 mb-2">{line.substring(3)}</h2>
-                    }
-                    if (!line.trim()) {
-                         return <p key={i} className="my-1">&nbsp;</p>;
-                    }
-                    const parts = line.split(/(\*\*.*?\*\*)/g);
-                    return (
-                        <p key={i} className="my-1">
-                            {parts.filter(part => part).map((part, j) => {
-                                if (part.startsWith('**') && part.endsWith('**')) {
-                                    return <strong key={j}>{part.slice(2, -2)}</strong>;
-                                }
-                                return part;
-                            })}
-                        </p>
-                    );
-                })}
-            </div>
-        );
-    };
 
     return (
         <div className="mt-4">

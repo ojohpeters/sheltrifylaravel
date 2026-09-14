@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { userAPI, uploadAPI, listingAPI } from '../services/api';
+import { userAPI, uploadAPI, listingAPI, PHOTO_UPLOAD_TARGET_BYTES } from '../services/api';
+import { PROPERTY_TYPES } from '../constants/property';
 import { TRANSPORT_ROLE_LABEL } from '../constants/services';
 
 // ── Role config ──────────────────────────────────────────────────────────────
@@ -234,7 +235,7 @@ const CreateListingForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
         try {
             const images: string[] = [];
             for (const f of imageFiles) {
-                const res = await uploadAPI.uploadImage(f, true);
+                const res = await uploadAPI.uploadImage(f, true, PHOTO_UPLOAD_TARGET_BYTES);
                 if (res.success) images.push(res.data.url);
                 else { throw new Error('Failed to upload one or more images'); }
             }
@@ -270,7 +271,7 @@ const CreateListingForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) =
                     <div>
                         <label className="block text-sm font-semibold text-light-text-primary dark:text-dark-text-primary mb-1">Property Type</label>
                         <select value={form.propertyType} onChange={e => setForm({ ...form, propertyType: e.target.value })} className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl px-4 py-2.5 text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none">
-                            {['Apartment', 'House', 'Duplex', 'Studio', 'Office', 'Land', 'Warehouse', 'Shortlet'].map(t => <option key={t}>{t}</option>)}
+                            {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
                         </select>
                     </div>
                     <div>

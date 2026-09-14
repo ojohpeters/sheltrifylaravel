@@ -10,6 +10,7 @@ import {
     uploadAPI, PHOTO_UPLOAD_TARGET_BYTES,
 } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import { PROPERTY_TYPES } from '../constants/property';
 import { router } from '@inertiajs/react';
 import { TRANSPORT_ROLE_LABEL } from '../constants/services';
 
@@ -42,7 +43,6 @@ const MARKETPLACE_CATEGORIES = [
 
 const GLOBAL_TALES_CATEGORIES = ['travel','finance','real_estate','lifestyle','technology','culture','other'];
 const COMMUNITY_CATEGORIES = ['general','advice','listings','market','rental','investment'];
-const PROPERTY_TYPES = ['Apartment','Duplex','Bungalow','Self-contain','Office Space','Land','Shortlet'];
 
 // ── empty form factory ────────────────────────────────────────────────────────
 
@@ -183,6 +183,61 @@ const ImageUploadField: React.FC<{
         </div>
     );
 };
+
+/**
+ * One row in a dashboard list.
+ *
+ * Declared at module level on purpose. It used to live inside UserDashboard's
+ * render, which gave it a new component identity on every render — so React tore
+ * down and rebuilt every row whenever anything on the dashboard changed.
+ */
+const ItemCard: React.FC<{
+    item: any;
+    title: string;
+    sub?: string;
+    badge?: string;
+    badgeColor?: string;
+    canEdit: boolean;
+    deletingId: string | null;
+    onEdit: (item: any) => void;
+    onDelete: (id: string) => void;
+    onSetDeleting: (id: string | null) => void;
+}> = ({ item, title, sub, badge, badgeColor = 'green', canEdit, deletingId, onEdit, onDelete, onSetDeleting }) => (
+    <div className="bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg p-3 flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-light-text-primary dark:text-dark-text-primary truncate">{title}</p>
+            {sub && <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-0.5 truncate">{sub}</p>}
+            {badge && (
+                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-${badgeColor}-500/10 text-${badgeColor}-500`}>
+                    {badge}
+                </span>
+            )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+            {canEdit && (
+                <button
+                    onClick={() => onEdit(item)}
+                    className="p-1.5 rounded-md text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-colors"
+                >
+                    <PencilIcon className="w-4 h-4" />
+                </button>
+            )}
+            {deletingId === String(item.id) ? (
+                <div className="flex items-center gap-1">
+                    <button onClick={() => onDelete(String(item.id))} className="text-xs px-2 py-1 bg-red-500 text-white rounded-md font-medium">Yes</button>
+                    <button onClick={() => onSetDeleting(null)} className="text-xs px-2 py-1 bg-light-border dark:bg-dark-border rounded-md">No</button>
+                </div>
+            ) : (
+                <button
+                    onClick={() => onSetDeleting(String(item.id))}
+                    className="p-1.5 rounded-md text-light-text-secondary dark:text-dark-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                >
+                    <TrashIcon className="w-4 h-4" />
+                </button>
+            )}
+        </div>
+    </div>
+);
 
 const TextareaField: React.FC<{ label: string; value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }> = ({ label, value, onChange, placeholder, rows = 3 }) => (
     <div>
@@ -379,44 +434,19 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
 
     const canEdit = activeTab !== 'community';
 
-    const ItemCard: React.FC<{ item: any; title: string; sub?: string; badge?: string; badgeColor?: string }> = ({ item, title, sub, badge, badgeColor = 'green' }) => (
-        <div className="bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg p-3 flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-light-text-primary dark:text-dark-text-primary truncate">{title}</p>
-                {sub && <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary mt-0.5 truncate">{sub}</p>}
-                {badge && (
-                    <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-${badgeColor}-500/10 text-${badgeColor}-500`}>
-                        {badge}
-                    </span>
-                )}
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-                {canEdit && (
-                    <button
-                        onClick={() => openEdit(item)}
-                        className="p-1.5 rounded-md text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary hover:bg-brand-primary/10 transition-colors"
-                    >
-                        <PencilIcon className="w-4 h-4" />
-                    </button>
-                )}
-                {deletingId === String(item.id) ? (
-                    <div className="flex items-center gap-1">
-                        <button onClick={() => handleDelete(String(item.id))} className="text-xs px-2 py-1 bg-red-500 text-white rounded-md font-medium">Yes</button>
-                        <button onClick={() => setDeletingId(null)} className="text-xs px-2 py-1 bg-light-border dark:bg-dark-border rounded-md">No</button>
-                    </div>
-                ) : (
-                    <button
-                        onClick={() => setDeletingId(String(item.id))}
-                        className="p-1.5 rounded-md text-light-text-secondary dark:text-dark-text-secondary hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                    >
-                        <TrashIcon className="w-4 h-4" />
-                    </button>
-                )}
-            </div>
-        </div>
-    );
+    // Row actions for the module-level ItemCard. A function, so the handlers are
+    // read when a row renders rather than captured before they are declared.
+    const itemCardActions = () => ({
+        canEdit: !!canEdit,
+        deletingId,
+        onEdit: openEdit,
+        onDelete: handleDelete,
+        onSetDeleting: setDeletingId,
+    });
 
-    const EmptyState: React.FC<{ label: string }> = ({ label }) => (
+    // A plain function rather than a component declared in render, which would
+    // get a new identity — and remount — every time the dashboard re-renders.
+    const emptyState = (label: string) => (
         <div className="text-center py-16 px-6 rounded-2xl border border-dashed border-light-border dark:border-dark-border">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-primary/10 flex items-center justify-center">
                 <PlusIcon className="w-7 h-7 text-brand-primary" />
@@ -507,33 +537,33 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
 
             case 'listings':
                 return myListings.length > 0
-                    ? <div className="space-y-2">{myListings.map(l => <ItemCard key={l.id} item={l} title={l.title} sub={`${l.location} · ${l.price}`} badge={l.isActive ? 'Active' : 'Inactive'} badgeColor={l.isActive ? 'green' : 'gray'} />)}</div>
-                    : <EmptyState label="listings" />;
+                    ? <div className="space-y-2">{myListings.map(l => <ItemCard {...itemCardActions()} key={l.id} item={l} title={l.title} sub={`${l.location} · ${l.price}`} badge={l.isActive ? 'Active' : 'Inactive'} badgeColor={l.isActive ? 'green' : 'gray'} />)}</div>
+                    : emptyState('listings');
 
             case 'marketplace':
                 return myProducts.length > 0
-                    ? <div className="space-y-2">{myProducts.map(p => <ItemCard key={p.id} item={p} title={p.name} sub={`${p.category?.replace(/_/g,' ')} · ₦${Number(p.price).toLocaleString()}`} badge={p.isApproved ? 'Approved' : 'Pending'} badgeColor={p.isApproved ? 'green' : 'yellow'} />)}</div>
-                    : <EmptyState label="marketplace products" />;
+                    ? <div className="space-y-2">{myProducts.map(p => <ItemCard {...itemCardActions()} key={p.id} item={p} title={p.name} sub={`${p.category?.replace(/_/g,' ')} · ₦${Number(p.price).toLocaleString()}`} badge={p.isApproved ? 'Approved' : 'Pending'} badgeColor={p.isApproved ? 'green' : 'yellow'} />)}</div>
+                    : emptyState('marketplace products');
 
             case 'feels':
                 return myFeels.length > 0
-                    ? <div className="space-y-2">{myFeels.map(f => <ItemCard key={f.id} item={f} title={f.caption || 'Untitled Feel'} sub={`❤️ ${f.likes ?? 0} likes`} />)}</div>
-                    : <EmptyState label="Feels" />;
+                    ? <div className="space-y-2">{myFeels.map(f => <ItemCard {...itemCardActions()} key={f.id} item={f} title={f.caption || 'Untitled Feel'} sub={`❤️ ${f.likes ?? 0} likes`} />)}</div>
+                    : emptyState('Feels');
 
             case 'rental-wahala':
                 return myWahala.length > 0
-                    ? <div className="space-y-2">{myWahala.map(w => <ItemCard key={w.id} item={w} title={w.caption || 'Untitled Video'} sub={`❤️ ${w.likes ?? 0} likes`} />)}</div>
-                    : <EmptyState label="Rental Wahala videos" />;
+                    ? <div className="space-y-2">{myWahala.map(w => <ItemCard {...itemCardActions()} key={w.id} item={w} title={w.caption || 'Untitled Video'} sub={`❤️ ${w.likes ?? 0} likes`} />)}</div>
+                    : emptyState('Rental Wahala videos');
 
             case 'global-tales':
                 return myGlobalTales.length > 0
-                    ? <div className="space-y-2">{myGlobalTales.map(t => <ItemCard key={t.id} item={t} title={t.title} sub={`${t.category ?? ''} · ${t.readTime ?? 0} min read`} />)}</div>
-                    : <EmptyState label="Global Tales" />;
+                    ? <div className="space-y-2">{myGlobalTales.map(t => <ItemCard {...itemCardActions()} key={t.id} item={t} title={t.title} sub={`${t.category ?? ''} · ${t.readTime ?? 0} min read`} />)}</div>
+                    : emptyState('Global Tales');
 
             case 'community':
                 return myCommunity.length > 0
-                    ? <div className="space-y-2">{myCommunity.map(p => <ItemCard key={p.id} item={p} title={p.title} sub={p.category ?? ''} />)}</div>
-                    : <EmptyState label="community posts" />;
+                    ? <div className="space-y-2">{myCommunity.map(p => <ItemCard {...itemCardActions()} key={p.id} item={p} title={p.title} sub={p.category ?? ''} />)}</div>
+                    : emptyState('community posts');
 
             case 'earnings':
                 return earnings ? (
@@ -552,7 +582,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onClose, user }) =
                                     <p className="font-bold text-green-500">+{formatCurrency(e.amount)}</p>
                                 </div>
                             ))}</div>
-                            : <EmptyState label="earnings" />}
+                            : emptyState('earnings')}
                     </div>
                 ) : null;
 
