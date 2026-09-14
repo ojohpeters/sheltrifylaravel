@@ -1,9 +1,28 @@
 import React from 'react';
-import { LogoIcon, CloseIcon } from './icons';
+import {
+  LogoIcon, CloseIcon, ResidentialHouseIcon, RentToOwnIcon, OfficeIcon,
+  TransportIcon, HammerIcon, WalletIcon,
+} from './icons';
 
 interface AboutPageProps {
   onClose?: () => void;
 }
+
+/**
+ * From the Sheltrify Group "Our Services" flyer. Land Verification is left out to
+ * match the homepage, where it was removed because no verification service sits
+ * behind it yet — add it back here when one does.
+ */
+const OUR_SERVICES = [
+  { label: 'Property Rentals', Icon: ResidentialHouseIcon },
+  { label: 'Property Sales & Purchases', Icon: RentToOwnIcon },
+  { label: 'Property Management', Icon: OfficeIcon },
+  { label: "Tipper Drivers' Konnect Services", Icon: TransportIcon },
+  { label: 'ShelTrify Local Artisans', Icon: HammerIcon },
+  { label: 'Online Rent & Bills Payment', Icon: WalletIcon },
+];
+
+const TAGLINE = ['Rent', 'Buy', 'Sell', 'Manage', 'Fix', 'Pay-Forward'];
 
 const AboutPage: React.FC<AboutPageProps> = ({ onClose }) => {
   return (
@@ -44,6 +63,28 @@ const AboutPage: React.FC<AboutPageProps> = ({ onClose }) => {
           <h1 className="text-2xl font-bold text-light-text-primary dark:text-dark-text-primary mb-1">About ShelTrify</h1>
           <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">First global one-stop superstore real estate ecosystem</p>
         </div>
+
+        {/* Our services */}
+        <section className="mb-8 rounded-2xl bg-[#17386B] p-5 sm:p-7" aria-labelledby="our-services">
+          <div className="text-center">
+            <h2 id="our-services" className="inline-block px-5 py-1.5 rounded-full bg-white/10 text-white text-sm font-bold tracking-widest uppercase">
+              Our Services
+            </h2>
+          </div>
+          <ul className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {OUR_SERVICES.map(({ label, Icon }) => (
+              <li key={label} className="flex flex-col items-center text-center gap-3 rounded-xl bg-white p-4">
+                <span className="w-14 h-14 rounded-full border-2 border-[#17386B]/15 flex items-center justify-center">
+                  <Icon className="w-7 h-7 text-[#17386B]" />
+                </span>
+                <span className="text-[11px] sm:text-xs font-bold uppercase leading-snug text-[#17386B]">{label}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-center text-xs sm:text-sm font-bold tracking-wide text-white">
+            {TAGLINE.join('  •  ')}
+          </p>
+        </section>
 
         {/* Main Content */}
         <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-lg p-6 md:p-8 shadow-lg">

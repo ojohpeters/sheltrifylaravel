@@ -6,7 +6,7 @@ import {
     EventVenueIcon, StudentHostelIcon, SmartHomeIcon,
     RentToOwnIcon, TripPlannerIcon, RoadNavigationIcon,
     BuildingStorefrontIcon, DocumentTextIcon, UsersIcon, GlobeAltIcon,
-    MegaphoneIcon, HammerIcon, CreditCardIcon, ShieldCheckIcon, LightbulbIcon,
+    MegaphoneIcon, HammerIcon, CreditCardIcon,
 } from './icons';
 import { router } from '@inertiajs/react';
 import { statsAPI, testimonialAPI } from '../services/api';
@@ -170,7 +170,7 @@ const CORE_SERVICES = [
     {
         title: 'Artisans Services',
         tagline: 'Find Trusted Artisans in 5 Minutes',
-        bullets: ['Plumbers, electricians, painters near you in Makurdi'],
+        bullets: ['Plumbers, electricians, painters and more, near you across Nigeria'],
         cta: 'Hire Now',
         href: '/artisans',
         icon: HammerIcon,
@@ -182,24 +182,6 @@ const CORE_SERVICES = [
         cta: 'Send Money',
         href: '/wallet',
         icon: CreditCardIcon,
-    },
-    {
-        title: 'Land Verification',
-        tagline: 'Verify Land Documents Before You Pay',
-        bullets: ['Check C of O and survey plans, and avoid land scams'],
-        cta: 'Verify Land',
-        // No dedicated land-verification page exists yet; the AI assistant is
-        // the current entry point for property enquiries. Repoint when one lands.
-        href: '/chat',
-        icon: ShieldCheckIcon,
-    },
-    {
-        title: 'SCAWA',
-        tagline: 'Sheltrify Capacity Advancement',
-        bullets: ['Learn AI, Data Analytics, Engineering and Software development.'],
-        cta: 'Join Session',
-        href: '/community',
-        icon: LightbulbIcon,
     },
 ] as const;
 
