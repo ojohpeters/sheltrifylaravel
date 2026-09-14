@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Validation\Rule;
+use App\Support\Phone;
+use App\Support\NigerianStates;
 use App\Models\ProfessionalProfile;
 use App\Models\User;
 use App\Models\Wallet;
@@ -138,7 +141,7 @@ class UserApiController extends Controller
     {
         $user = $request->user();
 
-        $data = $request->validate([
+        $data = $request->validate(array_merge([
             // NIN is the only hard requirement. Most local artisans have no
             // company, no licence number and no professional body — demanding
             // them kept exactly the people this page exists for from applying.
@@ -153,7 +156,17 @@ class UserApiController extends Controller
             'businessAddress'    => 'nullable|string',
             'yearsExperience'    => 'nullable|string|max:10',
             'bio'                => 'nullable|string|max:1000',
-        ]);
+        ], $this->artisanDetailRules()));
+
+        if ($message = $this->invalidPhoneMessage($data)) {
+            return $this->jsonErr($message, 422);
+        }
+
+        // Older clients send only the range string ("6–10 years").
+        if (! array_key_exists('experienceYears', $data)
+            && preg_match('/\d+/', (string) ($data['yearsExperience'] ?? ''), $m)) {
+            $data['experienceYears'] = (int) $m[0];
+        }
 
         $profile = ProfessionalProfile::updateOrCreate(
             ['user_id' => $user->id],
@@ -195,7 +208,115 @@ class UserApiController extends Controller
             'listing_approval_status'=> 'pending',
         ]);
 
+        // The directory reads phone, WhatsApp, location, bio, experience and
+        // photo from the user row. This form used to write bio and experience
+        // only to professional_profiles, so no artisan's bio ever appeared.
+        $this->saveArtisanDetails($user, $data);
+
         return $this->jsonOk($profile->load('user'), 'Professional profile submitted for admin review.');
+    }
+
+    /**
+     * Update the public details of an artisan's directory listing.
+     *
+     * Kept apart from the verification submission on purpose. Phone, WhatsApp,
+     * location, bio, experience and photo are what seekers see and have to stay
+     * current long after approval; sending those edits through the verification
+     * form would either reopen review for a changed phone number or let identity
+     * details change unreviewed. Nothing verification-related is touched here.
+     */
+    public function updateArtisanDetails(Request $request)
+    {
+        $data = $request->validate($this->artisanDetailRules());
+
+        if ($message = $this->invalidPhoneMessage($data)) {
+            return $this->jsonErr($message, 422);
+        }
+
+        $user = $this->saveArtisanDetails($request->user(), $data);
+
+        return $this->jsonOk([
+            'phone' => $user->phone,
+            'whatsapp' => $user->whatsapp,
+            'artisanState' => $user->artisan_state,
+            'artisanLga' => $user->artisan_lga,
+            'artisanLocation' => $user->artisan_location,
+            'artisanBio' => $user->artisan_bio,
+            'artisanExperienceYears' => $user->artisan_experience_years,
+            'avatarUrl' => $user->avatar_url,
+        ], 'Your listing details are saved.');
+    }
+
+    /** Validation for the fields shown on an artisan's public listing. */
+    private function artisanDetailRules(): array
+    {
+        return [
+            'phone' => 'nullable|string|max:30',
+            'whatsapp' => 'nullable|string|max:30',
+            'state' => ['nullable', 'string', Rule::in(NigerianStates::ALL)],
+            'lga' => 'nullable|string|max:80',
+            'bio' => 'nullable|string|max:1000',
+            'experienceYears' => 'nullable|integer|min:0|max:70',
+            // Our own uploads, or an https image — never a data: or javascript: URL.
+            'avatarUrl' => ['nullable', 'string', 'max:2048', 'regex:#^(/storage/|https://)#'],
+        ];
+    }
+
+    /** A message for the first supplied number that cannot be made valid, or null. */
+    private function invalidPhoneMessage(array $data): ?string
+    {
+        foreach (['phone' => 'phone', 'whatsapp' => 'WhatsApp'] as $field => $label) {
+            if (filled($data[$field] ?? null) && ! Phone::isValid(Phone::normalize($data[$field]))) {
+                return "Enter a valid {$label} number.";
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Write whichever public listing fields were supplied onto the user.
+     * Keys absent from $data are left alone, so a partial update cannot blank
+     * out fields the client never sent.
+     */
+    private function saveArtisanDetails(User $user, array $data): User
+    {
+        $attributes = [];
+
+        if (array_key_exists('phone', $data)) {
+            $attributes['phone'] = Phone::normalize($data['phone']);
+        }
+        if (array_key_exists('whatsapp', $data)) {
+            $attributes['whatsapp'] = Phone::normalize($data['whatsapp']);
+        }
+        if (array_key_exists('state', $data)) {
+            $attributes['artisan_state'] = $data['state'] ?: null;
+        }
+        if (array_key_exists('lga', $data)) {
+            $attributes['artisan_lga'] = filled($data['lga']) ? trim($data['lga']) : null;
+        }
+        if (array_key_exists('bio', $data)) {
+            $attributes['artisan_bio'] = filled($data['bio']) ? trim($data['bio']) : null;
+        }
+        if (array_key_exists('experienceYears', $data)) {
+            $attributes['artisan_experience_years'] = $data['experienceYears'];
+        }
+        if (filled($data['avatarUrl'] ?? null)) {
+            $attributes['avatar_url'] = $data['avatarUrl'];
+        }
+
+        $user->fill($attributes);
+
+        // Keep the display string in step with the structured fields it is built from.
+        if ($user->isDirty(['artisan_state', 'artisan_lga'])) {
+            $user->artisan_location = collect([$user->artisan_lga, $user->artisan_state])
+                ->filter()
+                ->implode(', ') ?: null;
+        }
+
+        $user->save();
+
+        return $user;
     }
 
     public function getProfessionalProfile(Request $request)

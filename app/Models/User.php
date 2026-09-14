@@ -27,7 +27,7 @@ class User extends Authenticatable
         'verification_photo_url', 'verification_id_url', 'verification_id_type',
         'verification_status', 'verification_rejected_at', 'verification_rejection_reason',
         'verified_at', 'artisan_service', 'artisan_location', 'artisan_rating', 'artisan_bio',
-        'artisan_experience_years', 'artisan_reviews_count',
+        'artisan_experience_years', 'artisan_reviews_count', 'artisan_state', 'artisan_lga',
         'nin_number', 'nin_verified',
         'listing_approval_status', 'listing_approval_rejection_reason', 'listing_approved_at',
         'professional_license_url', 'professional_type',

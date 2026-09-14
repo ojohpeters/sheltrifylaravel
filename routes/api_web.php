@@ -119,6 +119,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/submit-verification', [UserApiController::class, 'submitVerification']);
     Route::post('/users/professional-profile', [UserApiController::class, 'submitProfessionalProfile']);
     Route::get('/users/professional-profile', [UserApiController::class, 'getProfessionalProfile']);
+    Route::put('/users/artisan-details', [UserApiController::class, 'updateArtisanDetails']);
 
     Route::get('/cart', [CartApiController::class, 'index']);
     Route::delete('/cart', [CartApiController::class, 'clear']);

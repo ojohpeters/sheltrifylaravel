@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ArtisanReview;
 use App\Models\User;
+use App\Support\Phone;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -13,7 +14,7 @@ class ArtisanApiController extends Controller
     /** Columns safe to expose publicly — no email, no NIN, no verification docs. */
     private const PUBLIC_COLUMNS = [
         'id', 'full_name', 'phone', 'whatsapp', 'avatar_url',
-        'artisan_location', 'artisan_service', 'artisan_bio',
+        'artisan_location', 'artisan_state', 'artisan_lga', 'artisan_service', 'artisan_bio',
         'artisan_rating', 'artisan_reviews_count', 'artisan_experience_years',
         'created_at',
     ];
@@ -29,6 +30,7 @@ class ArtisanApiController extends Controller
         $data = $request->validate([
             'search' => 'nullable|string|max:120',
             'service' => 'nullable|string|max:60',
+            'state' => 'nullable|string|max:40',
         ]);
 
         $page = max(1, (int) $request->query('page', 1));
@@ -39,8 +41,21 @@ class ArtisanApiController extends Controller
             ->where('is_verified', true)
             ->where(fn ($q) => $q->whereNull('is_suspended')->orWhere('is_suspended', false));
 
+        // States that actually have a listed artisan, for the filter menu, so it
+        // never offers a state that returns nothing. Taken before the state
+        // filter is applied, or picking one state would hide all the others.
+        $states = (clone $query)
+            ->whereNotNull('artisan_state')
+            ->distinct()
+            ->orderBy('artisan_state')
+            ->pluck('artisan_state');
+
         if (! empty($data['service'])) {
             $query->where('artisan_service', $data['service']);
+        }
+
+        if (! empty($data['state'])) {
+            $query->where('artisan_state', $data['state']);
         }
 
         if (! empty($data['search'])) {
@@ -49,6 +64,8 @@ class ArtisanApiController extends Controller
             $query->where(fn ($q) => $q
                 ->where('full_name', 'like', $term)
                 ->orWhere('artisan_location', 'like', $term)
+                ->orWhere('artisan_lga', 'like', $term)
+                ->orWhere('artisan_state', 'like', $term)
                 ->orWhere('artisan_service', 'like', $term));
         }
 
@@ -63,6 +80,7 @@ class ArtisanApiController extends Controller
 
         return $this->jsonOk([
             'artisans' => $artisans,
+            'states' => $states,
             'pagination' => [
                 'page' => $page,
                 'limit' => $limit,
@@ -153,9 +171,11 @@ class ArtisanApiController extends Controller
         $user->fill([
             'full_name' => $data['fullName'],
             'role' => 'ARTISAN',
-            'phone' => $data['phone'],
-            'whatsapp' => $data['whatsapp'] ?? $user->whatsapp,
+            'phone' => Phone::normalize($data['phone']),
+            'whatsapp' => array_key_exists('whatsapp', $data) ? Phone::normalize($data['whatsapp']) : $user->whatsapp,
             'artisan_service' => $data['service'],
+            'artisan_state' => $data['state'],
+            'artisan_lga' => $data['lga'] ?? null,
             'artisan_location' => trim(($data['lga'] ?? '').', '.$data['state'], ', '),
             'artisan_bio' => $data['bio'] ?? null,
             'artisan_experience_years' => $data['experienceYears'] ?? null,

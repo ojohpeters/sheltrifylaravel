@@ -325,7 +325,7 @@ class AdminApiController extends Controller
     {
         $profiles = \App\Models\ProfessionalProfile::query()
             ->where('status', 'pending')
-            ->with(['user:id,email,full_name,phone,avatar_url,role'])
+            ->with(['user:id,email,full_name,phone,whatsapp,avatar_url,role,artisan_bio,artisan_state,artisan_lga,artisan_location,artisan_experience_years'])
             ->orderBy('created_at')
             ->get();
 
