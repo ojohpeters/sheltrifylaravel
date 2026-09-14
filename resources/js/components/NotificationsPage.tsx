@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { whatsAppLink } from '../utils/phone';
 import { CloseIcon, BellIcon, TrashIcon, CheckCircleIcon } from './icons';
 import { notificationAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
@@ -174,7 +175,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ onClose }) => {
                                                     </a>
                                                     <a
                                                         onClick={e => e.stopPropagation()}
-                                                        href={`https://wa.me/${(n.data.seekerPhone || '').replace(/[^\d+]/g, '')}?text=${encodeURIComponent(`Hi ${n.data.seekerName?.split(' ')[0] || ''}, you showed interest in "${n.data.productName || 'my listing'}" on ShelTrify.`)}`}
+                                                        href={whatsAppLink(n.data.seekerPhone, `Hi ${n.data.seekerName?.split(' ')[0] || ''}, you showed interest in "${n.data.productName || 'my listing'}" on ShelTrify.`)}
                                                         target="_blank" rel="noopener noreferrer"
                                                         className="px-3 py-1.5 text-xs font-semibold bg-green-500 text-white rounded-lg hover:bg-green-600"
                                                     >

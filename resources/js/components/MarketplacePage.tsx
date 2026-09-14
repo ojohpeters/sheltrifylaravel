@@ -8,7 +8,8 @@ import {
     CloseIcon,
     EyeIcon,
 } from './icons';
-import { marketplaceAPI, uploadAPI, subscribeAPI } from '../services/api';
+import { marketplaceAPI, uploadAPI, subscribeAPI, PHOTO_UPLOAD_TARGET_BYTES } from '../services/api';
+import { whatsAppLink, toInternationalDigits } from '../utils/phone';
 import { useToast } from '../contexts/ToastContext';
 
 const formatPrice = (price: number): string => {
@@ -115,7 +116,7 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
     };
 
     const phoneNumber = product.landlordPhone || product.user?.phone || '';
-    const whatsapp = phoneNumber.replace(/[^\d+]/g, '');
+    const whatsapp = toInternationalDigits(phoneNumber);
     const sellerName = product.landlordName || product.user?.fullName || product.user?.email || 'Seller';
     const isProperty = ['homesForSale','landForSale','shortlet','studentHostel','officeSpace','businessSpace','eventVenue','weddingMaterials','rentToOwn'].includes(product._category || '');
 
@@ -285,7 +286,7 @@ const ProductDetailModal: React.FC<{ product: any; onClose: () => void; isAuthen
                                 <PhoneIcon className="w-4 h-4" />Call
                             </a>
                             <a
-                                href={`https://wa.me/${whatsapp}?text=Hi, I saw your listing "${product.name}" on ShelTrify and I'm interested.`}
+                                href={whatsAppLink(phoneNumber, `Hi, I saw your listing "${product.name}" on ShelTrify and I'm interested.`)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center gap-2 py-3 bg-green-500 text-white font-semibold rounded-xl text-sm hover:bg-green-600 transition-colors"
@@ -588,7 +589,7 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
         try {
             const images: string[] = [];
             for (const f of imageFiles) {
-                const res = await uploadAPI.uploadImage(f, true);
+                const res = await uploadAPI.uploadImage(f, true, PHOTO_UPLOAD_TARGET_BYTES);
                 if (res.success && res.data?.url) images.push(res.data.url);
                 else { setError('Failed to upload one or more images'); return; }
             }
@@ -752,9 +753,9 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         // Build a WhatsApp deep link from whatever phone data we have on the product —
         // works even when the seller is offline / not logged in.
         const ownerPhone: string = product?.user?.whatsapp || product?.user?.phone || product?.landlordPhone || '';
-        const cleanPhone = (ownerPhone || '').replace(/[^\d+]/g, '').replace(/^\+/, '');
+        const cleanPhone = toInternationalDigits(ownerPhone);
         const waMessage = `Hi, I'm interested in your listing "${product.name}" on ShelTrify. Could you share more details?`;
-        const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}` : '';
+        const waUrl = whatsAppLink(ownerPhone, waMessage);
 
         if (isAuthenticated) {
             try {

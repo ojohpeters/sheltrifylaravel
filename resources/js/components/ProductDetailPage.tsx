@@ -4,6 +4,7 @@ import {
     BuildingStorefrontIcon, CloseIcon,
 } from './icons';
 import { marketplaceAPI, subscribeAPI } from '../services/api';
+import { whatsAppLink, toInternationalDigits } from '../utils/phone';
 import { useToast } from '../contexts/ToastContext';
 import Lightbox, { useLightbox } from './Lightbox';
 
@@ -57,7 +58,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, onBack, 
     const allImages: string[] = realImages.length > 0 ? realImages : [fallback];
 
     const phoneNumber = product?.landlordPhone || product?.user?.phone || '';
-    const whatsapp = (phoneNumber || '').replace(/[^\d+]/g, '');
+    const whatsapp = toInternationalDigits(phoneNumber);
     const sellerName = product?.landlordName || product?.user?.fullName || product?.user?.email || 'Seller';
 
     const prevImage = () => setCurrentImg(i => (i === 0 ? allImages.length - 1 : i - 1));
@@ -255,7 +256,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, onBack, 
                                     className="flex items-center justify-center gap-2 py-3 bg-brand-primary text-white font-semibold rounded-xl text-sm hover:bg-brand-secondary transition-colors">
                                     <PhoneIcon className="w-4 h-4" />Call
                                 </a>
-                                <a href={`https://wa.me/${whatsapp}?text=Hi, I saw your listing "${product.name}" on ShelTrify and I'm interested.`}
+                                <a href={whatsAppLink(phoneNumber, `Hi, I saw your listing "${product.name}" on ShelTrify and I'm interested.`)}
                                     target="_blank" rel="noopener noreferrer"
                                     className="flex items-center justify-center gap-2 py-3 bg-green-500 text-white font-semibold rounded-xl text-sm hover:bg-green-600 transition-colors">
                                     💬 WhatsApp
