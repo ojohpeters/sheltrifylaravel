@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Concerns\SerializesCamelCase;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ArtisanReview extends Model
 {
-    use HasFactory;
+    use HasFactory, SerializesCamelCase;
 
     protected $fillable = ['artisan_id', 'reviewer_id', 'rating', 'comment'];
 

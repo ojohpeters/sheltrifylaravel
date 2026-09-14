@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SerializesCamelCase;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProfessionalProfile extends Model
 {
+    use SerializesCamelCase;
+
     protected $fillable = [
         'user_id', 'professional_type', 'company_name', 'license_number',
         'license_url', 'nin_number', 'cac_number', 'cac_document_url',

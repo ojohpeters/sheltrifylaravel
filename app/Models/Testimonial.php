@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Concerns\SerializesCamelCase;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Testimonial extends Model
 {
-    use HasFactory;
+    use HasFactory, SerializesCamelCase;
 
     protected $fillable = ['user_id', 'rating', 'body', 'location', 'status'];
 
