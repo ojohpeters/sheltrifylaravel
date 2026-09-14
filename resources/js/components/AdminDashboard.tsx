@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { adminAPI, adminNotificationsAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI, PHOTO_UPLOAD_TARGET_BYTES } from '../services/api';
 import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon, BellIcon, MegaphoneIcon, NoSymbolIcon, StarIcon } from './icons';
 import { useToast } from '../contexts/ToastContext';
+import Lightbox, { useLightbox } from './Lightbox';
+import { serviceLabel } from '../constants/services';
+import { formatPhone, whatsAppLink } from '../utils/phone';
 
 interface AdminDashboardProps {
   onClose?: () => void;
@@ -94,7 +97,7 @@ interface MarketplaceProduct {
   };
 }
 
-type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala' | 'broadcast' | 'testimonials' | 'notifications';
+type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala' | 'broadcast' | 'testimonials' | 'artisan-applications' | 'notifications';
 type AdminView = 'list' | 'edit' | 'create' | 'upload';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
@@ -113,6 +116,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [listingImageUploading, setListingImageUploading] = useState(false);
   const listingImageRef = useRef<HTMLInputElement>(null);
   const listingImageCamRef = useRef<HTMLInputElement>(null);
+  const [artisanApplications, setArtisanApplications] = useState<any[]>([]);
+  const [rejectingApplicationId, setRejectingApplicationId] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const { lightbox: docLightbox, openLightbox: openDocLightbox, closeLightbox: closeDocLightbox } = useLightbox();
+
+  // Loaded on mount as well as when the tab opens, so the badge shows waiting
+  // applicants from anywhere in the dashboard. Nobody can be listed on the
+  // Local Artisans page until they are approved here.
+  useEffect(() => { loadArtisanApplications(); }, []);
   const [allMarketplaceProducts, setAllMarketplaceProducts] = useState<any[]>([]);
   const [marketplaceTab, setMarketplaceTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -179,6 +191,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       loadAllMarketplaceProducts();
     } else if (currentPage === 'requests') {
       loadAppointments();
+    } else if (currentPage === 'artisan-applications') {
+      loadArtisanApplications();
     } else if (currentPage === 'testimonials') {
       loadPendingTestimonials();
     } else if (currentPage === 'analytics') {
@@ -272,6 +286,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       setListingImageUploading(false);
       // Allow re-picking the same file after a failure.
       if (e.target) e.target.value = '';
+    }
+  };
+
+  // Artisan applications. The approve/reject endpoints and API client existed,
+  // but nothing in the dashboard ever called them — so every artisan who applied
+  // waited indefinitely and the directory stayed empty.
+  const loadArtisanApplications = async () => {
+    try {
+      const res: any = await adminAPI.getPendingProfessionalProfiles();
+      setArtisanApplications(res?.success ? (res.data.profiles || []) : []);
+    } catch { setArtisanApplications([]); }
+  };
+
+  const approveArtisanApplication = async (id: number) => {
+    try {
+      const res: any = await adminAPI.approveProfessionalProfile(String(id));
+      if (!res?.success) throw new Error(res?.message || 'Could not approve');
+      showSuccess('Approved — the artisan is now listed.');
+      setArtisanApplications(prev => prev.filter(a => a.id !== id));
+    } catch (e: any) {
+      showError(e?.message || 'Could not approve the application');
+    }
+  };
+
+  const rejectArtisanApplication = async (id: number) => {
+    const reason = rejectReason.trim();
+    // A reason is required: the applicant sees it and needs to know what to fix.
+    if (!reason) { showError('Add a reason so the applicant knows what to fix.'); return; }
+    try {
+      const res: any = await adminAPI.rejectProfessionalProfile(String(id), reason);
+      if (!res?.success) throw new Error(res?.message || 'Could not reject');
+      showSuccess('Rejected — the applicant can update it and resubmit.');
+      setArtisanApplications(prev => prev.filter(a => a.id !== id));
+      setRejectingApplicationId(null);
+      setRejectReason('');
+    } catch (e: any) {
+      showError(e?.message || 'Could not reject the application');
     }
   };
 
@@ -754,6 +805,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     { id: 'rental-wahala', label: 'Rental Wahala', icon: VideoCameraIcon },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon, badge: pendingProducts.length },
     { id: 'requests', label: 'Property Requests', icon: DocumentCheckIcon, badge: appointments.filter((a: any) => a.status === 'pending').length },
+    { id: 'artisan-applications', label: 'Artisan Applications', icon: DocumentCheckIcon, badge: artisanApplications.length },
     { id: 'testimonials', label: 'Testimonials', icon: StarIcon, badge: pendingTestimonials.length },
     { id: 'broadcast', label: 'Broadcast', icon: MegaphoneIcon },
     { id: 'notifications', label: 'All Notifications', icon: BellIcon },
@@ -869,6 +921,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 {currentPage === 'dashboard' && 'Overview of your platform statistics'}
                 {currentPage === 'users' && 'Manage all platform users'}
                 {currentPage === 'verifications' && 'Review and approve landlord/agent verifications'}
+                {currentPage === 'artisan-applications' && 'Review artisan verification applications'}
                 {currentPage === 'accommodations' && 'Upload and manage accommodation listings'}
                 {currentPage === 'listings' && 'Manage all property listings'}
                 {currentPage === 'feels' && 'Manage Feels video content'}
@@ -1609,6 +1662,184 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           )}
 
           {/* Broadcast Tab */}
+          {currentPage === 'artisan-applications' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-bold text-light-text-primary dark:text-dark-text-primary">Artisan applications</h3>
+                <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  Approving verifies the artisan and lists them on the Local Artisans page. Check the NIN and photo first.
+                </p>
+              </div>
+
+              {artisanApplications.length === 0 ? (
+                <div className="text-center py-14 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl">
+                  <DocumentCheckIcon className="w-10 h-10 mx-auto text-light-text-muted dark:text-dark-text-muted" />
+                  <p className="mt-2 font-semibold text-light-text-primary dark:text-dark-text-primary">No applications waiting</p>
+                  <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    New artisan applications will land here for review.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  {artisanApplications.map((app: any) => {
+                    const u = app.user || {};
+                    const location = [u.artisanLga, u.artisanState].filter(Boolean).join(', ') || u.artisanLocation || '';
+                    const bio = u.artisanBio || app.bio || '';
+                    const contact = whatsAppLink(
+                      u.whatsapp || u.phone,
+                      `Hi ${(u.fullName || '').split(' ')[0]}, this is ShelTrify about your artisan application.`,
+                    );
+                    const docs = [
+                      { label: 'Certificate / licence', url: app.licenseUrl },
+                      { label: 'Membership card', url: app.membershipDocUrl },
+                    ].filter(d => d.url) as { label: string; url: string }[];
+                    const isPdf = (url: string) => /\.pdf($|\?)/i.test(url);
+                    const imageDocs = docs.filter(d => !isPdf(d.url)).map(d => d.url);
+                    const facts: [string, string][] = [
+                      ['NIN', app.ninNumber || '—'],
+                      ['Phone', u.phone ? formatPhone(u.phone) : '—'],
+                      ['WhatsApp', u.whatsapp ? formatPhone(u.whatsapp) : '—'],
+                      ['Location', location || '—'],
+                      ['Experience', u.artisanExperienceYears != null ? `${u.artisanExperienceYears} yrs` : (app.yearsExperience || '—')],
+                      ['Business', app.companyName || '—'],
+                    ];
+
+                    return (
+                      <div key={app.id} className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl p-4 sm:p-5">
+                        <div className="flex gap-4">
+                          {u.avatarUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => openDocLightbox([u.avatarUrl], 0, u.fullName)}
+                              aria-label="View photo full size"
+                              className="flex-shrink-0 cursor-zoom-in"
+                            >
+                              <img src={u.avatarUrl} alt="" className="w-20 h-24 rounded-xl object-cover object-top border border-light-border dark:border-dark-border" />
+                            </button>
+                          ) : (
+                            <div className="w-20 h-24 rounded-xl bg-light-bg dark:bg-dark-bg flex items-center justify-center flex-shrink-0">
+                              <UserIcon className="w-8 h-8 text-light-text-muted dark:text-dark-text-muted" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-light-text-primary dark:text-dark-text-primary truncate">{u.fullName || 'Unnamed applicant'}</p>
+                            <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary truncate">{u.email}</p>
+                            <span className="inline-block mt-1.5 px-2.5 py-0.5 rounded-full bg-brand-primary/10 text-brand-primary text-xs font-semibold">
+                              {serviceLabel(app.professionalType) || 'Trade not set'}
+                            </span>
+                            {app.createdAt && (
+                              <p className="mt-1 text-[11px] text-light-text-muted dark:text-dark-text-muted">
+                                Applied {new Date(app.createdAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                          {facts.map(([label, value]) => (
+                            <div key={label} className="min-w-0">
+                              <dt className="text-[11px] uppercase tracking-wide text-light-text-muted dark:text-dark-text-muted">{label}</dt>
+                              <dd className={`text-light-text-primary dark:text-dark-text-primary truncate ${label === 'NIN' ? 'font-mono' : ''}`}>{value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+
+                        <div className="mt-3">
+                          <p className="text-[11px] uppercase tracking-wide text-light-text-muted dark:text-dark-text-muted">Bio</p>
+                          <p className="text-sm text-light-text-primary dark:text-dark-text-primary whitespace-pre-line break-words">
+                            {bio || 'No bio provided.'}
+                          </p>
+                        </div>
+
+                        {docs.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            {docs.map(d => isPdf(d.url) ? (
+                              <a
+                                key={d.label}
+                                href={d.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-2 rounded-lg border border-light-border dark:border-dark-border text-xs font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-bg dark:hover:bg-dark-bg"
+                              >
+                                📄 {d.label} (PDF)
+                              </a>
+                            ) : (
+                              <button
+                                key={d.label}
+                                type="button"
+                                onClick={() => openDocLightbox(imageDocs, imageDocs.indexOf(d.url), d.label)}
+                                className="text-left cursor-zoom-in"
+                              >
+                                <img src={d.url} alt="" className="w-24 h-16 object-cover rounded-lg border border-light-border dark:border-dark-border" />
+                                <span className="block mt-1 text-[11px] text-light-text-secondary dark:text-dark-text-secondary">{d.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {rejectingApplicationId === app.id ? (
+                          <div className="mt-4 space-y-2">
+                            <textarea
+                              value={rejectReason}
+                              onChange={e => setRejectReason(e.target.value)}
+                              rows={2}
+                              maxLength={500}
+                              placeholder="Tell the applicant what to fix, e.g. the photo does not show your face clearly"
+                              className="w-full bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg px-3 py-2 text-sm text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none resize-none"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => rejectArtisanApplication(app.id)}
+                                className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors"
+                              >
+                                Send rejection
+                              </button>
+                              <button
+                                onClick={() => { setRejectingApplicationId(null); setRejectReason(''); }}
+                                className="px-4 py-2 rounded-xl border border-light-border dark:border-dark-border text-sm font-semibold text-light-text-primary dark:text-dark-text-primary"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              onClick={() => approveArtisanApplication(app.id)}
+                              className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                            >
+                              Approve &amp; list
+                            </button>
+                            <button
+                              onClick={() => { setRejectingApplicationId(app.id); setRejectReason(''); }}
+                              className="px-4 py-2 rounded-xl border border-light-border dark:border-dark-border text-sm font-semibold text-light-text-primary dark:text-dark-text-primary hover:bg-light-bg dark:hover:bg-dark-bg transition-colors"
+                            >
+                              Reject
+                            </button>
+                            {contact && (
+                              <a
+                                href={contact}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 rounded-xl border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-500/10 transition-colors"
+                              >
+                                WhatsApp
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {docLightbox && (
+                <Lightbox images={docLightbox.images} startIndex={docLightbox.index} alt={docLightbox.alt} onClose={closeDocLightbox} />
+              )}
+            </div>
+          )}
+
           {currentPage === 'testimonials' && (
             <div className="space-y-4">
               <div>
