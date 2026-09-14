@@ -297,10 +297,12 @@ export const userAPI = {
   },
 
   submitProfessionalProfile: async (data: {
-    professionalType: string; companyName: string; licenseNumber: string;
-    licenseUrl: string; ninNumber: string; cacNumber?: string; cacDocumentUrl?: string;
+    professionalType: string; ninNumber: string;
+    companyName?: string; licenseNumber?: string; licenseUrl?: string;
     professionalBody?: string; membershipId?: string; membershipDocUrl?: string;
-    businessAddress?: string; yearsExperience?: string; bio?: string;
+    businessAddress?: string; yearsExperience?: string; bio?: string | null;
+    phone?: string | null; whatsapp?: string | null; state?: string | null; lga?: string | null;
+    experienceYears?: number | null; avatarUrl?: string | null;
   }) => {
     return apiRequest('/users/professional-profile', {
       method: 'POST',
@@ -311,6 +313,13 @@ export const userAPI = {
   getProfessionalProfile: async () => {
     return apiRequest('/users/professional-profile');
   },
+
+  // Public listing details — phone, WhatsApp, location, bio, photo. Editable at
+  // any time without reopening verification.
+  updateArtisanDetails: async (data: {
+    phone?: string | null; whatsapp?: string | null; state?: string | null; lga?: string | null;
+    bio?: string | null; experienceYears?: number | null; avatarUrl?: string | null;
+  }) => apiRequest('/users/artisan-details', { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 // Listing API
@@ -601,10 +610,11 @@ export const referralAPI = {
 };
 
 export const artisanAPI = {
-  list: async (params?: { search?: string; service?: string; page?: number; limit?: number }) => {
+  list: async (params?: { search?: string; service?: string; state?: string; page?: number; limit?: number }) => {
     const qs = new URLSearchParams();
     if (params?.search) qs.set('search', params.search);
     if (params?.service) qs.set('service', params.service);
+    if (params?.state) qs.set('state', params.state);
     if (params?.page) qs.set('page', String(params.page));
     if (params?.limit) qs.set('limit', String(params.limit));
     const suffix = qs.toString() ? `?${qs}` : '';

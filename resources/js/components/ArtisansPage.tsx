@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    SearchIcon, PlusIcon, StarSolidIcon, MapIcon, PhoneIcon,
+    SearchIcon, PlusIcon, StarSolidIcon, MapIcon, PhoneIcon, UserIcon,
     WhatsAppIcon, CommentBubbleIcon, CloseIcon, CheckCircleIcon, ShieldCheckIcon,
 } from './icons';
 import { artisanAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { ARTISAN_CATEGORIES, serviceLabel } from '../constants/services';
 import Pagination, { PageMeta } from './Pagination';
+import Lightbox, { useLightbox } from './Lightbox';
+import { whatsAppLink, telLink, formatPhone } from '../utils/phone';
 
 interface Artisan {
     id: number;
@@ -15,6 +17,8 @@ interface Artisan {
     whatsapp?: string | null;
     avatarUrl?: string | null;
     artisanLocation?: string | null;
+    artisanState?: string | null;
+    artisanLga?: string | null;
     artisanService?: string | null;
     artisanBio?: string | null;
     artisanRating?: number | null;
@@ -33,6 +37,21 @@ interface Review {
 /** Only the trades that actually have someone listed are worth a filter chip. */
 const FILTER_LIMIT = 8;
 
+/** "Makurdi, Benue" from the structured fields, falling back to the free-text location. */
+function locationOf(a: Artisan): string {
+    return [a.artisanLga, a.artisanState].filter(Boolean).join(', ') || a.artisanLocation || '';
+}
+
+function firstName(a: Artisan): string {
+    return (a.fullName || '').trim().split(' ')[0] || 'this artisan';
+}
+
+/** Prefilled WhatsApp message, so the artisan knows where the lead came from. */
+function hireMessage(a: Artisan): string {
+    const trade = serviceLabel(a.artisanService).toLowerCase();
+    return `Hi ${firstName(a)}, I found you on ShelTrify and I'd like to hire you${trade ? ` for ${trade} work` : ''}.`;
+}
+
 const Stars: React.FC<{ value: number; size?: string }> = ({ value, size = 'w-4 h-4' }) => (
     <span className="inline-flex items-center gap-0.5" aria-label={`${value} out of 5`}>
         {[1, 2, 3, 4, 5].map(i => (
@@ -42,6 +61,16 @@ const Stars: React.FC<{ value: number; size?: string }> = ({ value, size = 'w-4 
             />
         ))}
     </span>
+);
+
+const Detail: React.FC<{ icon?: React.ReactNode; label: string; value: string }> = ({ icon, label, value }) => (
+    <div className="flex items-start gap-2.5 p-3 rounded-xl bg-light-bg dark:bg-dark-bg">
+        {icon && <span className="mt-0.5 text-brand-primary flex-shrink-0">{icon}</span>}
+        <div className="min-w-0">
+            <p className="text-[11px] font-semibold tracking-wide uppercase text-light-text-secondary dark:text-dark-text-secondary">{label}</p>
+            <p className="text-sm font-medium text-light-text-primary dark:text-dark-text-primary break-words">{value}</p>
+        </div>
+    </div>
 );
 
 // ── Reviews modal ────────────────────────────────────────────────────────────
@@ -183,7 +212,7 @@ const ReviewsModal: React.FC<{
                     <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary py-6 text-center">Loading reviews…</p>
                 ) : reviews.length === 0 ? (
                     <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary py-6 text-center">
-                        No reviews yet. Be the first to rate {artisan.fullName.split(' ')[0]}.
+                        No reviews yet. Be the first to rate {firstName(artisan)}.
                     </p>
                 ) : (
                     <div className="space-y-3">
@@ -219,22 +248,188 @@ const ReviewsModal: React.FC<{
     );
 };
 
-// ── Artisan card ─────────────────────────────────────────────────────────────
+// ── Profile ──────────────────────────────────────────────────────────────────
 
-const ArtisanCard: React.FC<{ artisan: Artisan; onReviews: () => void }> = ({ artisan, onReviews }) => {
+/**
+ * Full artisan profile: a large, face-forward photo, the bio, where they work,
+ * experience, and direct contact. The card only has room for a line of bio, and
+ * seekers deciding who to let into their home want to read the rest.
+ */
+const ArtisanProfileModal: React.FC<{
+    artisan: Artisan;
+    onClose: () => void;
+    onReviews: () => void;
+}> = ({ artisan, onClose, onReviews }) => {
+    const { lightbox, openLightbox, closeLightbox } = useLightbox();
     const rating = artisan.artisanRating ?? 0;
     const reviews = artisan.artisanReviewsCount ?? 0;
-    // Digits only — wa.me rejects spaces, plus signs, and punctuation.
-    const waNumber = (artisan.whatsapp || artisan.phone || '').replace(/\D/g, '');
+    const location = locationOf(artisan);
+    const wa = whatsAppLink(artisan.whatsapp || artisan.phone, hireMessage(artisan));
+    const tel = telLink(artisan.phone || artisan.whatsapp);
+
+    // Escape closes the profile — but not while the photo viewer is open on
+    // top of it, which handles its own Escape.
+    useEffect(() => {
+        if (lightbox) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [lightbox, onClose]);
+
+    return (
+        <>
+            <div
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                onClick={onClose}
+            >
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`${artisan.fullName}'s profile`}
+                    onClick={e => e.stopPropagation()}
+                    className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-t-3xl sm:rounded-3xl shadow-2xl"
+                >
+                    <button
+                        onClick={onClose}
+                        aria-label="Close profile"
+                        className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                    >
+                        <CloseIcon className="w-5 h-5" />
+                    </button>
+
+                    {artisan.avatarUrl ? (
+                        <button
+                            type="button"
+                            onClick={() => openLightbox([artisan.avatarUrl], 0, artisan.fullName)}
+                            aria-label="View photo full size"
+                            className="block w-full cursor-zoom-in bg-light-bg dark:bg-dark-bg"
+                        >
+                            {/* object-top: portraits keep the face in frame when cropped. */}
+                            <img
+                                src={artisan.avatarUrl}
+                                alt={artisan.fullName}
+                                className="w-full aspect-[4/5] max-h-[52vh] object-cover object-top"
+                            />
+                        </button>
+                    ) : (
+                        <div className="w-full h-48 bg-light-bg dark:bg-dark-bg flex items-center justify-center">
+                            <UserIcon className="w-16 h-16 text-brand-primary/40" />
+                        </div>
+                    )}
+
+                    <div className="p-5 sm:p-6">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <h2 className="text-2xl font-bold text-light-text-primary dark:text-dark-text-primary leading-tight break-words">
+                                    {artisan.fullName}
+                                </h2>
+                                <p className="mt-1 text-sm font-bold tracking-wide text-brand-primary uppercase">
+                                    {serviceLabel(artisan.artisanService)}
+                                </p>
+                            </div>
+                            <span className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                                <CheckCircleIcon className="w-4 h-4" /> Verified
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={onReviews}
+                            className="mt-2 inline-flex items-center gap-2 text-sm text-light-text-secondary dark:text-dark-text-secondary hover:text-brand-primary transition-colors"
+                        >
+                            <Stars value={rating} />
+                            <span>{reviews > 0 ? `${rating.toFixed(1)} · ${reviews} review${reviews === 1 ? '' : 's'}` : 'No reviews yet'}</span>
+                        </button>
+
+                        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {location && <Detail icon={<MapIcon className="w-4 h-4" />} label="Location" value={location} />}
+                            {artisan.artisanExperienceYears ? (
+                                <Detail
+                                    icon={<ShieldCheckIcon className="w-4 h-4" />}
+                                    label="Experience"
+                                    value={`${artisan.artisanExperienceYears} year${artisan.artisanExperienceYears === 1 ? '' : 's'}`}
+                                />
+                            ) : null}
+                            {artisan.phone && <Detail icon={<PhoneIcon className="w-4 h-4" />} label="Phone" value={formatPhone(artisan.phone)} />}
+                            {artisan.whatsapp && <Detail icon={<WhatsAppIcon className="w-4 h-4" />} label="WhatsApp" value={formatPhone(artisan.whatsapp)} />}
+                        </div>
+
+                        <div className="mt-5">
+                            <h3 className="text-xs font-semibold tracking-wide uppercase text-light-text-secondary dark:text-dark-text-secondary">
+                                About {firstName(artisan)}
+                            </h3>
+                            {artisan.artisanBio ? (
+                                <p className="mt-2 text-sm leading-relaxed text-light-text-primary dark:text-dark-text-primary whitespace-pre-line break-words">
+                                    {artisan.artisanBio}
+                                </p>
+                            ) : (
+                                <p className="mt-2 text-sm italic text-light-text-secondary dark:text-dark-text-secondary">
+                                    {firstName(artisan)} hasn&rsquo;t added a bio yet.
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mt-6 grid grid-cols-2 gap-2">
+                            {tel ? (
+                                <a href={tel} className="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-light-text-primary dark:bg-dark-overlay text-white text-sm font-bold hover:opacity-90 transition-opacity">
+                                    <PhoneIcon className="w-4 h-4" /> Call
+                                </a>
+                            ) : (
+                                <span className="flex items-center justify-center py-3 rounded-xl bg-light-border dark:bg-dark-border text-light-text-muted text-sm font-bold">No phone</span>
+                            )}
+                            {wa ? (
+                                <a href={wa} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 py-3 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors">
+                                    <WhatsAppIcon className="w-4 h-4" /> WhatsApp
+                                </a>
+                            ) : (
+                                <span className="flex items-center justify-center py-3 rounded-xl bg-light-border dark:bg-dark-border text-light-text-muted text-sm font-bold">No WhatsApp</span>
+                            )}
+                        </div>
+                        <button
+                            onClick={onReviews}
+                            className="mt-2 w-full flex items-center justify-center gap-1.5 py-3 rounded-xl border border-light-border dark:border-dark-border text-light-text-primary dark:text-dark-text-primary text-sm font-bold hover:bg-light-bg dark:hover:bg-dark-bg transition-colors"
+                        >
+                            <CommentBubbleIcon className="w-4 h-4" /> Reviews
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* A sibling rather than a child of the backdrop: nested inside it,
+                a tap that closes the photo viewer would bubble up and close the
+                profile too. */}
+            {lightbox && (
+                <Lightbox images={lightbox.images} startIndex={lightbox.index} alt={lightbox.alt} onClose={closeLightbox} />
+            )}
+        </>
+    );
+};
+
+// ── Artisan card ─────────────────────────────────────────────────────────────
+
+const ArtisanCard: React.FC<{ artisan: Artisan; onReviews: () => void; onProfile: () => void }> = ({ artisan, onReviews, onProfile }) => {
+    const rating = artisan.artisanRating ?? 0;
+    const reviews = artisan.artisanReviewsCount ?? 0;
+    const location = locationOf(artisan);
+    const wa = whatsAppLink(artisan.whatsapp || artisan.phone, hireMessage(artisan));
+    const tel = telLink(artisan.phone || artisan.whatsapp);
 
     return (
         <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden flex flex-col sm:flex-row shadow-sm hover:shadow-md transition-shadow">
-            <div className="relative sm:w-40 flex-shrink-0 bg-light-bg dark:bg-dark-bg">
+            <button
+                type="button"
+                onClick={onProfile}
+                aria-label={`View ${artisan.fullName}'s profile`}
+                className="relative sm:w-44 sm:min-h-[15rem] flex-shrink-0 bg-light-bg dark:bg-dark-bg"
+            >
                 {artisan.avatarUrl ? (
-                    <img src={artisan.avatarUrl} alt={artisan.fullName} className="w-full h-40 sm:h-full object-cover" />
+                    // object-top keeps the face in frame. Cropped around the
+                    // centre, a portrait in this short, wide mobile frame showed
+                    // a torso and cut the head off entirely.
+                    <img src={artisan.avatarUrl} alt={artisan.fullName} className="w-full h-64 sm:h-full object-cover object-top" />
                 ) : (
-                    <div className="w-full h-40 sm:h-full min-h-[10rem] flex items-center justify-center">
-                        <ShieldCheckIcon className="w-10 h-10 text-brand-primary/40" />
+                    <div className="w-full h-64 sm:h-full flex items-center justify-center">
+                        <UserIcon className="w-12 h-12 text-brand-primary/40" />
                     </div>
                 )}
                 {artisan.artisanExperienceYears ? (
@@ -242,13 +437,15 @@ const ArtisanCard: React.FC<{ artisan: Artisan; onReviews: () => void }> = ({ ar
                         {artisan.artisanExperienceYears} YEARS EXP.
                     </span>
                 ) : null}
-            </div>
+            </button>
 
-            <div className="flex-1 p-4 min-w-0">
+            <div className="flex-1 p-4 min-w-0 flex flex-col">
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-lg font-bold text-light-text-primary dark:text-dark-text-primary leading-tight">
-                        {artisan.fullName}
-                    </h3>
+                    <button type="button" onClick={onProfile} className="text-left min-w-0">
+                        <h3 className="text-lg font-bold text-light-text-primary dark:text-dark-text-primary leading-tight hover:text-brand-primary transition-colors break-words">
+                            {artisan.fullName}
+                        </h3>
+                    </button>
                     {reviews > 0 && (
                         <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex-shrink-0">
                             <StarSolidIcon className="w-3 h-3" /> {rating.toFixed(1)}
@@ -263,24 +460,30 @@ const ArtisanCard: React.FC<{ artisan: Artisan; onReviews: () => void }> = ({ ar
                     </span>
                 </p>
 
-                {artisan.artisanLocation && (
+                {artisan.artisanBio && (
+                    <p className="mt-2 text-sm text-light-text-secondary dark:text-dark-text-secondary line-clamp-2 break-words">
+                        {artisan.artisanBio}
+                    </p>
+                )}
+
+                {location && (
                     <p className="mt-2 flex items-center gap-1.5 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                        <MapIcon className="w-4 h-4 flex-shrink-0" /> {artisan.artisanLocation}
+                        <MapIcon className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{location}</span>
                     </p>
                 )}
 
                 {artisan.phone && (
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                        <PhoneIcon className="w-4 h-4 flex-shrink-0" /> {artisan.phone}
+                        <PhoneIcon className="w-4 h-4 flex-shrink-0" /> {formatPhone(artisan.phone)}
                     </p>
                 )}
 
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-auto pt-3 grid grid-cols-2 gap-2">
                     <a
-                        href={artisan.phone ? `tel:${artisan.phone}` : undefined}
-                        aria-disabled={!artisan.phone}
+                        href={tel || undefined}
+                        aria-disabled={!tel}
                         className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold tracking-wide transition-colors ${
-                            artisan.phone
+                            tel
                                 ? 'bg-light-text-primary dark:bg-dark-overlay text-white hover:opacity-90'
                                 : 'bg-light-border dark:bg-dark-border text-light-text-muted pointer-events-none'
                         }`}
@@ -293,18 +496,23 @@ const ArtisanCard: React.FC<{ artisan: Artisan; onReviews: () => void }> = ({ ar
                     >
                         <CommentBubbleIcon className="w-4 h-4" /> REVIEWS
                     </button>
-                </div>
-
-                {waNumber && (
-                    <a
-                        href={`https://wa.me/${waNumber}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-emerald-500 text-white text-xs font-bold tracking-wide hover:bg-emerald-600 transition-colors"
+                    <button
+                        onClick={onProfile}
+                        className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold tracking-wide border border-brand-primary/40 text-brand-primary hover:bg-brand-primary/10 transition-colors ${wa ? '' : 'col-span-2'}`}
                     >
-                        <WhatsAppIcon className="w-4 h-4" /> CHAT ON WHATSAPP
-                    </a>
-                )}
+                        <UserIcon className="w-4 h-4" /> VIEW PROFILE
+                    </button>
+                    {wa && (
+                        <a
+                            href={wa}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500 text-white text-xs font-bold tracking-wide hover:bg-emerald-600 transition-colors"
+                        >
+                            <WhatsAppIcon className="w-4 h-4" /> WHATSAPP
+                        </a>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -320,7 +528,10 @@ const ArtisansPage: React.FC<{
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [service, setService] = useState<string>('');
+    const [stateFilter, setStateFilter] = useState<string>('');
+    const [states, setStates] = useState<string[]>([]);
     const [active, setActive] = useState<Artisan | null>(null);
+    const [profile, setProfile] = useState<Artisan | null>(null);
     const [page, setPage] = useState(1);
     const [meta, setMeta] = useState<PageMeta | null>(null);
 
@@ -330,17 +541,19 @@ const ArtisansPage: React.FC<{
             const res: any = await artisanAPI.list({
                 search: search || undefined,
                 service: service || undefined,
+                state: stateFilter || undefined,
                 page,
             });
             setArtisans(res?.success ? (res.data.artisans || []) : []);
             setMeta(res?.success ? (res.data.pagination ?? null) : null);
+            if (res?.success && Array.isArray(res.data.states)) setStates(res.data.states);
         } catch {
             setArtisans([]);
             setMeta(null);
         } finally {
             setLoading(false);
         }
-    }, [search, service, page]);
+    }, [search, service, stateFilter, page]);
 
     // Debounced so typing in the search box does not fire a request per keystroke.
     useEffect(() => {
@@ -349,7 +562,7 @@ const ArtisansPage: React.FC<{
     }, [load]);
 
     // A narrower filter can make the current page not exist any more.
-    useEffect(() => { setPage(1); }, [search, service]);
+    useEffect(() => { setPage(1); }, [search, service, stateFilter]);
 
     // Chips are driven by the trades actually present, so the filter row never
     // offers a category that returns nothing.
@@ -363,6 +576,11 @@ const ArtisansPage: React.FC<{
         }
         return ordered.slice(0, FILTER_LIMIT);
     }, [artisans, service]);
+
+    const stateOptions = useMemo(
+        () => Array.from(new Set([...(stateFilter ? [stateFilter] : []), ...states])).sort(),
+        [states, stateFilter],
+    );
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-10 md:py-14">
@@ -385,17 +603,30 @@ const ArtisansPage: React.FC<{
                 </button>
             </div>
 
-            <div className="mt-10 flex flex-wrap items-center gap-2">
-                <div className="relative flex-1 min-w-[12rem]">
+            <div className="mt-10 flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-light-text-secondary dark:text-dark-text-secondary" />
                     <input
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Search by name, trade or location"
+                        placeholder="Search by name, trade, LGA or state"
                         className="w-full bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-full pl-9 pr-4 py-2.5 text-sm text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none"
                     />
                 </div>
+                {stateOptions.length > 0 && (
+                    <select
+                        value={stateFilter}
+                        onChange={e => setStateFilter(e.target.value)}
+                        aria-label="Filter by state"
+                        className="sm:w-56 bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-full px-4 py-2.5 text-sm text-light-text-primary dark:text-dark-text-primary focus:ring-2 focus:ring-brand-primary focus:outline-none"
+                    >
+                        <option value="">All states</option>
+                        {stateOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                )}
+            </div>
 
+            <div className="mt-3 flex flex-wrap items-center gap-2">
                 <button
                     onClick={() => setService('')}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
@@ -425,7 +656,7 @@ const ArtisansPage: React.FC<{
                 {loading ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {[0, 1, 2, 3].map(i => (
-                            <div key={i} className="h-44 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border animate-pulse" />
+                            <div key={i} className="h-60 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border animate-pulse" />
                         ))}
                     </div>
                 ) : artisans.length === 0 ? (
@@ -435,21 +666,34 @@ const ArtisansPage: React.FC<{
                             No artisans found
                         </p>
                         <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                            {search || service
-                                ? 'Try a different trade or search term.'
+                            {search || service || stateFilter
+                                ? 'Try a different trade, state or search term.'
                                 : 'Verified artisans will appear here as they join.'}
                         </p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {artisans.map(a => (
-                            <ArtisanCard key={a.id} artisan={a} onReviews={() => setActive(a)} />
+                            <ArtisanCard
+                                key={a.id}
+                                artisan={a}
+                                onReviews={() => setActive(a)}
+                                onProfile={() => setProfile(a)}
+                            />
                         ))}
                     </div>
                 )}
             </div>
 
             {meta && !loading && <Pagination meta={meta} onChange={setPage} />}
+
+            {profile && (
+                <ArtisanProfileModal
+                    artisan={profile}
+                    onClose={() => setProfile(null)}
+                    onReviews={() => { setActive(profile); setProfile(null); }}
+                />
+            )}
 
             {active && (
                 <ReviewsModal

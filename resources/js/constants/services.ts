@@ -29,6 +29,21 @@ export const ARTISAN_CATEGORIES: ServiceOption[] = [
     { value: 'WASTE_DISPOSER', label: 'Waste Disposer' },
     { value: 'PAINTER', label: 'Painter' },
     { value: 'WELDER', label: 'Scanner / Welder' },
+    { value: 'CIVIL_ENGINEER', label: 'Civil Engineer' },
+    { value: 'BUILDING_ENGINEER', label: 'Building Engineer' },
+    { value: 'ARCHITECT', label: 'Architect' },
+    // Also the value the old surveyor/developer form stored, so those rows resolve.
+    { value: 'SURVEYOR', label: 'Surveyor' },
+    { value: 'INDUSTRIAL_CLEANER', label: 'Industrial Cleaner' },
+    { value: 'BRICKLAYER', label: 'Bricklayer' },
+    { value: 'AC_TECHNICIAN', label: 'Air Condition Technician' },
+    { value: 'BOREHOLE_TECHNICIAN', label: 'Borehole Technician' },
+    { value: 'POP_CEILING_INSTALLER', label: 'POP Ceiling Installer' },
+    { value: 'CLEANER', label: 'Cleaner' },
+    { value: 'NETWORKING_ENGINEER', label: 'Networking Engineer' },
+    { value: 'TILER', label: 'Tiler' },
+    { value: 'ALUMINUM_FABRICATOR', label: 'Aluminum Fabricator' },
+    { value: 'INTERIOR_DESIGNER', label: 'Interior Designer' },
 ];
 
 /**
@@ -53,7 +68,6 @@ export const TRANSPORT_CATEGORIES: ServiceOption[] = [
 export const LEGACY_SERVICE_LABELS: Record<string, string> = {
     MECHANIC: 'Mechanic',
     MASON: 'Mason',
-    TILER: 'Tiler',
     OTHER: 'Other',
 };
 
