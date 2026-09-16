@@ -9,7 +9,7 @@ class ListingView extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['listing_id', 'user_id', 'ip', 'user_agent'];
+    protected $fillable = ['listing_id', 'user_id', 'ip', 'user_agent', 'created_at'];
 
     protected function casts(): array
     {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\FiltersListings;
 use App\Http\Controllers\Controller;
 use App\Models\MarketplaceProduct;
 use App\Models\Notification;
@@ -12,20 +13,90 @@ use Illuminate\Http\Request;
 
 class MarketplaceApiController extends Controller
 {
+    use FiltersListings;
+
+    /** Sort keys the client may ask for, mapped to raw ORDER BY fragments. */
+    private const SORTS = [
+        'newest' => 'created_at DESC',
+        'oldest' => 'created_at ASC',
+        'priceAsc' => 'price IS NULL ASC, price ASC',
+        'priceDesc' => 'price IS NULL ASC, price DESC',
+        'popular' => 'views_count DESC',
+        'name' => 'name ASC',
+    ];
+
     public function index(Request $request)
     {
-        $page = max(1, (int) $request->query('page', 1));
-        $limit = max(1, min(200, (int) $request->query('limit', 50)));
-        $q = MarketplaceProduct::query()->with(['user:id,email,full_name,avatar_url'])
-            ->where('is_active', true)->where('is_approved', true);
-        if ($request->filled('category')) {
-            $q->where('category', $request->query('category'));
+        $data = $request->validate([
+            'page' => 'nullable|integer|min:1',
+            'limit' => 'nullable|integer|min:1|max:200',
+            'search' => 'nullable|string|max:120',
+            'category' => 'nullable|string|max:400',
+            'brand' => 'nullable|string|max:200',
+            'minPrice' => 'nullable|numeric|min:0|max:100000000000',
+            'maxPrice' => 'nullable|numeric|min:0|max:100000000000',
+            'featured' => 'nullable|boolean',
+            'discounted' => 'nullable|boolean',
+            'sort' => 'nullable|string|in:'.implode(',', array_keys(self::SORTS)),
+        ]);
+
+        $page = max(1, (int) ($data['page'] ?? 1));
+        $limit = max(1, min(200, (int) ($data['limit'] ?? 50)));
+
+        $q = MarketplaceProduct::query()
+            ->with(['user:id,email,full_name,avatar_url'])
+            ->where('is_active', true)
+            ->where('is_approved', true);
+
+        if (filled($data['search'] ?? null)) {
+            $s = '%'.$this->escapeLike($data['search']).'%';
+            $q->where(function ($w) use ($s) {
+                $w->where('name', 'like', $s)
+                    ->orWhere('description', 'like', $s)
+                    ->orWhere('brand', 'like', $s)
+                    ->orWhere('category', 'like', $s);
+            });
         }
+
+        // Facets reflect the searched set before the discrete filters narrow it,
+        // so category counts stay steady while a shopper ticks through them.
+        $facets = [
+            'categories' => $this->facetCounts(clone $q, 'category'),
+            'brands' => $this->facetCounts(clone $q, 'brand'),
+            'priceRange' => $this->priceBounds(clone $q),
+        ];
+
+        if (filled($data['category'] ?? null)) {
+            $this->whereInLower($q, 'category', $data['category']);
+        }
+        if (filled($data['brand'] ?? null)) {
+            $this->whereInLower($q, 'brand', $data['brand']);
+        }
+        if (isset($data['minPrice'])) {
+            $q->where('price', '>=', (float) $data['minPrice']);
+        }
+        if (isset($data['maxPrice'])) {
+            $q->where('price', '<=', (float) $data['maxPrice']);
+        }
+        if (! empty($data['featured'])) {
+            $q->where('featured', true);
+        }
+        if (! empty($data['discounted'])) {
+            $q->whereNotNull('old_price')->whereColumn('old_price', '>', 'price');
+        }
+
         $total = (clone $q)->count();
-        $products = $q->orderByDesc('created_at')->skip(($page - 1) * $limit)->take($limit)->get();
+
+        $products = $q
+            ->orderByRaw(self::SORTS[$data['sort'] ?? 'newest'])
+            ->orderByDesc('id')
+            ->skip(($page - 1) * $limit)
+            ->take($limit)
+            ->get();
 
         return $this->jsonOk([
             'products' => $products,
+            'facets' => $facets,
             'pagination' => [
                 'page' => $page,
                 'limit' => $limit,
@@ -33,6 +104,17 @@ class MarketplaceApiController extends Controller
                 'totalPages' => (int) ceil($total / $limit),
             ],
         ]);
+    }
+
+    /** @return array{min: float|null, max: float|null} */
+    private function priceBounds($base): array
+    {
+        $bounds = $base->selectRaw('min(price) as low, max(price) as high')->first();
+
+        return [
+            'min' => $bounds && $bounds->low !== null ? (float) $bounds->low : null,
+            'max' => $bounds && $bounds->high !== null ? (float) $bounds->high : null,
+        ];
     }
 
     public function subscribe(Request $request)

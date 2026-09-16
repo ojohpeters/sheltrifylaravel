@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\SerializesCamelCase;
+use App\Support\PriceText;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -37,7 +38,25 @@ class Listing extends Model
             'boost_cost'    => 'float',
             'lat'           => 'float',
             'lng'           => 'float',
+            'price_amount'  => 'float',
         ];
+    }
+
+    /**
+     * Keep the searchable price columns in step with the text the owner typed.
+     *
+     * price_amount / price_period are derived, never fillable — a client that
+     * posted its own values could sort itself to the top of a price filter.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $listing) {
+            if ($listing->isDirty('price')) {
+                $parsed = PriceText::parse($listing->price);
+                $listing->price_amount = $parsed['amount'];
+                $listing->price_period = $parsed['period'];
+            }
+        });
     }
 
     public function user(): BelongsTo

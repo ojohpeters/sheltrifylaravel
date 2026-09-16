@@ -36,6 +36,7 @@ Route::post('/auth/reset-password', [AuthApiController::class, 'resetPassword'])
 Route::get('/listings', [ListingApiController::class, 'index']);
 Route::get('/listings/user/my-listings', [ListingApiController::class, 'myListings'])->middleware('auth');
 Route::get('/listings/{id}', [ListingApiController::class, 'show'])->where('id', '[0-9]+');
+Route::post('/listings/{id}/contact', [ListingApiController::class, 'contact'])->where('id', '[0-9]+');
 
 Route::get('/marketplace', [MarketplaceApiController::class, 'index']);
 Route::get('/marketplace/category/{category}', [MarketplaceApiController::class, 'byCategory']);
