@@ -196,7 +196,28 @@ export const authAPI = {
 
 // Listings API
 export const listingsAPI = {
-  getAll: async (params?: { page?: number; limit?: number; search?: string; propertyType?: string; location?: string; minBedrooms?: number }) => {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    /** Comma-separated for the multi-selects, e.g. "Duplex,Apartment". */
+    propertyType?: string;
+    listingType?: string;
+    state?: string;
+    city?: string;
+    location?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    pricePeriod?: string;
+    minBedrooms?: number;
+    maxBedrooms?: number;
+    minBathrooms?: number;
+    furnished?: boolean;
+    parking?: boolean;
+    boosted?: boolean;
+    amenities?: string;
+    sort?: string;
+  }) => {
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -209,8 +230,13 @@ export const listingsAPI = {
     return apiRequest(`/listings${query ? `?${query}` : ''}`);
   },
 
-  getById: async (id: string) => {
+  getById: async (id: string | number) => {
     return apiRequest(`/listings/${id}`);
+  },
+
+  /** Reveals the landlord's contact details, and counts that the seeker asked. */
+  getContact: async (id: string | number) => {
+    return apiRequest(`/listings/${id}/contact`, { method: 'POST' });
   },
 
   create: async (data: any) => {
@@ -638,7 +664,18 @@ export const artisanAPI = {
 };
 
 export const marketplaceAPI = {
-  getAll: async (params?: { category?: string; page?: number; limit?: number }) => {
+  getAll: async (params?: {
+    category?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    brand?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    featured?: boolean;
+    discounted?: boolean;
+    sort?: string;
+  }) => {
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {

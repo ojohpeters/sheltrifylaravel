@@ -14,6 +14,7 @@ import { ARTISAN_CATEGORIES, TRANSPORT_CATEGORIES } from '../constants/services'
 
 interface LandingPageProps {
   onStartChatting: () => void;
+  onBrowseProperties?: () => void;
   onTalkToAnna: () => void;
   onPremiumUpgrade?: () => void;
   onLeaveFeedback?: () => void;
@@ -76,7 +77,7 @@ const LiveStats: React.FC = () => {
     );
 };
 
-const Hero: React.FC<Pick<LandingPageProps, 'onStartChatting'>> = ({ onStartChatting }) => (
+const Hero: React.FC<Pick<LandingPageProps, 'onStartChatting' | 'onBrowseProperties'>> = ({ onStartChatting, onBrowseProperties }) => (
   <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24">
     {/* Ambient glow */}
     <div className="pointer-events-none absolute inset-0 -z-10">
@@ -113,14 +114,13 @@ const Hero: React.FC<Pick<LandingPageProps, 'onStartChatting'>> = ({ onStartChat
         <ChevronRightIcon className="w-5 h-5" />
       </button>
       <button
-        onClick={onStartChatting}
+        onClick={() => onBrowseProperties?.()}
         className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-base font-medium text-light-text-primary dark:text-dark-text-primary bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border hover:border-brand-primary/40 hover:text-brand-primary transition-all"
       >
         <svg className="w-5 h-5 text-brand-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
         </svg>
-        Watch Demo
+        Browse Properties
       </button>
     </div>
 
@@ -852,10 +852,10 @@ const AdSpace: React.FC = () => (
 );
 
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onTalkToAnna, onPremiumUpgrade, onLeaveFeedback, isAuthenticated }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onBrowseProperties, onTalkToAnna, onPremiumUpgrade, onLeaveFeedback, isAuthenticated }) => {
   return (
     <div className="space-y-16 md:space-y-24 overflow-x-hidden w-full">
-      <Hero onStartChatting={onStartChatting} />
+      <Hero onStartChatting={onStartChatting} onBrowseProperties={onBrowseProperties} />
       <CoreServices />
       <ServiceShowcase />
       <HowItWorks />

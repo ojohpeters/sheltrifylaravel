@@ -35,6 +35,14 @@ const StoreIcon  = ({ active }: { active: boolean }) => (
         }
     </svg>
 );
+const BuildingIcon = ({ active }: { active: boolean }) => (
+    <svg viewBox="0 0 24 24" className="w-6 h-6" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active ? 0 : 1.8}>
+        {active
+            ? <path fillRule="evenodd" d="M3 2.25a.75.75 0 000 1.5v16.5h-.75a.75.75 0 000 1.5H15v-18a.75.75 0 000-1.5H3zM6.75 19.5v-2.25a.75.75 0 01.75-.75h3a.75.75 0 01.75.75v2.25a.75.75 0 01-.75.75h-3a.75.75 0 01-.75-.75zM6 6.75A.75.75 0 016.75 6h.75a.75.75 0 010 1.5h-.75A.75.75 0 016 6.75zM6.75 9a.75.75 0 000 1.5h.75a.75.75 0 000-1.5h-.75zM6 12.75a.75.75 0 01.75-.75h.75a.75.75 0 010 1.5h-.75a.75.75 0 01-.75-.75zM10.5 6a.75.75 0 000 1.5h.75a.75.75 0 000-1.5h-.75zm-.75 3.75A.75.75 0 0110.5 9h.75a.75.75 0 010 1.5h-.75a.75.75 0 01-.75-.75zM10.5 12a.75.75 0 000 1.5h.75a.75.75 0 000-1.5h-.75zM16.5 6.75v15h5.25a.75.75 0 000-1.5H21v-12a.75.75 0 00.75-.75V6.75a.75.75 0 00-.75-.75h-4.5zm1.5 4.5a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-.008zm.75 2.25a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 00.75-.75V14.25a.75.75 0 00-.75-.75h-.008zM18 17.25a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-.008z" clipRule="evenodd" />
+            : <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+        }
+    </svg>
+);
 const WalletIcon = ({ active }: { active: boolean }) => (
     <svg viewBox="0 0 24 24" className="w-6 h-6" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active ? 0 : 1.8}>
         {active
@@ -87,26 +95,25 @@ const BottomNav: React.FC<BottomNavProps> = ({
 
     // Signed out, the Wallet slot is a login wall, so it gives way to Artisans —
     // a page a visitor can actually use. Signed in, Artisans lives in Explore.
-    const EXPLORE_PAGES = ['artisans', 'community', 'feels', 'rentalWahala', 'globalTales',
+    const EXPLORE_PAGES = ['artisans', 'wallet', 'community', 'feels', 'rentalWahala', 'globalTales',
         'premium', 'about', 'contact', 'userDashboard', 'adminDashboard', 'profile'];
 
     const tabs = [
-        { id: 'landing',     label: 'Home',    Icon: HomeIcon,   active: currentPage === 'landing' },
-        { id: 'chat',        label: 'Chat',    Icon: ChatIcon,   active: currentPage === 'chat' },
-        { id: 'marketplace', label: 'Store',   Icon: StoreIcon,  active: currentPage === 'marketplace' },
-        isAuthenticated
-            ? { id: 'wallet',   label: 'Wallet',   Icon: WalletIcon, active: currentPage === 'wallet' }
-            : { id: 'artisans', label: 'Artisans', Icon: WalletIcon, active: currentPage === 'artisans' },
-        { id: 'more',        label: 'Explore', Icon: GridIcon,
-          active: showMore || EXPLORE_PAGES.filter(p => isAuthenticated || p !== 'artisans').includes(currentPage) },
+        { id: 'landing',     label: 'Home',     Icon: HomeIcon,     active: currentPage === 'landing' },
+        { id: 'listings',    label: 'Property', Icon: BuildingIcon, active: currentPage === 'listings' },
+        { id: 'chat',        label: 'Chat',     Icon: ChatIcon,     active: currentPage === 'chat' },
+        { id: 'marketplace', label: 'Store',    Icon: StoreIcon,    active: currentPage === 'marketplace' },
+        { id: 'more',        label: 'Explore',  Icon: GridIcon,
+          active: showMore || EXPLORE_PAGES.includes(currentPage) },
     ] as const;
 
     // Account-only destinations are hidden rather than shown-then-blocked: a
     // signed-out visitor tapping "My Dashboard" only to hit a login wall reads
     // as broken, not as an invitation.
     const moreItems: MoreItem[] = [
-        ...(isAuthenticated ? [{ label: 'Local Artisans', emoji: '🔧', page: 'artisans' as const }] : []),
+        { label: 'Local Artisans', emoji: '🔧', page: 'artisans' as const },
         ...(isAuthenticated ? [
+            { label: 'Wallet',        emoji: '👛', page: 'wallet' as const },
             { label: 'Community',     emoji: '💬', page: 'community' as const },
             { label: 'Feels',         emoji: '🎬', page: 'feels' as const },
             { label: 'Rental Wahala', emoji: '😤', page: 'rentalWahala' as const },

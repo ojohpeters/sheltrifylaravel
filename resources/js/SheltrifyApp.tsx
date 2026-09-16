@@ -14,6 +14,7 @@ const ChatPage = lazy(() => import('./components/ChatPage'));
 const CommunityPage = lazy(() => import('./components/CommunityPage'));
 const WalletPage = lazy(() => import('./components/WalletPage'));
 const MarketplacePage = lazy(() => import('./components/MarketplacePage'));
+const ListingsPage = lazy(() => import('./components/ListingsPage'));
 const ArtisansPage = lazy(() => import('./components/ArtisansPage'));
 const ReferralsPage = lazy(() => import('./components/ReferralsPage'));
 const FeelsPage = lazy(() => import('./components/FeelsPage'));
@@ -88,7 +89,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'artisans' | 'referrals' | 'login' | 'register' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'listings' | 'artisans' | 'referrals' | 'login' | 'register' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
 
 type ShellPageProps = {
   view: Page;
@@ -98,6 +99,7 @@ type ShellPageProps = {
 
 const URL_BY_PAGE: Record<Page, string> = {
   landing: '/',
+  listings: '/listings',
   chat: '/chat',
   community: '/community',
   wallet: '/wallet',
@@ -125,6 +127,7 @@ const URL_BY_PAGE: Record<Page, string> = {
 
 const HASH_TO_PATH: Record<string, string> = {
   landing: '/',
+  listings: '/listings',
   chat: '/chat',
   community: '/community',
   wallet: '/wallet',
@@ -438,6 +441,7 @@ const AppContent: React.FC = () => {
           onChatClick={() => navigateTo('chat')}
           onCommunityClick={() => navigateTo('community')}
           onWalletClick={() => navigateTo('wallet')}
+          onListingsClick={() => navigateTo('listings')}
           onMarketplaceClick={() => navigateTo('marketplace')}
           onArtisansClick={() => navigateTo('artisans')}
           onReferralsClick={() => navigateTo('referrals')}
@@ -477,6 +481,7 @@ const AppContent: React.FC = () => {
           {currentPage === 'landing' && (
             <LandingPage
               onStartChatting={() => navigateTo('chat')}
+              onBrowseProperties={() => navigateTo('listings')}
               onTalkToAnna={() => setIsVideoAssistantOpen(true)}
               onPremiumUpgrade={handlePremiumUpgrade}
               isAuthenticated={isAuthenticated}
@@ -524,6 +529,21 @@ const AppContent: React.FC = () => {
                   return;
                 }
                 navigateTo('professionalProfile');
+              }}
+            />
+          )}
+          {currentPage === 'listings' && (
+            <ListingsPage
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+              onListProperty={() => {
+                if (!isAuthenticated) {
+                  setIntendedPage('listingDashboard');
+                  navigateTo('login');
+                  showToast('Create an account to list your property.');
+                  return;
+                }
+                navigateTo('listingDashboard');
               }}
             />
           )}
