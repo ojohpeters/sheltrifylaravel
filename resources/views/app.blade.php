@@ -14,7 +14,49 @@
         @media (prefers-color-scheme: dark) { html { background: #07090F; } }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="ShelTrify — Nigeria's trusted marketplace for property, homes, shortlets, land, building materials, tipper drivers, and local services. Buy, rent, invest, and connect with verified professionals.">
+    {{-- Per-page title and description.
+         The document carried neither a title nor a per-route description, so
+         every page shared one line of copy: search results, browser tabs, the
+         Android task switcher and every shared link all read the same. The map
+         below is keyed by path; anything not listed keeps the site-wide copy. --}}
+    @php
+        $pageMeta = [
+            '' => [
+                "ShelTrify — Nigeria's AI Property & Marketplace Platform",
+                'Find homes, shortlets, land, building materials, and trusted local services in one place. Verified listings, AI property search, and secure payments.',
+            ],
+            'listings' => [
+                'Property for Rent & Sale in Nigeria | ShelTrify',
+                'Browse verified houses, flats, duplexes and land across Nigeria. Filter by price, bedrooms, state and features, then talk to the landlord directly.',
+            ],
+            'marketplace' => [
+                'Marketplace — Homes, Land & Building Materials | ShelTrify',
+                'Shop homes, shortlets, land, furniture, electronics and building materials from verified sellers across Nigeria.',
+            ],
+            'artisans' => [
+                'Verified Local Artisans & Tradesmen in Nigeria | ShelTrify',
+                'Hire verified plumbers, electricians, carpenters, engineers and other tradesmen near you. Every artisan is identity-checked before they appear.',
+            ],
+            'chat' => [
+                'AI Property Search | ShelTrify',
+                'Describe the home you want and let the ShelTrify assistant search verified listings across Nigeria for you.',
+            ],
+            'about' => ['About ShelTrify', 'Who we are and why we built a trusted property platform for Nigeria.'],
+            'contact' => ['Contact ShelTrify', 'Reach the ShelTrify team for support, partnerships or feedback.'],
+            'premium' => ['ShelTrify Premium', 'Priority access to new listings, advanced search and dedicated support.'],
+            'referrals' => ['Invite Friends & Earn | ShelTrify', 'Share your referral link and earn when friends join ShelTrify.'],
+            'login' => ['Log In | ShelTrify', 'Sign in to your ShelTrify account.'],
+            'register' => ['Create an Account | ShelTrify', 'Join ShelTrify to save properties, list your own and reach verified artisans.'],
+        ];
+
+        $sitewideTitle = "ShelTrify — Nigeria's Property & Marketplace Platform";
+        $sitewideDesc = "ShelTrify — Nigeria's trusted marketplace for property, homes, shortlets, land, building materials, tipper drivers, and local services. Buy, rent, invest, and connect with verified professionals.";
+
+        [$pageTitle, $pageDesc] = $pageMeta[trim(request()->path(), '/')] ?? [$sitewideTitle, $sitewideDesc];
+    @endphp
+
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDesc }}">
     <meta name="keywords" content="ShelTrify, Nigeria real estate, property listing, rent in Nigeria, buy land Nigeria, shortlet apartment, building materials, tipper driver, local artisans, property investment">
     <meta name="author" content="ShelTrify">
 
@@ -25,8 +67,8 @@
          copy indefinitely. --}}
     @php
         $ogImage = url('/icons/og-image.png').'?v='.(@filemtime(public_path('icons/og-image.png')) ?: 1);
-        $ogTitle = "ShelTrify — Nigeria's Property & Marketplace Platform";
-        $ogDesc  = 'Find homes, shortlets, land, building materials, and trusted local services in one place. Verified listings, AI property search, and secure payments.';
+        $ogTitle = $pageTitle;
+        $ogDesc = $pageDesc;
     @endphp
 
     <link rel="canonical" href="{{ url()->current() }}">
