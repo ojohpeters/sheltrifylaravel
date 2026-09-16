@@ -9,6 +9,13 @@ import {
     EyeIcon,
 } from './icons';
 import { marketplaceAPI, uploadAPI, subscribeAPI, PHOTO_UPLOAD_TARGET_BYTES } from '../services/api';
+import Pagination, { PageMeta } from './Pagination';
+import { categoryLabel } from '../constants/marketplace';
+import { formatNaira } from '../utils/format';
+import {
+    ActiveFilters, ActiveChip, EmptyResults, Facet, FacetPills, FilterButton,
+    FilterSection, FilterSheet, PriceRangeFields, SearchBar, SortSelect, SwitchRow,
+} from './FilterControls';
 import { whatsAppLink, toInternationalDigits } from '../utils/phone';
 import { useToast } from '../contexts/ToastContext';
 
@@ -46,6 +53,47 @@ const productImage = (product: any): string => {
 };
 
 // Skeleton shimmer card
+const PRODUCT_SORTS = [
+    { value: 'newest', label: 'Newest first' },
+    { value: 'priceAsc', label: 'Price: low to high' },
+    { value: 'priceDesc', label: 'Price: high to low' },
+    { value: 'popular', label: 'Most viewed' },
+    { value: 'name', label: 'Name A–Z' },
+] as const;
+
+const PRODUCT_PRICE_PRESETS = [
+    { label: 'Under ₦50k', max: 50_000 },
+    { label: '₦50k – ₦200k', min: 50_000, max: 200_000 },
+    { label: '₦200k – ₦1m', min: 200_000, max: 1_000_000 },
+    { label: '₦1m+', min: 1_000_000 },
+];
+
+/**
+ * ProductCard styles a handful of categories as property rather than goods, and
+ * keys off the carousel's own naming. Search results come straight from the
+ * database, so they need translating into the same vocabulary.
+ */
+const CARD_CATEGORY_KEY: Record<string, string> = {
+    RESIDENTIAL_HOUSE: 'residentialHouse',
+    HOMES_FOR_SALE: 'homesForSale',
+    LAND_FOR_SALE: 'landForSale',
+    SHORTLET: 'shortlet',
+    STUDENT_HOSTEL: 'studentHostel',
+    OFFICE_SPACE: 'officeSpace',
+    BUSINESS_SPACE: 'businessSpace',
+    EVENT_VENUE: 'eventVenue',
+    WEDDING_MATERIALS: 'weddingMaterials',
+    RENT_TO_OWN: 'rentToOwn',
+    HOME_ELECTRONICS: 'homeElectronics',
+    INTERIOR_DESIGN: 'interiorDesign',
+    BUILDING_MATERIALS: 'tipperShield',
+    BUY_PROPERTIES: 'buyProperties',
+    SALES_PROPERTIES: 'salesProperties',
+    PROPERTY_MANAGEMENT: 'propertyManagement',
+    TIPPER_DRIVERS: 'tipperDriverServices',
+    LOCAL_ARTISANS: 'localArtisanServices',
+};
+
 const SkeletonCard: React.FC = () => (
     <div className="bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl overflow-hidden animate-pulse">
         <div className="aspect-[4/3] bg-light-border dark:bg-dark-border" />
@@ -786,18 +834,43 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     const [tipperDrivers, setTipperDrivers] = useState<any[]>([]);
     const [localArtisans, setLocalArtisans] = useState<any[]>([]);
 
+    // Search runs against the server rather than the 200 products held in
+    // memory for the carousels, so it reaches the whole catalogue.
+    const [query, setQuery] = useState('');
+    const [sort, setSort] = useState<string>('newest');
+    const [cats, setCats] = useState<string[]>([]);
+    const [minPrice, setMinPrice] = useState<number | undefined>();
+    const [maxPrice, setMaxPrice] = useState<number | undefined>();
+    const [discounted, setDiscounted] = useState(false);
+    const [searchPage, setSearchPage] = useState(1);
+    const [results, setResults] = useState<any[]>([]);
+    const [facets, setFacets] = useState<{ categories: Facet[]; brands: Facet[]; priceRange: { min: number | null; max: number | null } } | null>(null);
+    const [meta, setMeta] = useState<PageMeta | null>(null);
+    const [searching, setSearching] = useState(false);
+    const [sheetOpen, setSheetOpen] = useState(false);
+
+    const searchMode = Boolean(
+        query.trim() || cats.length || minPrice !== undefined || maxPrice !== undefined
+        || discounted || sort !== 'newest',
+    );
+
+    // The periodic refresh below reads this; a ref keeps it out of the interval's
+    // stale closure without re-creating the timer on every keystroke.
+    const searchModeRef = useRef(searchMode);
+    useEffect(() => { searchModeRef.current = searchMode; }, [searchMode]);
+
     useEffect(() => { loadProducts(); loadTipperDrivers(); loadLocalArtisans(); }, []);
 
     // Refresh products periodically and on tab focus to show newly approved items
     useEffect(() => {
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
+            if (document.visibilityState === 'visible' && !searchModeRef.current) {
                 loadProducts();
                 loadTipperDrivers();
             }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        const interval = setInterval(() => loadProducts(), 30000);
+        const interval = setInterval(() => { if (!searchModeRef.current) loadProducts(); }, 30000);
         return () => {
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -847,6 +920,119 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
             }
         } catch { setLocalArtisans([]); }
     }, []);
+
+    // Debounced so typing does not fire a request per keystroke.
+    useEffect(() => {
+        if (!searchMode) {
+            setResults([]);
+            setMeta(null);
+            return;
+        }
+
+        let cancelled = false;
+        const t = setTimeout(async () => {
+            setSearching(true);
+            try {
+                const res: any = await marketplaceAPI.getAll({
+                    page: searchPage,
+                    limit: 24,
+                    search: query.trim() || undefined,
+                    category: cats.join(',') || undefined,
+                    minPrice,
+                    maxPrice,
+                    discounted: discounted || undefined,
+                    sort,
+                });
+                if (cancelled) return;
+                if (res?.success) {
+                    setResults(res.data.products ?? []);
+                    setMeta(res.data.pagination ?? null);
+                    if (res.data.facets) setFacets(res.data.facets);
+                } else {
+                    setResults([]);
+                    setMeta(null);
+                }
+            } catch {
+                if (!cancelled) { setResults([]); setMeta(null); }
+            } finally {
+                if (!cancelled) setSearching(false);
+            }
+        }, 300);
+
+        return () => { cancelled = true; clearTimeout(t); };
+    }, [searchMode, query, cats, minPrice, maxPrice, discounted, sort, searchPage]);
+
+    // A narrower filter can leave the current page beyond the last one.
+    useEffect(() => { setSearchPage(1); }, [query, cats, minPrice, maxPrice, discounted, sort]);
+
+    const clearSearch = useCallback(() => {
+        setQuery('');
+        setCats([]);
+        setMinPrice(undefined);
+        setMaxPrice(undefined);
+        setDiscounted(false);
+        setSort('newest');
+        setSearchPage(1);
+    }, []);
+
+    const toggleCat = useCallback((value: string) => {
+        setCats(prev => (prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]));
+    }, []);
+
+    const searchChips: ActiveChip[] = [
+        ...cats.map(c => ({ key: `cat:${c}`, label: categoryLabel(c) })),
+        ...(minPrice !== undefined || maxPrice !== undefined
+            ? [{
+                key: 'price',
+                label: minPrice !== undefined && maxPrice !== undefined
+                    ? `${formatNaira(minPrice)} – ${formatNaira(maxPrice)}`
+                    : minPrice !== undefined
+                        ? `From ${formatNaira(minPrice)}`
+                        : `Up to ${formatNaira(maxPrice)}`,
+            }]
+            : []),
+        ...(discounted ? [{ key: 'discounted', label: 'On offer' }] : []),
+    ];
+
+    const removeSearchChip = (key: string) => {
+        const [kind, value] = key.split(':');
+        if (kind === 'cat') return toggleCat(value);
+        if (kind === 'price') { setMinPrice(undefined); setMaxPrice(undefined); return; }
+        if (kind === 'discounted') setDiscounted(false);
+    };
+
+    const productFilters = (
+        <div>
+            <FilterSection title="Price">
+                <PriceRangeFields
+                    min={minPrice}
+                    max={maxPrice}
+                    bounds={facets?.priceRange}
+                    presets={PRODUCT_PRICE_PRESETS}
+                    onChange={next => { setMinPrice(next.min); setMaxPrice(next.max); }}
+                />
+            </FilterSection>
+
+            <FilterSection title="Category">
+                <FacetPills
+                    options={facets?.categories ?? []}
+                    selected={cats}
+                    labelFor={categoryLabel}
+                    onToggle={toggleCat}
+                    limit={10}
+                />
+            </FilterSection>
+
+            <FilterSection title="Offers" defaultOpen={false}>
+                <SwitchRow
+                    label="Reduced price"
+                    hint="Items listed below their original price"
+                    checked={discounted}
+                    onChange={setDiscounted}
+                />
+            </FilterSection>
+        </div>
+    );
 
     const productsByCategory = {
         RESIDENTIAL_HOUSE: products.filter(p => p.category === 'RESIDENTIAL_HOUSE'),
@@ -937,8 +1123,28 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
             {/* Sell CTA */}
             <ListProductSection onProductCreated={loadProducts} isAuthenticated={isAuthenticated} />
 
-            {/* Filter pills */}
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide -mx-1 px-1">
+            {/* Search, sort and filters */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                <SearchBar
+                    value={query}
+                    onChange={setQuery}
+                    placeholder="Search products, materials, services…"
+                    label="Search the marketplace"
+                />
+                <div className="flex gap-2">
+                    <SortSelect value={sort} onChange={setSort} options={PRODUCT_SORTS} />
+                    <FilterButton count={searchChips.length} onClick={() => setSheetOpen(true)} />
+                </div>
+            </div>
+
+            {searchChips.length > 0 && (
+                <div className="mb-3">
+                    <ActiveFilters chips={searchChips} onRemove={removeSearchChip} onClear={clearSearch} />
+                </div>
+            )}
+
+            {/* Category pills — the curated view only; search has its own filters */}
+            <div className={`flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide -mx-1 px-1 ${searchMode ? 'hidden' : ''}`}>
                 {filters.map(({ key, label, icon }) => (
                     <button key={key} onClick={() => setActiveFilter(key)}
                         className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-all touch-manipulation ${
@@ -952,7 +1158,50 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                 ))}
             </div>
 
-            {loading ? (
+            {searchMode ? (
+                <div className="lg:flex lg:gap-8 lg:items-start">
+                    <aside className="hidden lg:block w-72 shrink-0 sticky top-24">
+                        <div className="rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border px-5 py-2 max-h-[calc(100dvh-8rem)] overflow-y-auto">
+                            {productFilters}
+                        </div>
+                    </aside>
+
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4" aria-live="polite">
+                            {searching
+                                ? 'Searching…'
+                                : `${(meta?.total ?? 0).toLocaleString('en-NG')} ${(meta?.total ?? 0) === 1 ? 'item' : 'items'} found`}
+                        </p>
+
+                        {searching ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                            </div>
+                        ) : results.length === 0 ? (
+                            <EmptyResults
+                                icon={<BuildingStorefrontIcon className="w-12 h-12" />}
+                                title="Nothing matched that search"
+                                hint="Try a different word, widen the price range, or clear a filter."
+                                onClear={clearSearch}
+                            />
+                        ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {results.map((p: any) => (
+                                    <ProductCard
+                                        key={p.id}
+                                        product={{ ...p, image: p.imageUrl }}
+                                        category={CARD_CATEGORY_KEY[p.category] ?? 'product'}
+                                        onViewDetails={handleViewProduct}
+                                        onRequest={handleRequest}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {meta && !searching && <Pagination meta={meta} onChange={setSearchPage} />}
+                    </div>
+                </div>
+            ) : loading ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
@@ -995,6 +1244,16 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     )}
                 </>
             )}
+
+            <FilterSheet
+                open={sheetOpen}
+                onClose={() => setSheetOpen(false)}
+                onClear={clearSearch}
+                count={searchChips.length}
+                resultLabel={searching ? 'results' : `${meta?.total ?? 0} items`}
+            >
+                {productFilters}
+            </FilterSheet>
 
         </div>
     );
