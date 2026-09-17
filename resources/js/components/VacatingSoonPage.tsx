@@ -165,6 +165,7 @@ const VacatingSoonPage: React.FC<{
 
     const [tenant, setTenant] = useState({ ...TENANT_BLANK });
     const [seeker, setSeeker] = useState({ ...SEEKER_BLANK });
+    const [areaDraft, setAreaDraft] = useState('');
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [done, setDone] = useState<{ title: string; body: string } | null>(null);
@@ -295,12 +296,34 @@ const VacatingSoonPage: React.FC<{
         e.preventDefault();
         if (saving) return;
 
-        if (!seeker.fullName.trim() || !seeker.state || seeker.areas.length === 0) {
-            showError('Your name, state and at least one area are needed.');
+        // An area typed but not yet added counts. Requiring the + button first
+        // means a filled-in form is rejected as empty, which is what happened.
+        const typed = areaDraft.trim();
+        const areas = typed && !seeker.areas.some(a => a.toLowerCase() === typed.toLowerCase())
+            ? [...seeker.areas, typed].slice(0, 5)
+            : seeker.areas;
+
+        if (areas !== seeker.areas) {
+            setSeeker(prev => ({ ...prev, areas }));
+            setAreaDraft('');
+        }
+
+        // Named one at a time, so the message points at the field to fix
+        // rather than listing everything it could have been.
+        if (!seeker.fullName.trim()) {
+            showError('Enter your full name.');
             return;
         }
         if (seeker.whatsapp.replace(/\D/g, '').length < 10) {
             showError('Enter your WhatsApp number so we can reach you.');
+            return;
+        }
+        if (!seeker.state) {
+            showError('Choose the state you are looking in.');
+            return;
+        }
+        if (areas.length === 0) {
+            showError('Add at least one area — type it, then press the + button.');
             return;
         }
 
@@ -312,7 +335,7 @@ const VacatingSoonPage: React.FC<{
                 email: seeker.email.trim() || undefined,
                 state: seeker.state,
                 lga: seeker.lga.trim() || undefined,
-                areas: seeker.areas,
+                areas,
                 apartmentType: seeker.apartmentType,
                 budgetMin: seeker.budgetMin ? Number(seeker.budgetMin) : undefined,
                 budgetMax: seeker.budgetMax ? Number(seeker.budgetMax) : undefined,
@@ -333,6 +356,7 @@ const VacatingSoonPage: React.FC<{
                     : 'You will be notified as soon as an apartment in this area becomes available.',
             });
             setSeeker({ ...SEEKER_BLANK, state: seeker.state });
+            setAreaDraft('');
             void load();
         } catch (err: any) {
             showError(err?.message || 'Could not join the waitlist.');
@@ -551,6 +575,8 @@ const VacatingSoonPage: React.FC<{
                         <AreaChips
                             values={seeker.areas}
                             onChange={areas => setSeeker({ ...seeker, areas })}
+                            draft={areaDraft}
+                            onDraftChange={setAreaDraft}
                             suggestions={places.areas}
                         />
                     </Field>

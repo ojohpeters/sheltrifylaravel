@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CloseIcon, PlusIcon } from './icons';
 
 /**
@@ -95,10 +95,20 @@ export const PhoneInput: React.FC<{
 export const AreaChips: React.FC<{
     values: string[];
     onChange: (next: string[]) => void;
+    /**
+     * The half-typed area, held by the form rather than in here.
+     *
+     * Someone who types "High Level" and taps Submit has, as far as they are
+     * concerned, filled the field in — but the chip was never added, so the
+     * form saw an empty list and refused. The form owns the draft so it can
+     * commit it on submit instead of blaming the person for it.
+     */
+    draft: string;
+    onDraftChange: (v: string) => void;
     suggestions?: string[];
     max?: number;
-}> = ({ values, onChange, suggestions = [], max = 5 }) => {
-    const [draft, setDraft] = useState('');
+}> = ({ values, onChange, draft, onDraftChange, suggestions = [], max = 5 }) => {
+    const setDraft = onDraftChange;
 
     const add = (raw: string) => {
         const area = raw.trim();
@@ -140,6 +150,12 @@ export const AreaChips: React.FC<{
                     <PlusIcon className="w-4 h-4" />
                 </button>
             </div>
+
+            {draft.trim() !== '' && !values.some(v => v.toLowerCase().trim() === draft.toLowerCase().trim()) && (
+                <p className="mt-1.5 text-[11px] text-brand-primary font-semibold">
+                    Press + to add &ldquo;{draft.trim()}&rdquo;
+                </p>
+            )}
 
             {values.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
