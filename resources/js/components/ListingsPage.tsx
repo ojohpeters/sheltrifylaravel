@@ -5,6 +5,7 @@ import { listingPrice, formatNaira, plural } from '../utils/format';
 import { whatsAppLink, telLink, formatPhone } from '../utils/phone';
 import Pagination, { PageMeta } from './Pagination';
 import Lightbox, { useLightbox } from './Lightbox';
+import Portal from './Portal';
 import {
     ActiveFilters, ActiveChip, CardSkeletons, EmptyResults, Facet, FacetPills,
     FilterButton, FilterSection, FilterSheet, MinimumPills, PriceRangeFields,
@@ -300,6 +301,7 @@ const ListingDetailModal: React.FC<{
     const whatsapp = whatsAppLink(phone, `Hi, I saw "${full.title}" (${listingPrice(full)}) on ShelTrify. Is it still available?`);
 
     return (
+        <Portal>
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label={full.title}>
             <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
@@ -466,6 +468,7 @@ const ListingDetailModal: React.FC<{
                 />
             )}
         </div>
+        </Portal>
     );
 };
 

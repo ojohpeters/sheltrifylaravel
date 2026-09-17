@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { SearchIcon, CloseIcon, FilterIcon, ChevronRightIcon, XMarkIcon } from './icons';
 import { compactNaira } from '../utils/format';
+import Portal from './Portal';
 
 /**
  * The filter and search controls shared by the browse pages.
@@ -405,6 +406,7 @@ export const FilterSheet: React.FC<{
     if (!open) return null;
 
     return (
+        <Portal>
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="Filters">
             <button
                 type="button"
@@ -448,6 +450,7 @@ export const FilterSheet: React.FC<{
                 </div>
             </div>
         </div>
+        </Portal>
     );
 };
 

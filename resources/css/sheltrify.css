@@ -287,8 +287,16 @@ button, a, input, textarea, select {
 }
 
 /* ── Page transition ─────────────────────────────────────────────────────── */
+/* No `forwards`. The last keyframe of fade-up is translateY(0), and holding it
+   left a transform on <main> permanently — which makes <main> the containing
+   block for every `position: fixed` descendant instead of the viewport. Modals
+   then covered the whole document rather than the screen, opening near the top
+   of the page: from halfway down the artisan list, tapping "View profile"
+   looked like nothing happened until you scrolled up. The animation already
+   ends on the element's own resting style (opacity 1, no transform), so
+   dropping the fill mode changes nothing visible. */
 .page-enter {
-  animation: fade-up 0.35s ease-out forwards;
+  animation: fade-up 0.35s ease-out;
 }
 
 /* ── Dot indicator ───────────────────────────────────────────────────────── */

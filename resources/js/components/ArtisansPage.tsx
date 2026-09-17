@@ -7,6 +7,7 @@ import { artisanAPI } from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { ARTISAN_CATEGORIES, serviceLabel } from '../constants/services';
 import Pagination, { PageMeta } from './Pagination';
+import Portal from './Portal';
 import Lightbox, { useLightbox } from './Lightbox';
 import { whatsAppLink, telLink, formatPhone } from '../utils/phone';
 
@@ -129,6 +130,7 @@ const ReviewsModal: React.FC<{
     };
 
     return (
+        <Portal>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl p-6">
                 <button
@@ -245,6 +247,7 @@ const ReviewsModal: React.FC<{
                 )}
             </div>
         </div>
+        </Portal>
     );
 };
 
@@ -277,7 +280,7 @@ const ArtisanProfileModal: React.FC<{
     }, [lightbox, onClose]);
 
     return (
-        <>
+        <Portal>
             <div
                 className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
                 onClick={onClose}
@@ -401,7 +404,7 @@ const ArtisanProfileModal: React.FC<{
             {lightbox && (
                 <Lightbox images={lightbox.images} startIndex={lightbox.index} alt={lightbox.alt} onClose={closeLightbox} />
             )}
-        </>
+        </Portal>
     );
 };
 
