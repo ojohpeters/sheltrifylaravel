@@ -33,6 +33,7 @@ class MarketplaceApiController extends Controller
             'search' => 'nullable|string|max:120',
             'category' => 'nullable|string|max:400',
             'brand' => 'nullable|string|max:200',
+            'location' => 'nullable|string|max:400',
             'minPrice' => 'nullable|numeric|min:0|max:100000000000',
             'maxPrice' => 'nullable|numeric|min:0|max:100000000000',
             'featured' => 'nullable|boolean',
@@ -54,7 +55,10 @@ class MarketplaceApiController extends Controller
                 $w->where('name', 'like', $s)
                     ->orWhere('description', 'like', $s)
                     ->orWhere('brand', 'like', $s)
-                    ->orWhere('category', 'like', $s);
+                    ->orWhere('category', 'like', $s)
+                    // Shoppers search by area first — "High Level", "Wadata" —
+                    // so the place a seller gave has to be part of the query.
+                    ->orWhere('location', 'like', $s);
             });
         }
 
@@ -63,6 +67,7 @@ class MarketplaceApiController extends Controller
         $facets = [
             'categories' => $this->facetCounts(clone $q, 'category'),
             'brands' => $this->facetCounts(clone $q, 'brand'),
+            'locations' => $this->facetCounts(clone $q, 'location'),
             'priceRange' => $this->priceBounds(clone $q),
         ];
 
@@ -71,6 +76,10 @@ class MarketplaceApiController extends Controller
         }
         if (filled($data['brand'] ?? null)) {
             $this->whereInLower($q, 'brand', $data['brand']);
+        }
+        if (filled($data['location'] ?? null)) {
+            // Pipe-separated: "Lekki, Lagos" is one place, not two.
+            $this->whereInLower($q, 'location', $data['location'], '|');
         }
         if (isset($data['minPrice'])) {
             $q->where('price', '>=', (float) $data['minPrice']);
@@ -260,6 +269,7 @@ class MarketplaceApiController extends Controller
             'price' => 'required|numeric|min:0.01',
             'oldPrice' => 'nullable|numeric|min:0.01',
             'category' => 'required|string',
+            'location' => 'nullable|string|max:160',
             'imageUrl' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'string',
@@ -275,6 +285,7 @@ class MarketplaceApiController extends Controller
             'price' => $data['price'],
             'old_price' => $data['oldPrice'] ?? null,
             'category' => $data['category'],
+            'location' => $data['location'] ?? null,
             'image_url' => $data['imageUrl'] ?? null,
             'images' => $data['images'] ?? null,
             'video_url' => $data['videoUrl'] ?? null,
@@ -309,6 +320,7 @@ class MarketplaceApiController extends Controller
             'price' => 'sometimes|numeric|min:0.01',
             'oldPrice' => 'nullable|numeric|min:0.01',
             'category' => 'sometimes|string',
+            'location' => 'nullable|string|max:160',
             'imageUrl' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'string',
@@ -316,7 +328,7 @@ class MarketplaceApiController extends Controller
             'videos' => 'nullable|array',
             'videos.*' => 'string',
         ]);
-        $map = ['name' => 'name', 'description' => 'description', 'price' => 'price', 'oldPrice' => 'old_price', 'category' => 'category', 'imageUrl' => 'image_url', 'images' => 'images', 'videoUrl' => 'video_url', 'videos' => 'videos'];
+        $map = ['name' => 'name', 'description' => 'description', 'price' => 'price', 'oldPrice' => 'old_price', 'category' => 'category', 'location' => 'location', 'imageUrl' => 'image_url', 'images' => 'images', 'videoUrl' => 'video_url', 'videos' => 'videos'];
         $u = [];
         foreach ($map as $k => $col) {
             if (array_key_exists($k, $data)) {

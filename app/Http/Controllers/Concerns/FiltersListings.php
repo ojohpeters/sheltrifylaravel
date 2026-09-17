@@ -39,9 +39,9 @@ trait FiltersListings
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $q
      */
-    protected function whereInLower($q, string $column, ?string $csv): void
+    protected function whereInLower($q, string $column, ?string $csv, string $separator = ','): void
     {
-        $values = array_map('strtolower', $this->csv($csv));
+        $values = array_map('strtolower', $this->csv($csv, $separator));
 
         if ($values === []) {
             return;
@@ -53,10 +53,18 @@ trait FiltersListings
         );
     }
 
-    /** @return string[] */
-    protected function csv(?string $raw): array
+    /**
+     * Split a multi-select parameter.
+     *
+     * Comma by default, but a value that can itself contain a comma — a
+     * location such as "Lekki, Lagos" — has to be sent with a separator that
+     * cannot appear inside it, or one selection arrives as two nonsense terms.
+     *
+     * @return string[]
+     */
+    protected function csv(?string $raw, string $separator = ','): array
     {
-        return array_values(array_filter(array_map('trim', explode(',', (string) $raw)), 'strlen'));
+        return array_values(array_filter(array_map('trim', explode($separator, (string) $raw)), 'strlen'));
     }
 
     /** Wildcards typed by a user are literal text, not operators. */

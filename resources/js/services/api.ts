@@ -670,6 +670,7 @@ export const marketplaceAPI = {
     limit?: number;
     search?: string;
     brand?: string;
+    location?: string;
     minPrice?: number;
     maxPrice?: number;
     featured?: boolean;

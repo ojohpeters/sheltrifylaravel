@@ -603,7 +603,7 @@ const SectionGrid: React.FC<{
 
 const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthenticated?: boolean }> = ({ onProductCreated, isAuthenticated }) => {
     const { showSuccess, showError } = useToast();
-    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'RESIDENTIAL_HOUSE' as string, videoUrl: '' });
+    const [formData, setFormData] = useState({ name: '', description: '', price: '', category: 'RESIDENTIAL_HOUSE' as string, location: '', videoUrl: '' });
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -646,12 +646,13 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                 description: formData.description || undefined,
                 price: parseFloat(formData.price),
                 category: formData.category,
+                location: formData.location || undefined,
                 images: images.length > 0 ? images : undefined,
                 videoUrl: formData.videoUrl || undefined,
             });
             if (response.success) {
                 showSuccess('Product submitted! It will be reviewed before going live.');
-                setFormData({ name: '', description: '', price: '', category: 'RESIDENTIAL_HOUSE', videoUrl: '' });
+                setFormData({ name: '', description: '', price: '', category: 'RESIDENTIAL_HOUSE', location: '', videoUrl: '' });
                 setImageFiles([]); setImagePreviews([]); setShowForm(false);
                 if (imageInputRef.current) imageInputRef.current.value = '';
                 onProductCreated?.();
@@ -737,6 +738,16 @@ const ListProductSection: React.FC<{ onProductCreated?: () => void; isAuthentica
                                 <option value="TIPPER_DRIVERS">TIPPER DRIVERS</option>
                                 <option value="LOCAL_ARTISANS">LOCAL ARTISANS</option>
                             </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-light-text-secondary dark:text-dark-text-secondary mb-1">Location</label>
+                            <input type="text" placeholder="e.g., High Level, Makurdi" value={formData.location}
+                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                className="input-base text-sm" />
+                            <p className="mt-1 text-[11px] text-light-text-muted dark:text-dark-text-muted">
+                                Buyers search by area, so name the neighbourhood and town.
+                            </p>
                         </div>
 
                         <div>
@@ -844,13 +855,14 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     const [discounted, setDiscounted] = useState(false);
     const [searchPage, setSearchPage] = useState(1);
     const [results, setResults] = useState<any[]>([]);
-    const [facets, setFacets] = useState<{ categories: Facet[]; brands: Facet[]; priceRange: { min: number | null; max: number | null } } | null>(null);
+    const [locs, setLocs] = useState<string[]>([]);
+    const [facets, setFacets] = useState<{ categories: Facet[]; brands: Facet[]; locations: Facet[]; priceRange: { min: number | null; max: number | null } } | null>(null);
     const [meta, setMeta] = useState<PageMeta | null>(null);
     const [searching, setSearching] = useState(false);
     const [sheetOpen, setSheetOpen] = useState(false);
 
     const searchMode = Boolean(
-        query.trim() || cats.length || minPrice !== undefined || maxPrice !== undefined
+        query.trim() || cats.length || locs.length || minPrice !== undefined || maxPrice !== undefined
         || discounted || sort !== 'newest',
     );
 
@@ -938,6 +950,8 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     limit: 24,
                     search: query.trim() || undefined,
                     category: cats.join(',') || undefined,
+                    // Pipe, not comma: a place name contains commas.
+                    location: locs.join('|') || undefined,
                     minPrice,
                     maxPrice,
                     discounted: discounted || undefined,
@@ -960,14 +974,15 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         }, 300);
 
         return () => { cancelled = true; clearTimeout(t); };
-    }, [searchMode, query, cats, minPrice, maxPrice, discounted, sort, searchPage]);
+    }, [searchMode, query, cats, locs, minPrice, maxPrice, discounted, sort, searchPage]);
 
     // A narrower filter can leave the current page beyond the last one.
-    useEffect(() => { setSearchPage(1); }, [query, cats, minPrice, maxPrice, discounted, sort]);
+    useEffect(() => { setSearchPage(1); }, [query, cats, locs, minPrice, maxPrice, discounted, sort]);
 
     const clearSearch = useCallback(() => {
         setQuery('');
         setCats([]);
+        setLocs([]);
         setMinPrice(undefined);
         setMaxPrice(undefined);
         setDiscounted(false);
@@ -979,8 +994,13 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
         setCats(prev => (prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]));
     }, []);
 
+    const toggleLoc = useCallback((value: string) => {
+        setLocs(prev => (prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]));
+    }, []);
+
     const searchChips: ActiveChip[] = [
         ...cats.map(c => ({ key: `cat:${c}`, label: categoryLabel(c) })),
+        ...locs.map(l => ({ key: `loc:${l}`, label: l })),
         ...(minPrice !== undefined || maxPrice !== undefined
             ? [{
                 key: 'price',
@@ -997,6 +1017,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
     const removeSearchChip = (key: string) => {
         const [kind, value] = key.split(':');
         if (kind === 'cat') return toggleCat(value);
+        if (kind === 'loc') return toggleLoc(value);
         if (kind === 'price') { setMinPrice(undefined); setMaxPrice(undefined); return; }
         if (kind === 'discounted') setDiscounted(false);
     };
@@ -1022,6 +1043,17 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     limit={10}
                 />
             </FilterSection>
+
+            {(facets?.locations.length ?? 0) > 0 && (
+                <FilterSection title="Location">
+                    <FacetPills
+                        options={facets!.locations}
+                        selected={locs}
+                        onToggle={toggleLoc}
+                        limit={10}
+                    />
+                </FilterSection>
+            )}
 
             <FilterSection title="Offers" defaultOpen={false}>
                 <SwitchRow
@@ -1128,7 +1160,7 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                 <SearchBar
                     value={query}
                     onChange={setQuery}
-                    placeholder="Search products, materials, services…"
+                    placeholder="Search an item, service or area — e.g. High Level"
                     label="Search the marketplace"
                 />
                 <div className="flex gap-2">
@@ -1136,6 +1168,29 @@ const MarketplacePage: React.FC<MarketplacePageProps> = ({ onCartUpdate, isAuthe
                     <FilterButton count={searchChips.length} onClick={() => setSheetOpen(true)} />
                 </div>
             </div>
+
+            {/* Shoppers do not know the search reads the seller's location, and
+                a search box with no example gets typed into hesitantly. The
+                areas span a few states rather than one city, since the store
+                serves the whole country. */}
+            {!searchMode && (
+                <p className="mb-4 text-xs text-light-text-secondary dark:text-dark-text-secondary">
+                    Tip: search by area as well as by item — try{' '}
+                    {['High Level', 'Wadata', 'Lekki', 'Wuse', 'GRA'].map((place, i, all) => (
+                        <React.Fragment key={place}>
+                            <button
+                                type="button"
+                                onClick={() => setQuery(place)}
+                                className="font-semibold text-brand-primary hover:underline"
+                            >
+                                {place}
+                            </button>
+                            {i < all.length - 1 ? ', ' : ''}
+                        </React.Fragment>
+                    ))}
+                    {' '}— or name the town you are buying in.
+                </p>
+            )}
 
             {searchChips.length > 0 && (
                 <div className="mb-3">

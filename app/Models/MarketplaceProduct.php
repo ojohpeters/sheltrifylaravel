@@ -14,7 +14,7 @@ class MarketplaceProduct extends Model
     protected $table = 'marketplace_products';
 
     protected $fillable = [
-        'user_id', 'name', 'description', 'price', 'old_price', 'category',
+        'user_id', 'name', 'description', 'price', 'old_price', 'category', 'location',
         'image_url', 'video_url', 'images', 'videos',
         'is_active', 'is_approved', 'approved_at', 'approved_by',
     ];
