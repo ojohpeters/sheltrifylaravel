@@ -95,7 +95,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
 
     // Signed out, the Wallet slot is a login wall, so it gives way to Artisans —
     // a page a visitor can actually use. Signed in, Artisans lives in Explore.
-    const EXPLORE_PAGES = ['artisans', 'wallet', 'community', 'feels', 'rentalWahala', 'globalTales',
+    const EXPLORE_PAGES = ['artisans', 'vacatingSoon', 'wallet', 'community', 'feels', 'rentalWahala', 'globalTales',
         'premium', 'about', 'contact', 'userDashboard', 'adminDashboard', 'profile'];
 
     const tabs = [
@@ -111,6 +111,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
     // signed-out visitor tapping "My Dashboard" only to hit a login wall reads
     // as broken, not as an invitation.
     const moreItems: MoreItem[] = [
+        { label: 'Vacating Soon', emoji: '🔑', page: 'vacatingSoon' as const },
         { label: 'Local Artisans', emoji: '🔧', page: 'artisans' as const },
         ...(isAuthenticated ? [
             { label: 'Wallet',        emoji: '👛', page: 'wallet' as const },

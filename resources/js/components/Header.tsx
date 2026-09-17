@@ -14,6 +14,7 @@ interface HeaderProps {
     onCommunityClick: () => void;
     onWalletClick: () => void;
     onListingsClick?: () => void;
+    onVacatingSoonClick?: () => void;
     onMarketplaceClick: () => void;
     onArtisansClick: () => void;
     onReferralsClick?: () => void;
@@ -64,7 +65,7 @@ const NavLink: React.FC<{ label: string; onClick: () => void; active?: boolean }
 
 const Header: React.FC<HeaderProps> = ({
     isAuthenticated, currentUser, isAdmin, cartCount = 0, currentPage,
-    onLogoClick, onChatClick, onCommunityClick, onWalletClick, onListingsClick, onMarketplaceClick, onArtisansClick, onReferralsClick,
+    onLogoClick, onChatClick, onCommunityClick, onWalletClick, onListingsClick, onVacatingSoonClick, onMarketplaceClick, onArtisansClick, onReferralsClick,
     onFeelsClick, onRentalWahalaClick, onGlobalTalesClick, onAboutClick, onContactClick,
     onPremiumClick, onProfileClick, onDashboardClick, onNotificationsClick, onAdminClick, onCartClick,
     onLoginClick, onSignupClick, onLogoutClick,
@@ -152,6 +153,7 @@ const Header: React.FC<HeaderProps> = ({
                     {/* ── Desktop Nav ──────────────────────────────────── */}
                     <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center" aria-label="Main navigation">
                         <NavLink label="Property" onClick={() => onListingsClick?.()} active={currentPage === 'listings'} />
+                        <NavLink label="Vacating Soon" onClick={() => onVacatingSoonClick?.()} active={currentPage === 'vacatingSoon'} />
                         <NavLink label="Chat" onClick={onChatClick} active={currentPage === 'chat'} />
                         <NavLink label="Marketplace" onClick={onMarketplaceClick} active={currentPage === 'marketplace'} />
                         <NavLink label="Artisans" onClick={onArtisansClick} active={currentPage === 'artisans'} />

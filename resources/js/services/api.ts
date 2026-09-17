@@ -762,6 +762,52 @@ export const cartAPI = {
 };
 
 // Upload API — all uploads handled by Laravel PHP (no third-party handler)
+/**
+ * Vacating Soon: flats with notice already given, and the seekers waiting.
+ *
+ * Both submissions are open to guests — a tenant captured at their own door has
+ * no account, and asking them to make one loses the capture.
+ */
+export const vacatingAPI = {
+  list: async (params?: { page?: number; limit?: number; search?: string; state?: string; area?: string; apartmentType?: string }) => {
+    const query = new URLSearchParams();
+    Object.entries(params ?? {}).forEach(([k, v]) => {
+      if (v !== undefined) query.append(k, String(v));
+    });
+    const q = query.toString();
+    return apiRequest(`/vacating-soon${q ? `?${q}` : ''}`);
+  },
+
+  /** Areas and LGAs already captured, so both forms suggest instead of relying on spelling. */
+  places: async (state?: string) =>
+    apiRequest(`/vacating-soon/places${state ? `?state=${encodeURIComponent(state)}` : ''}`),
+
+  submitVacating: async (data: Record<string, unknown>) =>
+    apiRequest('/vacating-soon', { method: 'POST', body: JSON.stringify(data) }),
+
+  joinWaitlist: async (data: Record<string, unknown>) =>
+    apiRequest('/waitlist', { method: 'POST', body: JSON.stringify(data) }),
+
+  contact: async (id: number | string) =>
+    apiRequest(`/vacating-soon/${id}/contact`, { method: 'POST' }),
+
+  // Admin
+  adminVacating: async (status?: string) =>
+    apiRequest(`/admin/vacating-soon${status ? `?status=${status}` : ''}`),
+  adminWaitlist: async (status?: string) =>
+    apiRequest(`/admin/waitlist${status ? `?status=${status}` : ''}`),
+  adminMatches: async (status?: string) =>
+    apiRequest(`/admin/vacating-matches${status ? `?status=${status}` : ''}`),
+  adminUpdateVacating: async (id: number | string, data: Record<string, unknown>) =>
+    apiRequest(`/admin/vacating-soon/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminUpdateWaitlist: async (id: number | string, status: string) =>
+    apiRequest(`/admin/waitlist/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  adminUpdateMatch: async (id: number | string, data: Record<string, unknown>) =>
+    apiRequest(`/admin/vacating-matches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  adminRematch: async (id: number | string) =>
+    apiRequest(`/admin/vacating-soon/${id}/rematch`, { method: 'POST' }),
+};
+
 export const uploadAPI = {
   uploadImage: async (file: File, _requireAuth?: boolean, targetBytes?: number) => {
     if (file.size > IMAGE_MAX_BYTES) {

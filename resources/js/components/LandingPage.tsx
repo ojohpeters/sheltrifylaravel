@@ -15,6 +15,8 @@ import { ARTISAN_CATEGORIES, TRANSPORT_CATEGORIES } from '../constants/services'
 interface LandingPageProps {
   onStartChatting: () => void;
   onBrowseProperties?: () => void;
+  /** `as` lands the visitor straight on the form they picked. */
+  onVacatingSoon?: (as?: 'tenant' | 'seeker') => void;
   onTalkToAnna: () => void;
   onPremiumUpgrade?: () => void;
   onLeaveFeedback?: () => void;
@@ -184,6 +186,47 @@ const CORE_SERVICES = [
         icon: CreditCardIcon,
     },
 ] as const;
+
+/**
+ * The client's own framing: most apartments are taken before they are ever
+ * advertised, so a month of seekers can go unhoused in an area where flats did
+ * come free. This band is the entry to catching them at notice instead.
+ */
+const VacatingSoonBand: React.FC<Pick<LandingPageProps, 'onVacatingSoon'>> = ({ onVacatingSoon }) => (
+  <section className="px-4">
+    <div className="max-w-4xl mx-auto rounded-3xl border border-brand-primary/30 bg-brand-primary/5 dark:bg-brand-primary/10 p-6 md:p-9">
+      <div className="flex flex-col md:flex-row md:items-center gap-6">
+        <div className="flex-1 min-w-0">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary text-white text-xs font-bold tracking-wide">
+            🔑 VACATING SOON
+          </span>
+          <h2 className="mt-3 text-2xl md:text-3xl font-bold text-light-text-primary dark:text-dark-text-primary">
+            The best apartments never get advertised
+          </h2>
+          <p className="mt-2 text-light-text-secondary dark:text-dark-text-secondary">
+            They are taken the week the tenant gives notice. Tell us you are moving out, or
+            join the waitlist for your area and hear about it first.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 md:w-64 shrink-0">
+          <button
+            onClick={() => onVacatingSoon?.('seeker')}
+            className="px-6 py-3.5 rounded-2xl bg-brand-primary text-white font-bold hover:bg-brand-secondary transition-colors"
+          >
+            Join the waitlist
+          </button>
+          <button
+            onClick={() => onVacatingSoon?.('tenant')}
+            className="px-6 py-3.5 rounded-2xl bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border font-semibold text-light-text-primary dark:text-dark-text-primary hover:border-brand-primary transition-colors"
+          >
+            I&rsquo;m vacating soon
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+);
 
 const CoreServices: React.FC = () => {
     const services = CORE_SERVICES.filter(s => s.tagline && s.cta);
@@ -852,10 +895,11 @@ const AdSpace: React.FC = () => (
 );
 
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onBrowseProperties, onTalkToAnna, onPremiumUpgrade, onLeaveFeedback, isAuthenticated }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onStartChatting, onBrowseProperties, onVacatingSoon, onTalkToAnna, onPremiumUpgrade, onLeaveFeedback, isAuthenticated }) => {
   return (
     <div className="space-y-16 md:space-y-24 overflow-x-hidden w-full">
       <Hero onStartChatting={onStartChatting} onBrowseProperties={onBrowseProperties} />
+      <VacatingSoonBand onVacatingSoon={onVacatingSoon} />
       <CoreServices />
       <ServiceShowcase />
       <HowItWorks />

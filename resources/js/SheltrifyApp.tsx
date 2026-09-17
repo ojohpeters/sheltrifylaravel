@@ -15,6 +15,7 @@ const CommunityPage = lazy(() => import('./components/CommunityPage'));
 const WalletPage = lazy(() => import('./components/WalletPage'));
 const MarketplacePage = lazy(() => import('./components/MarketplacePage'));
 const ListingsPage = lazy(() => import('./components/ListingsPage'));
+const VacatingSoonPage = lazy(() => import('./components/VacatingSoonPage'));
 const ArtisansPage = lazy(() => import('./components/ArtisansPage'));
 const ReferralsPage = lazy(() => import('./components/ReferralsPage'));
 const FeelsPage = lazy(() => import('./components/FeelsPage'));
@@ -89,7 +90,7 @@ export const useTheme = (): ThemeContextType => {
 };
 // --- End Theme Context ---
 
-export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'listings' | 'artisans' | 'referrals' | 'login' | 'register' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
+export type Page = 'landing' | 'chat' | 'community' | 'wallet' | 'marketplace' | 'listings' | 'vacatingSoon' | 'artisans' | 'referrals' | 'login' | 'register' | 'productDetail' | 'feels' | 'rentalWahala' | 'paymentVerify' | 'cart' | 'globalTales' | 'about' | 'contact' | 'premium' | 'adminDashboard' | 'userDashboard' | 'profile' | 'listingDashboard' | 'professionalProfile' | 'notifications';
 
 type ShellPageProps = {
   view: Page;
@@ -99,6 +100,7 @@ type ShellPageProps = {
 
 const URL_BY_PAGE: Record<Page, string> = {
   landing: '/',
+  vacatingSoon: '/vacating-soon',
   listings: '/listings',
   chat: '/chat',
   community: '/community',
@@ -127,6 +129,7 @@ const URL_BY_PAGE: Record<Page, string> = {
 
 const HASH_TO_PATH: Record<string, string> = {
   landing: '/',
+  vacatingSoon: '/vacating-soon',
   listings: '/listings',
   chat: '/chat',
   community: '/community',
@@ -442,6 +445,7 @@ const AppContent: React.FC = () => {
           onCommunityClick={() => navigateTo('community')}
           onWalletClick={() => navigateTo('wallet')}
           onListingsClick={() => navigateTo('listings')}
+          onVacatingSoonClick={() => navigateTo('vacatingSoon')}
           onMarketplaceClick={() => navigateTo('marketplace')}
           onArtisansClick={() => navigateTo('artisans')}
           onReferralsClick={() => navigateTo('referrals')}
@@ -482,6 +486,7 @@ const AppContent: React.FC = () => {
             <LandingPage
               onStartChatting={() => navigateTo('chat')}
               onBrowseProperties={() => navigateTo('listings')}
+              onVacatingSoon={(as) => router.visit(as ? `/vacating-soon?as=${as}` : '/vacating-soon')}
               onTalkToAnna={() => setIsVideoAssistantOpen(true)}
               onPremiumUpgrade={handlePremiumUpgrade}
               isAuthenticated={isAuthenticated}
@@ -545,6 +550,12 @@ const AppContent: React.FC = () => {
                 }
                 navigateTo('listingDashboard');
               }}
+            />
+          )}
+          {currentPage === 'vacatingSoon' && (
+            <VacatingSoonPage
+              currentUser={currentUser}
+              isAuthenticated={isAuthenticated}
             />
           )}
           {currentPage === 'marketplace' && (

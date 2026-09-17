@@ -40,6 +40,7 @@ Route::get('/chat', fn () => $shell('chat'))->name('chat');
 Route::get('/community', fn () => $shell('community'))->name('community');
 Route::get('/wallet', fn () => $shell('wallet'))->name('wallet');
 Route::get('/listings', fn () => $shell('listings'))->name('listings');
+Route::get('/vacating-soon', fn () => $shell('vacatingSoon'))->name('vacating-soon');
 Route::get('/marketplace', fn () => $shell('marketplace'))->name('marketplace');
 Route::get('/artisans', fn () => $shell('artisans'))->name('artisans');
 Route::get('/referrals', fn () => $shell('referrals'))->name('referrals');

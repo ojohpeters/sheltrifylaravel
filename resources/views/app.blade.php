@@ -29,6 +29,10 @@
                 'Property for Rent & Sale in Nigeria | ShelTrify',
                 'Browse verified houses, flats, duplexes and land across Nigeria. Filter by price, bedrooms, state and features, then talk to the landlord directly.',
             ],
+            'vacating-soon' => [
+                'Vacating Soon — Apartments Before They Are Advertised | ShelTrify',
+                'Most apartments are taken before they are ever listed. Tell us you are moving out, or join the waitlist for your area and hear the moment a tenant there gives notice.',
+            ],
             'marketplace' => [
                 'Marketplace — Homes, Land & Building Materials | ShelTrify',
                 'Shop homes, shortlets, land, furniture, electronics and building materials from verified sellers across Nigeria.',
