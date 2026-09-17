@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InvestmentApiController;
 use App\Http\Controllers\Api\LargeTransactionApiController;
 use App\Http\Controllers\Api\ListingApiController;
+use App\Http\Controllers\Api\VacatingSoonApiController;
 use App\Http\Controllers\Api\MarketplaceApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\PaymentApiController;
@@ -37,6 +38,15 @@ Route::get('/listings', [ListingApiController::class, 'index']);
 Route::get('/listings/user/my-listings', [ListingApiController::class, 'myListings'])->middleware('auth');
 Route::get('/listings/{id}', [ListingApiController::class, 'show'])->where('id', '[0-9]+');
 Route::post('/listings/{id}/contact', [ListingApiController::class, 'contact'])->where('id', '[0-9]+');
+
+// Vacating Soon: flats with notice already given, and the seekers waiting for
+// them. Both submissions are open to guests — a tenant met at their door has no
+// account, and demanding one is how you lose the capture.
+Route::get('/vacating-soon', [VacatingSoonApiController::class, 'index']);
+Route::get('/vacating-soon/places', [VacatingSoonApiController::class, 'places']);
+Route::post('/vacating-soon', [VacatingSoonApiController::class, 'store'])->middleware('throttle:30,1');
+Route::post('/vacating-soon/{id}/contact', [VacatingSoonApiController::class, 'contact'])->where('id', '[0-9]+');
+Route::post('/waitlist', [VacatingSoonApiController::class, 'joinWaitlist'])->middleware('throttle:30,1');
 
 Route::get('/marketplace', [MarketplaceApiController::class, 'index']);
 Route::get('/marketplace/category/{category}', [MarketplaceApiController::class, 'byCategory']);
@@ -190,6 +200,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/listings/{id}', [AdminApiController::class, 'listingShow'])->where('id', '[0-9]+');
         Route::put('/listings/{id}', [AdminApiController::class, 'listingUpdate'])->where('id', '[0-9]+');
         Route::delete('/listings/{id}', [AdminApiController::class, 'listingDestroy'])->where('id', '[0-9]+');
+
+        Route::get('/vacating-soon', [VacatingSoonApiController::class, 'adminVacating']);
+        Route::put('/vacating-soon/{id}', [VacatingSoonApiController::class, 'adminUpdateVacating'])->where('id', '[0-9]+');
+        Route::post('/vacating-soon/{id}/rematch', [VacatingSoonApiController::class, 'adminRematch'])->where('id', '[0-9]+');
+        Route::get('/waitlist', [VacatingSoonApiController::class, 'adminWaitlist']);
+        Route::put('/waitlist/{id}', [VacatingSoonApiController::class, 'adminUpdateWaitlist'])->where('id', '[0-9]+');
+        Route::get('/vacating-matches', [VacatingSoonApiController::class, 'adminMatches']);
+        Route::put('/vacating-matches/{id}', [VacatingSoonApiController::class, 'adminUpdateMatch'])->where('id', '[0-9]+');
 
         Route::get('/stats', [AdminApiController::class, 'stats']);
         Route::put('/marketplace/{id}/approve', [AdminApiController::class, 'approveProduct'])->where('id', '[0-9]+');
