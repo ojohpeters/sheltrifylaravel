@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { adminAPI, adminNotificationsAPI, feelsAPI, listingsAPI, rentalWahalaAPI, uploadAPI, PHOTO_UPLOAD_TARGET_BYTES } from '../services/api';
-import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon, BellIcon, MegaphoneIcon, NoSymbolIcon, StarIcon } from './icons';
+import { CloseIcon, UserIcon, BuildingStorefrontIcon, TrendingUpIcon, UsersIcon, CloudArrowUpIcon, TrashIcon, CheckCircleIcon, XCircleIcon, DocumentCheckIcon, Bars3Icon, XMarkIcon, ChartBarIcon, ShoppingCartIcon, VideoCameraIcon, CogIcon, CreditCardIcon, DocumentTextIcon, BellIcon, MegaphoneIcon, NoSymbolIcon, StarIcon, CalendarIcon} from './icons';
+import VacatingAdminPanel from './VacatingAdminPanel';
 import { useToast } from '../contexts/ToastContext';
 import Lightbox, { useLightbox } from './Lightbox';
 import { serviceLabel } from '../constants/services';
@@ -97,7 +98,7 @@ interface MarketplaceProduct {
   };
 }
 
-type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala' | 'broadcast' | 'testimonials' | 'artisan-applications' | 'notifications';
+type AdminPage = 'dashboard' | 'users' | 'verifications' | 'accommodations' | 'listings' | 'vacating' | 'feels' | 'marketplace' | 'analytics' | 'ai' | 'system' | 'transactions' | 'content' | 'requests' | 'rental-wahala' | 'broadcast' | 'testimonials' | 'artisan-applications' | 'notifications';
 type AdminView = 'list' | 'edit' | 'create' | 'upload';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
@@ -805,6 +806,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     { id: 'rental-wahala', label: 'Rental Wahala', icon: VideoCameraIcon },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon, badge: pendingProducts.length },
     { id: 'requests', label: 'Property Requests', icon: DocumentCheckIcon, badge: appointments.filter((a: any) => a.status === 'pending').length },
+    { id: 'vacating', label: 'Vacating & Waitlist', icon: CalendarIcon },
     { id: 'artisan-applications', label: 'Artisan Applications', icon: DocumentCheckIcon, badge: artisanApplications.length },
     { id: 'testimonials', label: 'Testimonials', icon: StarIcon, badge: pendingTestimonials.length },
     { id: 'broadcast', label: 'Broadcast', icon: MegaphoneIcon },
@@ -921,6 +923,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 {currentPage === 'dashboard' && 'Overview of your platform statistics'}
                 {currentPage === 'users' && 'Manage all platform users'}
                 {currentPage === 'verifications' && 'Review and approve landlord/agent verifications'}
+                {currentPage === 'vacating' && 'Apartments being vacated, seekers waiting, and the matches between them'}
                 {currentPage === 'artisan-applications' && 'Review artisan verification applications'}
                 {currentPage === 'accommodations' && 'Upload and manage accommodation listings'}
                 {currentPage === 'listings' && 'Manage all property listings'}
@@ -1662,6 +1665,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           )}
 
           {/* Broadcast Tab */}
+          {currentPage === 'vacating' && <VacatingAdminPanel />}
+
           {currentPage === 'artisan-applications' && (
             <div className="space-y-4">
               <div>
